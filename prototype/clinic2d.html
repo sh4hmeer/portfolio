@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tri-City Patient Flow · top-down (prototype)</title>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#131820; --panel-2:#1a212c; --border:#232c3a;
+    --text:#e6edf3; --muted:#8a96a8;
+    --here:#4ade80; --hvf:#ec8b3c; --vision:#34d399; --oct:#ffd43b; --waiting:#b794f6; --billed:#4dabf7;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text)}
+  body{display:flex;flex-direction:column;align-items:center;min-height:100%;padding:18px}
+  .head{width:100%;max-width:1500px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .head .eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .head h1{margin:2px 0 0;font-size:18px;font-weight:700}
+  .head h1 b{color:var(--billed)}
+  .timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:34px;padding:4px 12px;border-radius:10px;
+    background:var(--panel);border:1px solid var(--border);transition:color .3s,box-shadow .3s}
+  .timer.frozen{color:var(--billed);box-shadow:0 0 0 2px rgba(77,171,247,.5),0 0 24px rgba(77,171,247,.35)}
+  .split{position:relative;display:flex;gap:14px;width:100%;max-width:1500px;height:648px}
+  .stage{position:relative;flex:1 1 0;min-width:0;border-radius:14px;overflow:hidden;
+    border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.5);background:#070a0f}
+  .dash{position:relative;flex:1 1 0;min-width:0;border-radius:14px;overflow:hidden;border:1px solid #2a3140;background:#0e1116}
+  #game{display:block;width:100%;height:100%;image-rendering:pixelated}
+  .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;z-index:5}
+
+  .hud{position:absolute;top:14px;left:14px;width:212px;background:linear-gradient(180deg,rgba(19,24,32,.94),rgba(13,17,23,.94));
+    border:1px solid var(--border);border-radius:12px;padding:11px 11px 9px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  .hud h3{margin:0 0 1px;font-size:13px}.hud .sub{font-size:10px;color:var(--muted);margin-bottom:8px}
+  .step{display:flex;align-items:center;gap:8px;padding:4px 5px;border-radius:6px;font-size:11.5px;color:var(--muted);transition:all .35s}
+  .step .dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--border);flex:none;transition:all .35s}
+  .step.active{color:var(--text);background:rgba(255,255,255,.04)}
+  .step.active .dot{background:var(--c);border-color:var(--c);box-shadow:0 0 10px var(--c);transform:scale(1.15)}
+  .step.done{color:#cdd6e2}.step.done .dot{background:color-mix(in srgb,var(--c) 55%,transparent);border-color:var(--c)}
+
+  .controls{width:100%;max-width:1500px;margin-top:12px;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--muted)}
+  .controls kbd{background:var(--panel-2);border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:1px 7px;color:var(--text);font-size:12px}
+  .controls .btn{margin-left:auto;background:var(--panel-2);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-weight:600;cursor:pointer}
+  .controls .btn:hover{filter:brightness(1.18)}
+  .takeover{color:var(--here);font-weight:600;opacity:0;transition:opacity .3s}.takeover.on{opacity:1}
+
+  .finale{position:absolute;inset:0;z-index:48;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:18px;
+    background:radial-gradient(1200px 700px at 50% 30%,rgba(20,28,42,.96),rgba(8,11,17,.99));
+    opacity:0;visibility:hidden;transition:opacity .8s,visibility .8s;padding:30px;text-align:center}
+  .finale.show{opacity:1;visibility:visible}
+  .finale .fstep{display:none;flex-direction:column;align-items:center;gap:14px;max-width:760px;width:100%}
+  .finale .fstep.on{display:flex;animation:fin .8s ease}
+  @keyframes fin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .finale h2{margin:0;font-size:22px;font-weight:700}.finale h2 b{color:var(--billed)}
+  .finale .big{font-variant-numeric:tabular-nums;font-weight:800;font-size:72px;color:var(--billed);line-height:1}
+  .finale .cap{font-size:14px;color:var(--muted);max-width:560px}.finale .cap b{color:var(--text)}
+  .sheet{width:100%;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--panel)}
+  .sheet table{width:100%;border-collapse:collapse;font-size:13px}
+  .sheet th{background:var(--panel-2);color:var(--muted);text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  .sheet td{padding:8px 12px;border-top:1px solid var(--border);font-variant-numeric:tabular-nums}
+  .sheet tr.live td{background:rgba(77,171,247,.08)}
+  .cell.lit{outline:2px solid var(--billed);background:rgba(77,171,247,.18);border-radius:5px}
+  .strike{text-decoration:line-through;color:#ff6b6b;opacity:.85}
+  .ml-row{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;width:100%}
+  .chart{position:relative;border:1px solid var(--border);border-radius:10px;background:var(--panel);height:210px;padding:8px}
+  .loss{fill:none;stroke:url(#g);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:1500;stroke-dashoffset:1500;transition:stroke-dashoffset 6s linear}
+  .loss.draw{stroke-dashoffset:0}
+  .mlstats{display:flex;flex-direction:column;gap:12px;justify-content:center}
+  .mlstat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:11px 14px;text-align:left}
+  .mlstat .k{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .mlstat .v{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+  .predict{background:rgba(81,207,102,.08);border:1px solid rgba(81,207,102,.35);border-radius:10px;padding:12px 16px;font-size:14px}
+  .predict b{color:#51cf66}
+  .replay2{background:var(--panel-2);color:var(--text);border:1px solid var(--border);padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer}
+
+  /* intro screen — meet the patient + break down today's orders */
+  .intro{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(1200px 760px at 50% 35%,rgba(16,22,34,.97),rgba(7,10,16,.99));
+    opacity:0;visibility:hidden;transition:opacity .5s,visibility .5s}
+  .intro.show{opacity:1;visibility:visible}
+  .intro-card{width:min(700px,94%);background:linear-gradient(180deg,#141a24,#0e131b);border:1px solid #28313f;border-radius:16px;
+    padding:24px 28px;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+  .intro-eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+  .intro-row{display:flex;gap:22px;align-items:center}
+  .intro-portrait{flex:none;width:112px;height:200px;background:#0c1118;border:1px solid #232c3a;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .intro-name{font-size:25px;font-weight:800}
+  .intro-meta{font-size:13.5px;color:var(--muted);margin-top:3px}.intro-meta b{color:#e6edf3}
+  .intro-orderlabel{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:18px 0 9px}
+  .intro-chips{display:flex;flex-wrap:wrap;gap:8px}
+  .intro-chip{font-size:14px;font-weight:700;padding:6px 14px;border-radius:999px;border:1px solid #2a3340;color:#aeb9c8;
+    background:#161d27;transition:all .35s ease;opacity:.45}
+  .intro-chip.on{opacity:1;color:#0e1116;transform:translateY(-2px) scale(1.06);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+  .intro-chip.done{opacity:.95;color:#0e1116}
+  .intro-chip.c-green.on,.intro-chip.c-green.done{background:#5fc88f;border-color:#5fc88f}
+  .intro-chip.c-orange.on,.intro-chip.c-orange.done{background:#ec8b3c;border-color:#ec8b3c}
+  .intro-chip.c-yellow.on,.intro-chip.c-yellow.done{background:#f5c542;border-color:#f5c542}
+  .intro-chip.c-blue.on,.intro-chip.c-blue.done{background:#5aa7ff;border-color:#5aa7ff}
+  .intro-legend{min-height:44px;margin-top:18px;font-size:14.5px;color:#cdd6e2;display:flex;align-items:center;line-height:1.45}
+  .intro-legend .lg-term{font-weight:800;margin-right:7px}
+  .intro-start{margin-top:18px;width:100%;background:#1b3a5c;border:1px solid #2d6da3;color:#fff;font-weight:700;
+    font-size:15px;padding:11px;border-radius:10px;cursor:pointer;opacity:.5;transition:opacity .3s}
+  .intro-start.ready{opacity:1}.intro-start:hover{filter:brightness(1.15)}
+</style>
+<link rel="stylesheet" href="dash.css" />
+</head>
+<body>
+  <div class="head">
+    <div>
+      <div class="eyebrow">Tri-City Eye Care · walkable patient flow</div>
+      <h1>Walk one visit, watch the board update, then see it become <b>data</b></h1>
+    </div>
+    <div class="timer" id="timer">00:00</div>
+  </div>
+
+  <div class="split">
+    <div class="stage">
+      <canvas id="game"></canvas>
+      <div class="loading" id="loading">loading clinic…</div>
+      <div class="dim" id="dimGame"></div>
+    </div>
+    <div class="dash" id="dash"><!-- faithful dashboard boards injected here --></div>
+
+    <div class="finale" id="finale">
+      <div class="fstep" id="fs1">
+        <h2>Visit complete. Total time door-to-door:</h2>
+        <div class="big" id="finalTime">00:00</div>
+        <div class="cap">Every status change you just walked through was timestamped automatically.</div>
+      </div>
+      <div class="fstep" id="fs2">
+        <h2>That time becomes a row, with <b>zero typing</b></h2>
+        <div class="sheet"><table>
+          <thead><tr><th>Patient</th><th>Path</th><th>Date</th><th>Door-to-door</th></tr></thead>
+          <tbody>
+            <tr><td>R. Mensah</td><td>HVF · Vision · OCT</td><td>2026-06-09</td><td>41:08</td></tr>
+            <tr><td>A. Koval</td><td>Vision · OCT</td><td>2026-06-09</td><td>38:50</td></tr>
+            <tr class="live"><td>You</td><td>HVF · Vision · OCT</td><td>2026-06-10</td><td class="cell" id="fcell">&nbsp;</td></tr>
+          </tbody>
+        </table></div>
+        <div class="cap"><span class="strike">~3 min of manual entry per visit</span> &nbsp;→&nbsp; <b>captured the instant you're billed.</b></div>
+      </div>
+      <div class="fstep" id="fs3">
+        <h2>Thousands of visits later → a model that <b>predicts the day</b></h2>
+        <div class="ml-row">
+          <div class="chart">
+            <svg viewBox="0 0 460 200" width="100%" height="100%" preserveAspectRatio="none">
+              <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ec8b3c"/><stop offset="1" stop-color="#4dabf7"/></linearGradient></defs>
+              <path class="loss" id="loss" d=""/>
+            </svg>
+            <div style="position:absolute;left:10px;top:8px;font-size:10px;color:var(--muted)">training loss</div>
+            <div style="position:absolute;right:10px;bottom:6px;font-size:10px;color:var(--muted)">epochs →</div>
+          </div>
+          <div class="mlstats">
+            <div class="mlstat"><div class="k">Epoch</div><div class="v" style="color:var(--billed)" id="mlEp">0 / 60</div></div>
+            <div class="mlstat"><div class="k">Loss</div><div class="v" style="color:var(--hvf)" id="mlLoss">0.94</div></div>
+            <div class="mlstat"><div class="k">Val accuracy</div><div class="v" style="color:#51cf66" id="mlAcc">58%</div></div>
+          </div>
+        </div>
+        <div class="predict">Predicting today: <b>peak congestion ~2:40pm</b> · pull 2 OCT slots earlier <span style="color:var(--muted)">· shorter waits, fewer bottlenecks.</span></div>
+        <button class="replay2" id="replay2">↻ Walk it again</button>
+      </div>
+    </div>
+
+    <div class="intro" id="intro">
+      <div class="intro-card">
+        <div class="intro-eyebrow">Next patient · checking in</div>
+        <div class="intro-row">
+          <div class="intro-portrait"><canvas id="heroPortrait" width="112" height="200"></canvas></div>
+          <div>
+            <div class="intro-name">DOE, Jordan</div>
+            <div class="intro-meta">DOB 1959-04-22 · age 67 · here to see <b>Dr. Husayn</b></div>
+            <div class="intro-orderlabel">Today's orders</div>
+            <div class="intro-chips" id="introChips"></div>
+          </div>
+        </div>
+        <div class="intro-legend" id="introLegend"></div>
+        <button class="intro-start" id="introStart">▶ Start the visit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows to walk · it auto-walks if you don't</span>
+    <span class="takeover" id="takeover">● you're driving</span>
+    <button class="btn" id="replay">↻ Restart</button>
+  </div>
+
+<script src="assets_data.js"></script>
+<script src="map2d.js"></script>
+<script src="flow2d.js"></script>
+<script src="marks2d.js"></script>
+<script src="dash.js"></script>
+<script>
+(function(){
+"use strict";
+const A=window.CLINIC_ASSETS;
+const loadingEl=document.getElementById('loading');
+if(!A){loadingEl.textContent='assets_data.js not found';return;}
+const IDX=A.index;
+
+/* ---------------- patient flow (from flow2d.js) ---------------- */
+const FLOW = window.CLINIC_FLOW || {start:[72,64],stops:[]};
+const FLOW_STOPS = FLOW.stops.filter(s=>s.status!=='via');
+
+/* ---------------- status colors + checklist (derived from flow) ---------------- */
+const COL={ default:'#6f8fd0' };
+FLOW_STOPS.forEach(s=>{ if(!COL[s.status]) COL[s.status]=s.color||'#6f8fd0'; });
+const STEPS = FLOW_STOPS.map(s=>({key:s.status,label:s.label||s.status,c:s.color||'#6f8fd0'}));
+const stepIdx=k=>STEPS.findIndex(s=>s.key===k);
+
+/* ---------------- map (baked from blueprint -> map2d.js) ---------------- */
+const M=window.CLINIC_MAP;
+if(!M){loadingEl.textContent='map2d.js not found';return;}
+const MW=M.w, MH=M.h, TILE=16;
+const floorL=new Array(MW*MH).fill(IDX.void);
+const objL=new Array(MW*MH).fill(0);     // 0 = none
+const at=(x,y)=>y*MW+x;
+const setF=(x,y,t)=>{if(x>=0&&x<MW&&y>=0&&y<MH)floorL[at(x,y)]=t;};
+const setO=(x,y,t)=>{if(x>=0&&x<MW&&y>=0&&y<MH)objL[at(x,y)]=t;};
+const SOLID=new Set([IDX.wall,IDX.wall_win,IDX.deskH,IDX.chair,IDX.stool,IDX.plant,IDX.exam_top,IDX.exam_bot,IDX.mach_top,IDX.mach_bot,IDX.monitor]);
+
+// '#' = pink wall, '.' = interior floor, ' ' = exterior void
+for(let y=0;y<MH;y++){const row=M.rows[y];for(let x=0;x<MW;x++){
+  const ch=row[x];
+  if(ch==='#'){ floorL[at(x,y)]=IDX.room; objL[at(x,y)]=IDX.wall; }
+  else if(ch==='D'){ floorL[at(x,y)]=IDX.room; objL[at(x,y)]=IDX.deskH; }   // desk: solid, drawn as counter
+  else if(ch==='M'){ floorL[at(x,y)]=IDX.room;
+    // machine touching a desk = computer; standalone = eye machine
+    const nearDesk=(M.rows[y-1]&&M.rows[y-1][x]==='D')||(M.rows[y+1]&&M.rows[y+1][x]==='D')||row[x-1]==='D'||row[x+1]==='D';
+    objL[at(x,y)]= nearDesk ? IDX.monitor : IDX.mach_top; } // computer on a desk vs standalone eye machine
+  else if(ch==='.'){ floorL[at(x,y)]=IDX.room; }
+}}
+
+const walkable=(tx,ty)=>{ if(tx<0||tx>=MW||ty<0||ty>=MH)return false;
+  if(floorL[at(tx,ty)]===IDX.void)return false; return !SOLID.has(objL[at(tx,ty)]); };
+const canPlace=(x,y)=> x>=0&&x<MW&&y>=0&&y<MH && floorL[at(x,y)]!==IDX.void && objL[at(x,y)]!==IDX.wall;
+
+/* ---------------- flow: BFS through the real corridors ---------------- */
+const wp=(tx,ty)=>({x:tx*TILE+TILE/2,y:ty*TILE+TILE/2});
+function snapTile(x,y){ if(walkable(x,y))return[x,y];
+  for(let r=1;r<12;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
+    const nx=x+dx,ny=y+dy; if(walkable(nx,ny))return[nx,ny]; } return [x,y]; }
+function bfsPath(a,b){
+  const q=[a]; const prev=new Map(); prev.set(at(a[0],a[1]),null); let h=0;
+  while(h<q.length){ const c=q[h++];
+    if(c[0]===b[0]&&c[1]===b[1]){ const out=[]; let k=c;
+      while(k){out.push(k); k=prev.get(at(k[0],k[1]));} return out.reverse(); }
+    for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=c[0]+d[0],ny=c[1]+d[1]; if(!walkable(nx,ny))continue;
+      const key=at(nx,ny); if(prev.has(key))continue;
+      prev.set(key,c); q.push([nx,ny]); } }
+  return null; }
+// simplify a tile path to corner waypoints (keeps auto-walk smooth)
+function corners(tiles){ if(tiles.length<3)return tiles.slice();
+  const out=[tiles[0]];
+  for(let i=1;i<tiles.length-1;i++){
+    const a=tiles[i-1],b=tiles[i],c=tiles[i+1];
+    if((b[0]-a[0])!==(c[0]-b[0])||(b[1]-a[1])!==(c[1]-b[1])) out.push(b);
+  }
+  out.push(tiles[tiles.length-1]); return out; }
+
+// Build legs by BFS through the corridors between consecutive flow stops.
+// 'via' stops extend the current leg (route steering) without a status change.
+const START_T=FLOW.start||[72,64];
+const LEGS=[]; { let cur=snapTile(START_T[0],START_T[1]); let acc=[];
+  for(const s of FLOW.stops){ const dst=snapTile(s.t[0],s.t[1]);
+    let tiles;
+    if(s.path&&s.path.length){ // hand-drawn route from the editor — use verbatim, just bridge the endpoints
+      tiles=s.path.map(t=>[t[0],t[1]]);
+      if(tiles[0][0]!==cur[0]||tiles[0][1]!==cur[1]) tiles.unshift(cur);
+      const e=tiles[tiles.length-1]; if(e[0]!==dst[0]||e[1]!==dst[1]) tiles.push(dst);
+    } else {
+      tiles=bfsPath(cur,dst); if(!tiles){console.warn('no BFS path to',s.status);tiles=[cur,dst];}
+    }
+    acc=acc.length?acc.concat(tiles.slice(1)):tiles; cur=dst;
+    if(s.status!=='via'){ LEGS.push({status:s.status,where:s.where||s.status,path:corners(acc).map(t=>wp(t[0],t[1]))}); acc=[]; } } }
+const START=wp(START_T[0],START_T[1]);
+
+/* Furniture comes from the painted map itself (D = desk, M = machine). Seats and
+   characters will be placed from marks2d.js + the LimeZu pack — no hardcoded props here. */
+
+/* ---------------- LimeZu art (Modern Interiors Free) ---------------- */
+const roomImg=new Image(), advImg=new Image();   // Room_Builder (floor/wall) + Adam (player)
+const npcImgs=[new Image(),new Image(),new Image()]; // Amelia, Bob, Alex walk sheets
+// white-coat variants (shirt recolored white at build time) indexed by sheet 0-3 — for doctors
+const coatImgs=[new Image(),new Image(),new Image(),new Image()];
+let ready=0; const need=9;
+function go(){ if(++ready===need) boot(); }
+roomImg.onload=go; advImg.onload=go; npcImgs.forEach(im=>im.onload=go); coatImgs.forEach(im=>im.onload=go);
+roomImg.src='assets/limezu/Room_Builder_free_16x16.png';
+advImg.src='assets/limezu/Adam_16x16.png';
+npcImgs[0].src='assets/limezu/Amelia_16x16.png';
+npcImgs[1].src='assets/limezu/Bob_16x16.png';
+npcImgs[2].src='assets/limezu/Alex_16x16.png';
+coatImgs[0].src='assets/limezu/Adam_coat.png';
+coatImgs[1].src='assets/limezu/Amelia_coat.png';
+coatImgs[2].src='assets/limezu/Bob_coat.png';
+coatImgs[3].src='assets/limezu/Alex_coat.png';
+
+// source tiles (col,row) in the 16px Room_Builder sheet
+const RB_FLOOR=[12,8], RB_WALL=[15,8];
+function roomTile(col,row,dx,dy){ ctx.drawImage(roomImg, col*16,row*16,16,16, dx,dy, TS,TS); }
+// furniture as clean primitives — the free pack has no medical gear; full pack swaps in later
+function drawDesk(dx,dy){ ctx.fillStyle='#8a5a2b';ctx.fillRect(dx,dy,TS,TS);
+  ctx.fillStyle='#a9743f';ctx.fillRect(dx,dy,TS,Math.round(TS*0.72));
+  ctx.fillStyle='#6e4420';ctx.fillRect(dx,dy+TS-Math.round(TS*0.16),TS,Math.round(TS*0.16)); }
+function drawMonitor(dx,dy){ const w=Math.round(TS*0.6),h=Math.round(TS*0.46),x=dx+Math.round((TS-w)/2),y=dy+Math.round(TS*0.16);
+  ctx.fillStyle='#23303c';ctx.fillRect(x,y,w,h); ctx.fillStyle='#4fc3f7';ctx.fillRect(x+2,y+2,w-4,h-6);
+  ctx.fillStyle='#1a242e';ctx.fillRect(x+Math.round(w/2)-2,y+h,4,Math.round(TS*0.12)); }
+function drawEyeMachine(dx,dy){ ctx.fillStyle='#cfd6df';ctx.fillRect(dx+3,dy+Math.round(TS*0.28),TS-6,Math.round(TS*0.6));
+  ctx.fillStyle='#aab3c0';ctx.fillRect(dx+3,dy+Math.round(TS*0.28),TS-6,4);
+  ctx.fillStyle='#3a4654';ctx.fillRect(dx+Math.round(TS/2)-4,dy+4,8,Math.round(TS*0.3));
+  ctx.fillStyle='#222b34';ctx.fillRect(dx+Math.round(TS/2)-2,dy+Math.round(TS*0.36),4,Math.round(TS*0.2)); }
+// chair (backrest toward the side the sitter faces away from) — mostly hidden when occupied
+function drawChair(dx,dy,dir){ const seat='#6e5740', back='#5a4632', leg='#3f3122';
+  ctx.fillStyle=seat;ctx.fillRect(dx+5,dy+TS*0.42,TS-10,TS*0.3);
+  ctx.fillStyle=back;
+  if(dir==='up') ctx.fillRect(dx+5,dy+TS*0.64,TS-10,TS*0.14);
+  else if(dir==='left') ctx.fillRect(dx+TS-9,dy+TS*0.3,4,TS*0.44);
+  else if(dir==='right') ctx.fillRect(dx+5,dy+TS*0.3,4,TS*0.44);
+  else ctx.fillRect(dx+5,dy+TS*0.28,TS-10,TS*0.14);
+  ctx.fillStyle=leg;ctx.fillRect(dx+5,dy+TS*0.72,3,TS*0.14);ctx.fillRect(dx+TS-8,dy+TS*0.72,3,TS*0.14); }
+function drawPlant(dx,dy){ ctx.fillStyle='#7a5230';ctx.fillRect(dx+Math.round(TS*0.32),dy+Math.round(TS*0.58),Math.round(TS*0.36),Math.round(TS*0.3));
+  ctx.fillStyle='#2e7d4f';ctx.beginPath();ctx.arc(dx+TS*0.5,dy+TS*0.42,TS*0.28,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#3a9b63';ctx.beginPath();ctx.arc(dx+TS*0.42,dy+TS*0.36,TS*0.16,0,Math.PI*2);ctx.fill(); }
+// varied clinic wall/floor decor — nudged toward the wall the mark faces
+function drawDecor(dx,dy,sub,dir){ const push=7;
+  if(dir==='up')dy-=push; else if(dir==='down')dy+=push; else if(dir==='left')dx-=push; else if(dir==='right')dx+=push;
+  const cx=dx+TS/2, cy=dy+TS/2;
+  if(sub==='eyechart'){ ctx.fillStyle='#f7f7ef';ctx.fillRect(dx+6,dy+3,TS-12,TS-7);
+    ctx.fillStyle='#23303c';ctx.fillRect(dx+5,dy+2,TS-10,2);
+    ctx.fillStyle='#1a1f26';ctx.fillRect(cx-5,dy+6,10,3);ctx.fillRect(cx-4,dy+12,8,2);ctx.fillRect(cx-3,dy+16,6,2);ctx.fillRect(cx-2,dy+20,4,1);
+  } else if(sub==='poster'){ const hues=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6'],h=hues[(dx+dy)%hues.length];
+    ctx.fillStyle='#e9edf2';ctx.fillRect(dx+6,dy+3,TS-12,TS-7);
+    ctx.fillStyle=h;ctx.fillRect(dx+8,dy+5,TS-16,TS*0.34);
+    ctx.fillStyle='#9aa3b0';ctx.fillRect(dx+8,dy+TS*0.5,TS-16,2);ctx.fillRect(dx+8,dy+TS*0.5+4,TS-18,2);
+  } else if(sub==='clock'){ ctx.fillStyle='#f4f4ee';ctx.beginPath();ctx.arc(cx,cy,TS*0.3,0,7);ctx.fill();
+    ctx.strokeStyle='#23303c';ctx.lineWidth=2;ctx.stroke();
+    ctx.strokeStyle='#1a1f26';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy-TS*0.2);ctx.moveTo(cx,cy);ctx.lineTo(cx+TS*0.14,cy);ctx.stroke();
+  } else if(sub==='frame'){ ctx.fillStyle='#7c5a36';ctx.fillRect(dx+6,dy+4,TS-12,TS-10);
+    ctx.fillStyle='#bfe3f5';ctx.fillRect(dx+8,dy+6,TS-16,(TS-14)*0.6);
+    ctx.fillStyle='#79c08a';ctx.fillRect(dx+8,dy+6+(TS-14)*0.6,TS-16,(TS-14)*0.4);
+    ctx.fillStyle='#f2c14e';ctx.beginPath();ctx.arc(dx+12,dy+11,2.5,0,7);ctx.fill();
+  } else if(sub==='board'){ ctx.fillStyle='#caa46a';ctx.fillRect(dx+5,dy+4,TS-10,TS-9);
+    ctx.fillStyle='#8a6a3f';ctx.fillRect(dx+5,dy+4,TS-10,2);
+    const notes=['#fef08a','#bbf7d0','#bfdbfe','#fecaca'];
+    for(let i=0;i<4;i++){ctx.fillStyle=notes[i];ctx.fillRect(dx+7+(i%2)*9,dy+7+Math.floor(i/2)*8,6,6);}
+  } else if(sub==='cooler'){ ctx.fillStyle='#dfe6ee';ctx.fillRect(cx-5,dy+TS*0.45,10,TS*0.4);
+    ctx.fillStyle='#7cc4e8';ctx.beginPath();ctx.moveTo(cx-5,dy+TS*0.45);ctx.lineTo(cx+5,dy+TS*0.45);ctx.lineTo(cx+3,dy+TS*0.2);ctx.lineTo(cx-3,dy+TS*0.2);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#3f4654';ctx.fillRect(cx-2,dy+TS*0.62,4,4);
+  } else if(sub==='sign'){ ctx.fillStyle='#1f9d55';ctx.fillRect(dx+8,dy+6,TS-16,TS-14);
+    ctx.fillStyle='#fff';ctx.fillRect(cx-1,dy+9,2,TS*0.38);ctx.fillRect(cx-TS*0.16,cy-1,TS*0.32,2);
+  } else if(sub==='bookshelf'){ ctx.fillStyle='#6b4a2b';ctx.fillRect(dx+4,dy+2,TS-8,TS-4);
+    ctx.fillStyle='#4e351e';ctx.fillRect(dx+4,dy+2,TS-8,2);
+    const books=['#c0504d','#4f81bd','#9bbb59','#8064a2','#f0ad4e','#5bc0de'];
+    for(let r=0;r<3;r++){ const yy=dy+5+r*((TS-9)/3);
+      ctx.fillStyle='#3e2917';ctx.fillRect(dx+5,yy+((TS-9)/3)-2,TS-10,2);   // shelf
+      for(let bk=0;bk<5;bk++){ ctx.fillStyle=books[(r*5+bk)%books.length];
+        ctx.fillRect(dx+6+bk*((TS-12)/5),yy,Math.max(2,((TS-12)/5)-1),((TS-9)/3)-2); } }
+  } else drawPlant(dx,dy); }
+
+/* ---------------- people catalog (shared ids with mapedit.html) ----------------
+   Everyone is one of the 4 LimeZu walk sheets (+ optional subtle tint), so patients/staff
+   are genuinely different people with natural skin and full 4-direction facing. Whether a
+   person is drawn *seated* (walk sprite + a chair over the legs) is decided per-NPC by context;
+   `seated:true` on a catalog entry is just the default for the legacy `sit_*` ids. */
+const PEOPLE=[
+  {id:'sit_olive', sheet:0, look:'none', seated:true, label:'Seated · Adam'},
+  {id:'sit_warm',  sheet:1, look:'none', seated:true, label:'Seated · Amelia'},
+  {id:'sit_cool',  sheet:2, look:'none', seated:true, label:'Seated · Bob'},
+  {id:'sit_grey',  sheet:3, look:'none', seated:true, label:'Seated · Alex'},
+  {id:'sit_rose',  sheet:0, look:'warm', seated:true, label:'Seated · Adam (warm)'},
+  {id:'sit_sage',  sheet:1, look:'cool', seated:true, label:'Seated · Amelia (cool)'},
+  {id:'sit_sand',  sheet:2, look:'sage', seated:true, label:'Seated · Bob (sage)'},
+  {id:'sit_sky',   sheet:3, look:'rose', seated:true, label:'Seated · Alex (rose)'},
+  {id:'adam',   sheet:0, look:'none', seated:false, label:'Adam'},
+  {id:'amelia', sheet:1, look:'none', seated:false, label:'Amelia'},
+  {id:'bob',    sheet:2, look:'none', seated:false, label:'Bob'},
+  {id:'alex',   sheet:3, look:'none', seated:false, label:'Alex'},
+  {id:'adam_warm',   sheet:0, look:'warm', seated:false, label:'Adam · warm'},
+  {id:'amelia_cool', sheet:1, look:'cool', seated:false, label:'Amelia · cool'},
+  {id:'bob_sage',    sheet:2, look:'sage', seated:false, label:'Bob · sage'},
+  {id:'alex_rose',   sheet:3, look:'rose', seated:false, label:'Alex · rose'},
+];
+const PEOPLE_BY_ID={}; PEOPLE.forEach(p=>PEOPLE_BY_ID[p.id]=p);
+// pool of distinct looks for auto-filled patients (all 4 chars + tints)
+const CHAR_IDS=['adam','amelia','bob','alex','adam_warm','amelia_cool','bob_sage','alex_rose'];
+const resolveWho=who=>PEOPLE_BY_ID[who]||PEOPLE_BY_ID['adam'];
+
+/* ---------------- NPCs + props from marks2d.js ----------------
+   patient/staff -> a person from the catalog (mark.who, else a deterministic default);
+   seat -> empty chair, decor -> plant. room/waiting/equipment = design labels, not drawn. */
+const MARKS=(window.CLINIC_MARKS&&window.CLINIC_MARKS.marks)||[];
+const DIRNUM={down:0,up:1,left:2,right:3,'':0};
+const hashPos=(x,y)=>((x*73856093)^(y*19349663))>>>0;   // stable per-tile seed
+const feetX=tx=>tx*TILE+TILE/2, feetY=ty=>ty*TILE+TILE/2;
+const NPCS=[];   // y-sorted actors (patients + staff, seated or standing)
+const PROPS=[];  // ground props (chairs, decor) drawn under actors
+const WALKERS=[];// animated staff pacing the halls (built below)
+const ESCORTS=[];// a room tech that comes out, meets the patient, and leads them into the room
+
+// tiles where the MAIN character stops/waits — never auto-occupy these seats
+const FLOW_TILES=new Set(); FLOW.stops.forEach(s=>FLOW_TILES.add(s.t[0]+','+s.t[1])); FLOW_TILES.add(START_T[0]+','+START_T[1]);
+const occupied=new Set();   // tiles already holding a person
+const isDoc=lbl=>/^doc(\b|tor|\s|\d)/i.test(lbl||'');
+// face a machine (eye device or computer) within 2 tiles, else fall back to the seat's dir
+const machineAt=(x,y)=> x>=0&&x<MW&&y>=0&&y<MH && (objL[at(x,y)]===IDX.mach_top||objL[at(x,y)]===IDX.monitor);
+function faceMachine(x,y,fallback){ let best=null,bd=99;
+  for(let r=1;r<=2;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
+    if(Math.abs(dx)+Math.abs(dy)>r||!machineAt(x+dx,y+dy))continue;
+    const d=Math.abs(dx)+Math.abs(dy); if(d<bd){bd=d;best=[dx,dy];} }
+  if(!best)return fallback; const [dx,dy]=best;
+  return Math.abs(dx)>=Math.abs(dy)?(dx<0?'left':'right'):(dy<0?'up':'down'); }
+
+// 1) explicit patient/staff marks
+for(const m of MARKS){ if((m.type==='patient'||m.type==='staff')&&m.t){
+  occupied.add(m.t[0]+','+m.t[1]);
+  const who=(m.who&&PEOPLE_BY_ID[m.who])?m.who:CHAR_IDS[hashPos(m.t[0],m.t[1])%CHAR_IDS.length];
+  const p=resolveWho(who);
+  NPCS.push({fx:feetX(m.t[0]),fy:feetY(m.t[1]),dir:m.dir||'',sheet:p.sheet,look:p.look,seated:p.seated,doctor:isDoc(m.label)});
+}}
+
+// 2) seats: expand "<key> start/end" pairs into a line; singles stay single. exam seats always fill.
+const seatMarks=MARKS.filter(m=>m.type==='seat'&&m.t);
+const rowMap={}, singleSeats=[];
+for(const s of seatMarks){ const mm=/^(.*) (start|end)$/.exec(s.label||'');
+  if(mm){ (rowMap[mm[1]]=rowMap[mm[1]]||{})[mm[2]]=s; } else singleSeats.push(s); }
+const seatTiles=[];   // {x,y,dir,exam}
+for(const k in rowMap){ const r=rowMap[k];
+  if(r.start&&r.end){ const a=r.start.t,b=r.end.t,dir=r.start.dir||r.end.dir||'';
+    const sx=Math.sign(b[0]-a[0]),sy=Math.sign(b[1]-a[1]), steps=Math.max(Math.abs(b[0]-a[0]),Math.abs(b[1]-a[1]));
+    for(let i=0;i<=steps;i++) seatTiles.push({x:a[0]+sx*i,y:a[1]+sy*i,dir,exam:false});
+  } else { const s=r.start||r.end; singleSeats.push(s); } }
+for(const s of singleSeats) seatTiles.push({x:s.t[0],y:s.t[1],dir:s.dir||'',exam:/exam/i.test(s.label||'')});
+// tile -> facing of the seat there, so the patient sits aligned with the rest of the row
+const SEAT_DIR={}; for(const st of seatTiles) if(st.dir) SEAT_DIR[st.x+','+st.y]=st.dir;
+
+// 3) chairs + dummy seated patients (exam seats always filled; others ~half; never the main char's seats)
+const OCC_PCT=52;
+for(const st of seatTiles){ const key=st.x+','+st.y;
+  if(occupied.has(key)) continue;                                 // a real NPC sits here (draws its own chair)
+  if(FLOW_TILES.has(key)){ PROPS.push({kind:'chair',tx:st.x,ty:st.y,dir:st.dir}); continue; }  // empty for the patient
+  const seed=hashPos(st.x,st.y);
+  if(!st.exam && seed%100>=OCC_PCT){ PROPS.push({kind:'chair',tx:st.x,ty:st.y,dir:st.dir}); continue; } // empty chair
+  occupied.add(key);
+  const dir=faceMachine(st.x,st.y,st.dir);
+  const p=resolveWho(CHAR_IDS[seed%CHAR_IDS.length]);
+  NPCS.push({fx:feetX(st.x),fy:feetY(st.y),dir,sheet:p.sheet,look:p.look,seated:true,doctor:false});
+}
+
+// 4) decor: a single chosen item per mark (mark.kind, else auto), or a line between a start/end pair
+const DECOR_KINDS=['plant','bookshelf','eyechart','poster','clock','frame','cooler','sign','board'];
+const onFloor=(x,y)=> x>=0&&x<MW&&y>=0&&y<MH && floorL[at(x,y)]!==IDX.void && objL[at(x,y)]!==IDX.wall;
+const decorKind=m=> (m.kind&&DECOR_KINDS.includes(m.kind))?m.kind:DECOR_KINDS[hashPos(m.t[0]*3,m.t[1]*5)%DECOR_KINDS.length];
+const decorMarks=MARKS.filter(m=>m.type==='decor'&&m.t), decorRows={}, decorSingles=[];
+for(const d of decorMarks){ const mm=/^(.*) (start|end)$/.exec(d.label||''); if(mm){(decorRows[mm[1]]=decorRows[mm[1]]||{})[mm[2]]=d;} else decorSingles.push(d); }
+for(const k in decorRows){ const r=decorRows[k]; if(!(r.start&&r.end)){decorSingles.push(r.start||r.end);continue;}
+  const a=r.start.t,b=r.end.t,dir=r.start.dir||'',sub=decorKind(r.start);
+  const sx=Math.sign(b[0]-a[0]),sy=Math.sign(b[1]-a[1]),steps=Math.max(Math.abs(b[0]-a[0]),Math.abs(b[1]-a[1]));
+  for(let i=0;i<=steps;i++){const x=a[0]+sx*i,y=a[1]+sy*i; if(onFloor(x,y)) PROPS.push({kind:'decor',sub,tx:x,ty:y,dir}); } }
+for(const d of decorSingles){ if(onFloor(d.t[0],d.t[1])) PROPS.push({kind:'decor',sub:decorKind(d),tx:d.t[0],ty:d.t[1],dir:d.dir||'down'}); }
+
+// 5) walking staff — pace straight hall segments, animated; built at boot (need images)
+const WALK_ROUTES=[
+  {a:[51,52],b:[85,52],who:'amelia'},   // bottom open room
+  {a:[58,53],b:[78,53],who:'bob'},      // reception corridor
+  {a:[4,22], b:[47,22],who:'alex'},     // left waiting/corridor
+];
+function drawProps(sx,sy,ex,ey){ for(const p of PROPS){ if(p.tx<sx||p.tx>=ex||p.ty<sy||p.ty>=ey)continue;
+  const dx=Math.round(p.tx*TILE*SCALE-camX), dy=Math.round(p.ty*TILE*SCALE-camY);
+  if(p.kind==='chair'){drawChair(dx,dy,p.dir);continue;} if(p.kind==='decor'){drawDecor(dx,dy,p.sub,p.dir);continue;}
+} }
+
+/* ---------------- engine state ---------------- */
+const canvas=document.getElementById('game'), ctx=canvas.getContext('2d');
+const SCALE=2, TS=TILE*SCALE;
+let camX=0,camY=0;
+const player={x:START.x,y:START.y,dir:0,frame:0,anim:0,moving:false,status:'default',seated:false};
+// dir rows: 0 down,1 up,2 left,3 right
+let leg=0, seg=0, manual=false, idleT=0, pendingDwell=0, finished=false, started=false, legStarted=true, escortSheet=null, escortHold=false, escortReleaseT=0, paused=false;
+
+const timerEl=document.getElementById('timer');
+const timer={running:false,secs:0,frozen:'00:00'};
+// clinical-seconds added per real second while seated IN a room being assessed (→ ~40 min total visit)
+const ROOMRATE={hvf:90, vision:50, oct:40, doctor:120};
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');
+
+/* the patient narrates his own visit so a first-time viewer follows along (keyed to stop index) */
+const bubble={text:'',shown:-1e9}; let bubbleQueue=[];
+// patient narration. legs 2 (HVF) & 4 (vision) fire when the escort reaches him (updateEscorts), not at
+// leg-start; *waiting* legs have no line; leg 9 is a 2-line sequence; idx 9 (billing) is an arrival line.
+const BUBBLES={0:"Ok, let me just check in.", 1:"Nice, now I'll find a seat.",
+  2:"Yes, I'm ready for HVF.", 3:"Alright, back to waiting.", 4:"Hi, yes I'm ready for vision.",
+  5:"Got it, I'll find a seat.", 6:"Time for OCT.", 7:"That was fast, just need to see the doc now.",
+  10:"What a smooth flow."};
+const ARRIVE_BUBBLES={9:"That's all for me, thank you."};
+function showBubble(t){ bubble.text=t; bubble.shown=performance.now(); }
+function setBubble(t){ bubbleQueue=[]; showBubble(t); }
+function sayLines(lines,gap){ gap=gap||3400; bubbleQueue=[]; showBubble(lines[0]); const s=performance.now();
+  for(let i=1;i<lines.length;i++) bubbleQueue.push({text:lines[i], at:s+i*gap}); }
+function tickBubbles(){ const n=performance.now(); while(bubbleQueue.length&&bubbleQueue[0].at<=n) showBubble(bubbleQueue.shift().text); }
+
+/* Stage status — the old left status board is gone; status now drives the dashboards (see Dash director). */
+function applyStep(idx){
+  const key=STEPS[idx]?STEPS[idx].key:'default';
+  player.status=key;
+  // sit facing the same way as the rest of the row (or the machine seat)
+  const tk=Math.floor(player.x/TILE)+','+Math.floor(player.y/TILE);
+  if(SEAT_DIR[tk]){ player.dir=DIRNUM[SEAT_DIR[tk]]||0; player.seated=true; } else player.seated=false;
+  if(ARRIVE_BUBBLES[idx]) setBubble(ARRIVE_BUBBLES[idx]);   // e.g. "That's all for me, thank you." at the desk
+  if(key==='here'&&!timer.running&&timer.secs===0){timer.running=true;}
+  // freeze the clock at the first billed stop (door-to-door clinical time); patient may still walk out
+  if(key==='billed'&&timer.running){timer.running=false;timer.frozen=timerEl.textContent;timerEl.classList.add('frozen');}
+  if(window.Dash) Dash.stage(idx, key, LEGS[idx]);
+}
+
+/* input */
+const keys={};
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();
+  if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){keys[k]=1;manual=true;idleT=0;document.getElementById('takeover').classList.add('on');e.preventDefault();}});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=0;});
+
+/* movement + collision (feet box) */
+function canBe(px,py){
+  const pts=[[px-4,py-1],[px+4,py-1],[px-4,py+3],[px+4,py+3]];
+  for(const [x,y] of pts){ if(!walkable(Math.floor(x/TILE),Math.floor(y/TILE))) return false; }
+  return true;
+}
+function move(dx,dy){
+  if(dx&&canBe(player.x+dx,player.y))player.x+=dx;
+  if(dy&&canBe(player.x,player.y+dy))player.y+=dy;
+}
+function face(dx,dy){
+  if(Math.abs(dx)>Math.abs(dy)) player.dir = dx<0?2:3;
+  else if(dy!==0) player.dir = dy<0?1:0;
+}
+
+function moveManual(dt){
+  let dx=0,dy=0;const sp=110*dt;
+  if(keys['w']||keys['arrowup'])dy--;if(keys['s']||keys['arrowdown'])dy++;
+  if(keys['a']||keys['arrowleft'])dx--;if(keys['d']||keys['arrowright'])dx++;
+  if(dx||dy){const l=Math.hypot(dx,dy);dx/=l;dy/=l;move(dx*sp,dy*sp);face(dx,dy);player.moving=true;idleT=0;}
+  else{player.moving=false;idleT+=dt;if(idleT>3.5){manual=false;document.getElementById('takeover').classList.remove('on');}}
+}
+function walkAuto(dt){
+  if(pendingDwell>0){pendingDwell-=dt;player.moving=false;return;}
+  if(leg>=LEGS.length)return;
+  const pts=LEGS[leg].path;
+  if(seg>=pts.length){ // arrived
+    const L=LEGS[leg]; applyStep(leg);
+    if(leg===LEGS.length-1){finished=true;setTimeout(runFinale,1400);return;} // finale on the final stop
+    // showcase pacing: short waits (don't over-linger seated), longer in-room so the board reads
+    const DWELL={here:2.5, hvf:6, vision:6, oct:6, octwait:2.5, drwait:2.5, doctor:6, billed:2};
+    pendingDwell = (leg===0?2.5 : (DWELL[L.status]!=null?DWELL[L.status]:3));
+    leg++; seg=0; legStarted=false;
+    const ns=LEGS[leg];                                  // a room tech will come out to call the patient in
+    escortSheet = (ns&&ns.status==='hvf') ? 1 : (ns&&ns.status==='vision') ? 3 : null;  // Amelia / Alex
+    return;
+  }
+  if(!legStarted){ legStarted=true; if(window.Dash)Dash.focusGame();
+    if(window.Dash && leg>0 && LEGS[leg-1] && ROOMRATE[LEGS[leg-1].status]) Dash.roomLeave();  // freeze the room timer as he leaves
+    const isEscort=(escortSheet!=null);
+    if(!isEscort){                                            // non-escort legs narrate at start; escort legs at the pause
+      if(leg===9) sayLines(["Thanks, doc.","Time to get billed."]);   // leaving the exam room → heading to billing
+      else if(BUBBLES[leg]) setBubble(BUBBLES[leg]);
+    }
+    if(isEscort){ const n=ESCORTS.length; spawnEscort(pts, escortSheet); escortHold=(ESCORTS.length>n); escortSheet=null; } }
+  if(escortHold){ player.moving=false; return; }   // wait, seated, until the tech arrives to lead you in
+  player.seated=false;                              // up and walking now
+  const t=pts[seg], dx=t.x-player.x, dy=t.y-player.y, d=Math.hypot(dx,dy), sp=150*dt;
+  if(d<=sp||d<0.001){player.x=t.x;player.y=t.y;seg++;}
+  else{const nx=dx/d*sp,ny=dy/d*sp;player.x+=nx;player.y+=ny;face(nx,ny);}
+  player.moving=true;
+}
+
+/* render — floor + walls from LimeZu, furniture from map cells (D/M) */
+function drawCells(sx,sy,ex,ey){
+  for(let ty=sy;ty<ey;ty++)for(let tx=sx;tx<ex;tx++){
+    const i=at(tx,ty); if(floorL[i]===IDX.void) continue;
+    const dx=Math.round(tx*TILE*SCALE-camX), dy=Math.round(ty*TILE*SCALE-camY);
+    roomTile(RB_FLOOR[0],RB_FLOOR[1],dx,dy);
+    const o=objL[i];
+    if(o===IDX.wall) roomTile(RB_WALL[0],RB_WALL[1],dx,dy);
+    else if(o===IDX.deskH) drawDesk(dx,dy);
+    else if(o===IDX.monitor){ drawDesk(dx,dy); drawMonitor(dx,dy); }
+    else if(o===IDX.mach_top) drawEyeMachine(dx,dy);
+  }
+}
+const labels=[
+  ['EXAM',9,4,'#8a96a8'],['EXAM',24,4,'#8a96a8'],['EXAM',33,4,'#8a96a8'],['SCAN',42,4,'#8a96a8'],
+  ['TERTIARY WAITING',62,5,'#ffd43b'],
+  ['oct 1',82,4,'#ffd43b'],['oct 3',82,14,'#ffd43b'],['vision 4',82,20,'#34d399'],
+  ['EXAM',58,18,'#8a96a8'],['oct 2',67,19,'#ffd43b'],
+  ['vision 3',67,31,'#34d399'],['SECONDARY WAITING',80,29,'#34d399'],['SURGICAL',58,31,'#8a96a8'],
+  ['hvf',55,44,'#ec8b3c'],['vision 2',67,44,'#34d399'],['vision 1',81,44,'#34d399'],
+  ['RECEPTION',70,52,'#4dabf7'],
+  ['QUATERNARY WAITING',24,20,'#b794f6'],
+  ['EXAM',11,30,'#8a96a8'],['EXAM',22,30,'#8a96a8'],['EXAM',31,30,'#8a96a8'],['EXAM',42,30,'#8a96a8'],
+];
+function drawLabels(){
+  ctx.font='700 12px "Segoe UI",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const [txt,tx,ty,c] of labels){
+    const sx=Math.round(tx*TILE*SCALE-camX), sy=Math.round((ty*TILE+8)*SCALE-camY);
+    const w=ctx.measureText(txt).width+12;
+    ctx.fillStyle='rgba(10,14,20,.78)';roundRect(sx-w/2,sy-9,w,18,5);ctx.fill();
+    ctx.fillStyle=c;ctx.fillText(txt,sx,sy);
+  }
+}
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+// Walk sheet (row 1) column order is right,up,left,down. dir 0 down,1 up,2 left,3 right
+const ADV_DIR={0:18,1:6,2:12,3:0};
+// person looks — subtle shifts that vary hair/clothing while keeping skin natural
+const LOOK_FILTER={none:'', warm:'hue-rotate(20deg) saturate(1.2)', cool:'hue-rotate(-20deg) saturate(1.15)',
+  muted:'saturate(0.4) brightness(1.08)', rose:'hue-rotate(-34deg) saturate(1.25)',
+  sage:'hue-rotate(34deg) saturate(0.95)', sand:'hue-rotate(28deg) saturate(1.1) brightness(1.05)',
+  sky:'hue-rotate(-30deg) saturate(1.3) brightness(0.98)'};
+const STAND_IMGS=()=>[advImg,npcImgs[0],npcImgs[1],npcImgs[2]];     // adam,amelia,bob,alex
+// tinted full walk sheet, cached (so per-frame draws stay filter-free)
+const walkCache={};
+function walkSheet(sheetIdx,look){ const img=STAND_IMGS()[sheetIdx]||advImg;
+  if(!look||look==='none'||!LOOK_FILTER[look]) return img;
+  const key=sheetIdx+'_'+look; if(walkCache[key]) return walkCache[key];
+  const c=document.createElement('canvas'); c.width=img.width; c.height=img.height;
+  const x=c.getContext('2d'); x.imageSmoothingEnabled=false; x.filter=LOOK_FILTER[look]; x.drawImage(img,0,0);
+  walkCache[key]=c; return c; }
+const spriteXY=(fx,fy)=>[Math.round((fx-8)*SCALE-camX), Math.round((fy-26)*SCALE-camY)];  // top-left of a 32x64 sprite
+function blitActor(img,cx,cy,fx,fy){ const [dx,dy]=spriteXY(fx,fy);
+  ctx.drawImage(img, cx,cy,16,32, dx,dy, 16*SCALE,32*SCALE); }
+// a chair seat+legs drawn OVER a seated character's legs (so the standing walk sprite reads as sitting)
+function drawSeatFront(fx,fy){ const [dx,dy]=spriteXY(fx,fy);
+  ctx.fillStyle='#6e5740'; ctx.fillRect(dx+8,dy+43,16,11);
+  ctx.fillStyle='#5a4632'; ctx.fillRect(dx+8,dy+43,16,3);
+  ctx.fillStyle='#3f3122'; ctx.fillRect(dx+9,dy+53,4,9); ctx.fillRect(dx+19,dy+53,4,9); }
+// draw player + NPC actors + walkers together, sorted by feet-y so closer sprites overlap farther ones
+function drawActors(){
+  const list=[];
+  for(const n of NPCS) list.push({kind:'npc',n,fx:n.fx,fy:n.fy});
+  for(const w of WALKERS){ const p=PEOPLE_BY_ID[w.who]||PEOPLE_BY_ID['amelia'];
+    list.push({kind:'walk',p,w,fx:w.x,fy:w.y}); }
+  for(const e of ESCORTS) list.push({kind:'walk',p:{sheet:e.sheet,look:e.look},w:e,fx:e.x,fy:e.y});
+  list.push({kind:'player',fx:player.x,fy:player.y});
+  list.sort((a,b)=>a.fy-b.fy);
+  for(const s of list){
+    if(s.kind==='player'){ blitActor(advImg,((ADV_DIR[player.dir]||0)+player.frame)*16,32,s.fx,s.fy); if(player.seated)drawSeatFront(s.fx,s.fy); continue; }
+    if(s.kind==='walk'){ blitActor(walkSheet(s.p.sheet,s.p.look),((ADV_DIR[s.w.dir]||0)+s.w.frame)*16,32,s.fx,s.fy); continue; }
+    const n=s.n;
+    const img = n.doctor ? (coatImgs[n.sheet]||advImg) : walkSheet(n.sheet,n.look);  // doctors use the white-coat sheet
+    blitActor(img,(ADV_DIR[DIRNUM[n.dir]]||0)*16,32,s.fx,s.fy);
+    if(n.seated) drawSeatFront(s.fx,s.fy);
+  }
+}
+// move walkers back and forth along their route segment, animating the walk cycle
+function updateWalkers(dt){
+  for(const w of WALKERS){ const tgt=w.pts[w.seg];
+    const dx=tgt.x-w.x, dy=tgt.y-w.y, d=Math.hypot(dx,dy), sp=70*dt;
+    if(d<=sp||d<0.001){ w.x=tgt.x; w.y=tgt.y; w.seg+=w.step;
+      if(w.seg>=w.pts.length){w.seg=w.pts.length-2;w.step=-1;} else if(w.seg<0){w.seg=1;w.step=1;} }
+    else{ w.x+=dx/d*sp; w.y+=dy/d*sp; w.dir = Math.abs(dx)>Math.abs(dy)?(dx<0?2:3):(dy<0?1:0); }
+    w.anim+=dt*8; w.frame=Math.floor(w.anim)%6;
+  }
+}
+// escort: spawn at the room, walk out toward the patient, then turn and lead them in
+function spawnEscort(legPath, sheet){
+  if(!legPath||legPath.length<2) return;
+  const fwd=legPath.map(p=>({x:p.x,y:p.y})), rev=fwd.slice().reverse();
+  ESCORTS.push({sheet, look:'none', x:rev[0].x, y:rev[0].y, dir:0, frame:0, anim:0, path:rev, seg:1, mode:'out', fwd});
+}
+function updateEscorts(dt){
+  if(escortReleaseT>0){ escortReleaseT-=dt; if(escortReleaseT<=0) escortHold=false; }  // head-start before patient follows
+  for(let i=ESCORTS.length-1;i>=0;i--){ const e=ESCORTS[i];
+    if(e.mode==='pause'){ e.frame=0; e.pauseT-=dt;                       // stand in front of the patient
+      if(e.pauseT<=0){ e.mode='lead'; e.path=e.fwd; e.seg=1; escortReleaseT=0.85; } continue; }
+    if(e.mode==='out' && Math.hypot(player.x-e.x,player.y-e.y)<26){      // arrived just in front of the seated patient
+      e.mode='pause'; e.pauseT=1.9;
+      e.dir = Math.abs(player.x-e.x)>Math.abs(player.y-e.y) ? (player.x<e.x?2:3) : (player.y<e.y?1:0);  // face him
+      if(BUBBLES[leg]) setBubble(BUBBLES[leg]);                          // "Yes, I'm ready…" — said to the escort
+      continue;
+    }
+    const tgt=e.path[e.seg];
+    if(!tgt){ ESCORTS.splice(i,1); continue; }                          // lead reached the room → done
+    const dx=tgt.x-e.x, dy=tgt.y-e.y, d=Math.hypot(dx,dy), sp=(e.mode==='out'?225:150)*dt;
+    if(d<=sp){ e.x=tgt.x; e.y=tgt.y; e.seg++; }
+    else{ e.x+=dx/d*sp; e.y+=dy/d*sp; e.dir=Math.abs(dx)>Math.abs(dy)?(dx<0?2:3):(dy<0?1:0); }
+    e.anim+=dt*8; e.frame=Math.floor(e.anim)%6;
+  }
+}
+
+function render(){
+  const vw=canvas.width, vh=canvas.height;
+  const mapPxW=MW*TILE*SCALE, mapPxH=MH*TILE*SCALE;
+  camX=Math.max(0,Math.min(mapPxW-vw, Math.round(player.x*SCALE - vw/2)));
+  camY=Math.max(0,Math.min(mapPxH-vh, Math.round(player.y*SCALE - vh/2)));
+  if(mapPxW<vw)camX=-(vw-mapPxW)/2; if(mapPxH<vh)camY=-(vh-mapPxH)/2;
+  ctx.fillStyle='#070a0f';ctx.fillRect(0,0,vw,vh);
+  const sx=Math.max(0,Math.floor(camX/TS)), ex=Math.min(MW,Math.ceil((camX+vw)/TS));
+  const sy=Math.max(0,Math.floor(camY/TS)), ey=Math.min(MH,Math.ceil((camY+vh)/TS));
+  drawCells(sx,sy,ex,ey);
+  drawProps(sx,sy,ex,ey);
+  drawActors();
+  drawLabels();
+  drawBubble();
+}
+// a comic speech bubble above the patient — appears briefly then fades out
+function drawBubble(){
+  if(!bubble.text||paused) return;
+  const age=performance.now()-bubble.shown, TTL=3200, FADE=550;
+  if(age>TTL+FADE) return;
+  const alpha=age>TTL ? Math.max(0,1-(age-TTL)/FADE) : 1;
+  ctx.save(); ctx.globalAlpha=alpha;
+  ctx.font='600 13px "Segoe UI",sans-serif'; ctx.textBaseline='top';
+  const maxw=210, words=bubble.text.split(' '); let lines=[],cur='';
+  for(const w of words){ const t=cur?cur+' '+w:w; if(ctx.measureText(t).width>maxw&&cur){lines.push(cur);cur=w;} else cur=t; } if(cur)lines.push(cur);
+  const lh=17,padX=11,padY=8; let tw=0; for(const l of lines)tw=Math.max(tw,ctx.measureText(l).width);
+  const bw=tw+padX*2, bh=lines.length*lh+padY*2;
+  const ax=Math.round(player.x*SCALE-camX), ay=Math.round((player.y-26)*SCALE-camY);   // just above his head
+  let bx=ax-bw/2, by=ay-bh-3; bx=Math.max(8,Math.min(canvas.width-bw-8,bx)); by=Math.max(8,by);
+  ctx.fillStyle='rgba(248,250,253,.98)';
+  roundRect(bx,by,bw,bh,9); ctx.fill();
+  const tx=Math.max(bx+13,Math.min(bx+bw-13,ax));   // tail points toward the patient
+  ctx.beginPath(); ctx.moveTo(tx-6,by+bh-1); ctx.lineTo(tx+6,by+bh-1); ctx.lineTo(tx,by+bh+7); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#1b2433'; ctx.textAlign='left';
+  lines.forEach((l,i)=>ctx.fillText(l,bx+padX,by+padY+i*lh));
+  ctx.restore();
+}
+
+/* anim */
+function animate(dt){
+  if(player.moving){player.anim+=dt*9; player.frame=Math.floor(player.anim)%6;}
+  else{player.frame=0;player.anim=0;}
+}
+
+let last=performance.now();
+function loop(now){
+  const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now;
+  if(started){updateWalkers(dt);updateEscorts(dt);tickBubbles();}
+  if(started&&!finished&&!paused){
+    if(manual)moveManual(dt);else walkAuto(dt);
+    animate(dt);
+    if(timer.running){
+      // clinical clock: spins up rapidly while he's actually in a room being assessed, slow otherwise.
+      // tuned so a full visit reads ~40 min door-to-door.
+      const inRoom = pendingDwell>0 && ROOMRATE[player.status];
+      timer.secs += dt * (inRoom ? ROOMRATE[player.status] : 8);
+      timerEl.textContent=fmt(timer.secs);
+    }
+    if(window.Dash) Dash.clock(timer.secs);   // keep the dashboard room timer in sync with the rapid clock
+  }
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* finale */
+function runFinale(){
+  if(window.Dash) Dash.focusNone();   // clear the focus dim so it doesn't bleed onto the finale
+  document.getElementById('finale').classList.add('show');
+  document.getElementById('finalTime').textContent=timer.frozen;
+  showF('fs1');
+  setTimeout(()=>{showF('fs2');typeCell();},4400);
+  setTimeout(()=>{showF('fs3');runML();},9800);
+}
+function showF(id){document.querySelectorAll('.fstep').forEach(e=>e.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function typeCell(){const c=document.getElementById('fcell');c.classList.add('lit');setTimeout(()=>c.textContent=timer.frozen,700);setTimeout(()=>c.classList.remove('lit'),2200);}
+function lossPath(){const W=460,H=200,n=60;let d='';for(let i=0;i<=n;i++){const x=i/n*W;const b=0.94*Math.exp(-i/16)+0.06;const y=(b+Math.sin(i*1.6)*0.018*Math.exp(-i/22))*(H-26)+8;d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1)+' ';}return d;}
+function runML(){const p=document.getElementById('loss');p.setAttribute('d',lossPath());p.classList.remove('draw');void p.getBoundingClientRect();p.classList.add('draw');
+  const ep=document.getElementById('mlEp'),ls=document.getElementById('mlLoss'),ac=document.getElementById('mlAcc');const dur=6000,t0=performance.now();
+  (function tk(now){const t=Math.min(1,(now-t0)/dur);ep.textContent=Math.round(t*60)+' / 60';ls.textContent=(0.94*Math.exp(-t*3)+0.06).toFixed(3);ac.textContent=Math.round(58+t*36)+'%';if(t<1)requestAnimationFrame(tk);})(t0);}
+
+/* resize */
+function resize(){const r=canvas.getBoundingClientRect();canvas.width=Math.round(r.width);canvas.height=Math.round(r.height);ctx.imageSmoothingEnabled=false;}
+addEventListener('resize',resize);
+
+/* restart */
+function restart(){
+  finished=false;document.getElementById('finale').classList.remove('show');
+  player.x=START.x;player.y=START.y;player.dir=0;player.status='default';player.moving=false;player.seated=false;
+  leg=0;seg=0;manual=false;pendingDwell=0;legStarted=true;escortSheet=null;escortHold=false;escortReleaseT=0;ESCORTS.length=0;bubble.text='';bubbleQueue=[];document.getElementById('takeover').classList.remove('on');
+  timer.running=false;timer.secs=0;timerEl.textContent='00:00';timerEl.classList.remove('frozen');
+  showIntro();
+}
+document.getElementById('replay').onclick=restart;
+document.getElementById('replay2').onclick=restart;
+
+/* intro — meet the patient, break down today's orders, map each to where he'll go */
+const ORDERS=[
+  {term:'optos',  cls:'c-green', desc:'Optomap, wide-field retinal photo', where:'in a Vision room'},
+  {term:'HVF',    cls:'c-orange',desc:'Humphrey visual field test',         where:'in the HVF room'},
+  {term:'VA',     cls:'c-green', desc:'Visual acuity, the vision check',    where:'in a Vision room'},
+  {term:'OCT',    cls:'c-yellow',desc:'Retinal OCT scan',                    where:'in an OCT room'},
+  {term:'gl w/u', cls:'c-blue',  desc:'Glaucoma work-up, why he’s in today', where:'with Dr. Husayn'},
+];
+const CHIPCOL={'c-green':'#5fc88f','c-orange':'#ec8b3c','c-yellow':'#f5c542','c-blue':'#5aa7ff'};
+let introTimers=[];
+function drawPortrait(){ const c=document.getElementById('heroPortrait'); if(!c)return; const x=c.getContext('2d'); x.imageSmoothingEnabled=false;
+  x.clearRect(0,0,c.width,c.height); const sc=6,w=16*sc,h=32*sc;   // Adam, front-facing (down) frame
+  x.drawImage(advImg, (ADV_DIR[0])*16,32,16,32, Math.round((c.width-w)/2),Math.round((c.height-h)/2),w,h); }
+function runIntro(){
+  introTimers.forEach(clearTimeout); introTimers=[];
+  drawPortrait();
+  const chips=document.getElementById('introChips'); chips.innerHTML='';
+  ORDERS.forEach((o,i)=>{const e=document.createElement('div');e.className='intro-chip '+o.cls;e.id='chip'+i;e.textContent=o.term;chips.appendChild(e);});
+  const leg2=document.getElementById('introLegend'); leg2.innerHTML='';
+  document.getElementById('introStart').classList.remove('ready');
+  ORDERS.forEach((o,i)=>introTimers.push(setTimeout(()=>{
+    if(i>0){const pc=document.getElementById('chip'+(i-1));if(pc){pc.classList.remove('on');pc.classList.add('done');}}
+    const c=document.getElementById('chip'+i); if(c)c.classList.add('on');
+    leg2.innerHTML='<span class="lg-term" style="color:'+CHIPCOL[o.cls]+'">'+o.term+'</span> · '+o.desc+' · <span style="color:var(--muted)">'+o.where+'</span>';
+  }, 800+i*1500)));
+  const total=800+ORDERS.length*1500;
+  introTimers.push(setTimeout(()=>{ const lc=document.getElementById('chip'+(ORDERS.length-1)); if(lc){lc.classList.remove('on');lc.classList.add('done');}
+    leg2.innerHTML='<span style="color:var(--muted)">Follow him through the clinic. The boards on the right update as he goes.</span>';
+    document.getElementById('introStart').classList.add('ready');
+  }, total));
+  // no auto-start — the visit begins only when the user clicks "Start the visit".
+}
+function showIntro(){ paused=true; document.getElementById('intro').classList.add('show'); if(window.Dash)Dash.reset(); runIntro(); }
+function endIntro(){ introTimers.forEach(clearTimeout); introTimers=[]; document.getElementById('intro').classList.remove('show'); paused=false;
+  if(window.Dash)Dash.focusGame();   // dashboard starts dark; lifts when he's checked in (Dash.stage case 0)
+  setBubble(BUBBLES[0]); }
+document.getElementById('introStart').onclick=endIntro;
+
+/* boot */
+function boot(){
+  WALK_ROUTES.forEach((r,i)=>{ const pts=[wp(r.a[0],r.a[1]),wp(r.b[0],r.b[1])];
+    WALKERS.push({pts, x:pts[0].x, y:pts[0].y, seg:1, step:1, dir:3, frame:0, anim:i*0.6, who:r.who}); });
+  resize();
+  loadingEl.style.display='none';
+  started=true;
+  showIntro();
+  requestAnimationFrame(loop);
+}
+})();
+</script>
+</body>
+</html>

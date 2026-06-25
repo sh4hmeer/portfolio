@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Clinic editor — walls · flow · marks</title>
+<style>
+  :root{--bg:#0a0e14;--panel:#131820;--panel2:#1a212c;--border:#232c3a;--text:#e6edf3;--muted:#8a96a8;--blue:#4dabf7;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text)}
+  body{display:flex;height:100%}
+  .side{width:290px;flex:none;background:var(--panel);border-right:1px solid var(--border);
+    padding:12px;display:flex;flex-direction:column;gap:11px;overflow:auto}
+  .side h1{font-size:15px;margin:0}
+  .sub{font-size:11px;color:var(--muted);line-height:1.5}
+  .modes{display:flex;gap:6px}
+  .modes button{flex:1;padding:8px 4px;border:1px solid var(--border);background:var(--panel2);color:var(--text);
+    border-radius:8px;font-weight:700;cursor:pointer;font-size:13px}
+  .modes button.on{background:#1b3a5c;border-color:#2d6da3;color:#fff}
+  .grp{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border);padding-top:9px}
+  .grp .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .brushes{display:flex;flex-direction:column;gap:5px}
+  .brush{display:flex;align-items:center;gap:9px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;
+    background:var(--panel2);cursor:pointer;font-size:13px;user-select:none}
+  .brush.on{outline:2px solid var(--blue);border-color:var(--blue)}
+  .brush .sw{width:16px;height:16px;border-radius:4px;border:1px solid rgba(255,255,255,.25);flex:none}
+  .btn{background:var(--panel2);color:var(--text);border:1px solid var(--border);padding:8px 10px;border-radius:8px;
+    font-weight:600;cursor:pointer;font-size:12.5px;text-align:center}
+  .btn:hover{filter:brightness(1.2)}
+  .btn.go{background:#1b3a5c;border-color:#2d6da3}
+  .row{display:flex;gap:6px}.row .btn{flex:1}
+  label.ck{display:flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer}
+  input[type=range]{width:100%}
+  .stat{font-size:12px;padding:7px 9px;border-radius:8px;border:1px solid var(--border);background:var(--panel2)}
+  .stat.ok{color:#51cf66;border-color:rgba(81,207,102,.4)}
+  .stat.bad{color:#ff6b6b;border-color:rgba(255,107,107,.4)}
+  .stage{flex:1;overflow:auto;position:relative;background:#070a0f}
+  #cv{display:block;image-rendering:pixelated;cursor:crosshair}
+  .hud{position:fixed;bottom:10px;right:14px;background:rgba(19,24,32,.92);border:1px solid var(--border);
+    border-radius:8px;padding:6px 10px;font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)}
+  input[type=file]{font-size:11px;color:var(--muted);width:100%}
+  /* list rows (flow stops + marks) */
+  .list{display:flex;flex-direction:column;gap:7px}
+  .item{border:1px solid var(--border);border-radius:8px;background:var(--panel2);padding:7px;display:flex;flex-direction:column;gap:5px}
+  .item.sel{outline:2px solid #fff}
+  .item .top{display:flex;align-items:center;gap:5px}
+  .item .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .item select{flex:1;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px;font-size:12px}
+  .item input[type=color]{width:24px;height:22px;border:1px solid var(--border);border-radius:5px;background:none;padding:0;flex:none}
+  .item input[type=text]{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px}
+  .item .meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+  .item .meta .sp{margin-left:auto;display:flex;gap:4px}
+  .item .meta select{flex:none;width:auto;padding:2px}
+  .ibtn{background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:5px;cursor:pointer;font-size:12px;padding:2px 7px;line-height:1.2}
+  .ibtn:hover{filter:brightness(1.3)}
+  .startrow{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--panel2)}
+  .startrow.sel{outline:2px solid #fff}
+  .startrow .dot{width:11px;height:11px;border-radius:50%;background:#51cf66;flex:none}
+  .legend{display:flex;flex-wrap:wrap;gap:6px}
+  .legend span{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--muted)}
+  .legend i{width:9px;height:9px;border-radius:2px;transform:rotate(45deg);display:inline-block}
+</style>
+</head>
+<body>
+  <div class="side">
+    <h1>Clinic editor</h1>
+    <div class="modes">
+      <button id="mWalls" class="on">Walls</button>
+      <button id="mFlow">Flow</button>
+      <button id="mMarks">Marks</button>
+    </div>
+    <div class="sub" id="modeHelp"></div>
+
+    <!-- WALLS -->
+    <div class="grp" id="wallsPanel">
+      <div class="lbl">Brush</div>
+      <div class="brushes" id="brushes"></div>
+    </div>
+
+    <!-- FLOW -->
+    <div class="grp" id="flowPanel" style="display:none">
+      <div class="lbl">Patient flow — drag dots, or pick a row then click the map</div>
+      <div class="startrow" id="startRow"><span class="dot"></span><b>START</b><span id="startXY" style="margin-left:auto;color:var(--muted)"></span></div>
+      <div class="list" id="stops"></div>
+      <button class="btn" id="addStop">＋ add stop</button>
+      <button class="btn" id="drawPath">✏ draw custom path</button>
+      <div class="sub">Select a stop, toggle draw, then drag across floor to author its route into that stop (pink). Off = BFS auto-route (cyan).</div>
+    </div>
+
+    <!-- MARKS -->
+    <div class="grp" id="marksPanel" style="display:none">
+      <div class="lbl">Placement marks — room points, seats, people, equipment</div>
+      <div class="legend" id="markLegend"></div>
+      <div class="list" id="marks"></div>
+      <button class="btn" id="addMark">＋ add mark</button>
+    </div>
+
+    <div class="grp">
+      <div class="lbl">Blueprint underlay</div>
+      <input type="file" id="imgFile" accept="image/*" />
+      <label class="ck"><input type="checkbox" id="showImg" checked /> show underlay</label>
+      <div class="sub">opacity <input type="range" id="imgOp" min="0" max="100" value="55" /></div>
+    </div>
+
+    <div class="grp">
+      <div class="lbl">View</div>
+      <div class="row">
+        <button class="btn" id="zoomOut">– zoom</button>
+        <button class="btn" id="zoomIn">+ zoom</button>
+      </div>
+      <label class="ck"><input type="checkbox" id="showFlow" checked /> show flow path + anchors</label>
+      <label class="ck"><input type="checkbox" id="showMarks" checked /> show marks</label>
+      <label class="ck"><input type="checkbox" id="showGrid" /> show editor gridlines</label>
+    </div>
+
+    <div class="grp">
+      <div class="lbl">Flow check</div>
+      <div class="stat" id="flowStat">—</div>
+    </div>
+
+    <div class="grp">
+      <div class="lbl">Save</div>
+      <div class="row">
+        <button class="btn go" id="expMap">⬇ map</button>
+        <button class="btn go" id="expFlow">⬇ flow</button>
+        <button class="btn go" id="expMarks">⬇ marks</button>
+      </div>
+      <div class="row">
+        <button class="btn" id="revert">Revert all</button>
+        <button class="btn" id="clearLS">Clear autosave</button>
+      </div>
+      <div class="sub" id="saveMsg">Edits autosave to this browser.</div>
+    </div>
+  </div>
+
+  <div class="stage" id="stage"><canvas id="cv"></canvas></div>
+  <div class="hud" id="hud">—</div>
+
+<script src="map2d.js"></script>
+<script src="flow2d.js"></script>
+<script src="marks2d.js"></script>
+<script>
+(function(){
+"use strict";
+const SRC=window.CLINIC_MAP;
+if(!SRC){document.getElementById('hud').textContent='map2d.js not found';return;}
+const W=SRC.w,H=SRC.h;
+const LS_MAP='clinic_mapedit_rows',LS_FLOW='clinic_flowedit',LS_MARKS='clinic_marksedit';
+
+/* ---------- map grid ---------- */
+let grid;
+const loadMapSrc=()=>{grid=SRC.rows.map(r=>r.split(''));};
+(function(){const s=localStorage.getItem(LS_MAP);
+  if(s){try{const r=JSON.parse(s);if(r.length===H&&r[0].length===W){grid=r.map(x=>x.split(''));return;}}catch(e){}}
+  loadMapSrc();})();
+const saveMap=()=>localStorage.setItem(LS_MAP,JSON.stringify(grid.map(r=>r.join(''))));
+
+/* ---------- flow ---------- */
+const STATUS_COL={here:'#4ade80',vision:'#34d399',hvf:'#ec8b3c',octwait:'#ffd43b',oct:'#ffd43b',
+  drwait:'#b794f6',doctor:'#b794f6',billed:'#4dabf7',via:'#8a96a8'};
+const STATUS_OPTS=['here','vision','hvf','octwait','oct','drwait','doctor','billed','via'];
+const DEF_FLOW=window.CLINIC_FLOW||{start:[72,64],stops:[]};
+let flow;
+const cloneFlow=f=>({start:f.start.slice(),stops:f.stops.map(s=>{const o={status:s.status,label:s.label||'',where:s.where||'',color:s.color||STATUS_COL[s.status]||'#8a96a8',t:s.t.slice()};if(s.path&&s.path.length)o.path=s.path.map(p=>p.slice());return o;})});
+const loadFlowSrc=()=>{flow=cloneFlow(DEF_FLOW);};
+(function(){const s=localStorage.getItem(LS_FLOW);
+  if(s){try{const f=JSON.parse(s);if(f&&f.start&&f.stops){flow=cloneFlow(f);return;}}catch(e){}}
+  loadFlowSrc();})();
+const saveFlow=()=>localStorage.setItem(LS_FLOW,JSON.stringify(flow));
+
+/* ---------- marks ---------- */
+const MARK_COL={room:'#22d3ee',waiting:'#f59e0b',seat:'#fbbf24',patient:'#4ade80',staff:'#e879f9',equipment:'#fb923c',decor:'#2dd4bf'};
+const MARK_OPTS=Object.keys(MARK_COL);
+const DIR_OPTS=['','up','down','left','right'];
+// people a patient/staff mark can be (must match clinic2d.html PEOPLE ids).
+// sit_* = drawn seated (chair over legs); plain names = standing. All are real 4-dir characters now.
+const PEOPLE=[
+  {id:'sit_olive',label:'Seated · Adam'},{id:'sit_warm',label:'Seated · Amelia'},
+  {id:'sit_cool',label:'Seated · Bob'},{id:'sit_grey',label:'Seated · Alex'},
+  {id:'sit_rose',label:'Seated · Adam (warm)'},{id:'sit_sage',label:'Seated · Amelia (cool)'},
+  {id:'sit_sand',label:'Seated · Bob (sage)'},{id:'sit_sky',label:'Seated · Alex (rose)'},
+  {id:'adam',label:'Adam'},{id:'amelia',label:'Amelia'},{id:'bob',label:'Bob'},{id:'alex',label:'Alex'},
+  {id:'adam_warm',label:'Adam · warm'},{id:'amelia_cool',label:'Amelia · cool'},
+  {id:'bob_sage',label:'Bob · sage'},{id:'alex_rose',label:'Alex · rose'}];
+// decor a decor mark can be (must match clinic2d.html DECOR_KINDS). Blank = auto/varied.
+const DECOR_KINDS=['plant','bookshelf','eyechart','poster','clock','frame','cooler','sign','board'];
+const DEF_MARKS=window.CLINIC_MARKS||{marks:[]};
+let marks;
+const cloneMarks=m=>(m.marks||[]).map(k=>{const o={type:k.type||'room',label:k.label||'',dir:k.dir||'',t:k.t.slice()};if(k.who)o.who=k.who;if(k.kind)o.kind=k.kind;return o;});
+const loadMarksSrc=()=>{marks=cloneMarks(DEF_MARKS);};
+(function(){const s=localStorage.getItem(LS_MARKS);
+  if(s){try{const m=JSON.parse(s);if(Array.isArray(m)){marks=m.map(k=>{const o={type:k.type,label:k.label||'',dir:k.dir||'',t:k.t.slice()};if(k.who)o.who=k.who;if(k.kind)o.kind=k.kind;return o;});return;}}catch(e){}}
+  loadMarksSrc();})();
+const saveMarks=()=>localStorage.setItem(LS_MARKS,JSON.stringify(marks));
+
+/* ---------- BFS ---------- */
+const walk=(x,y)=>x>=0&&x<W&&y>=0&&y<H&&grid[y][x]==='.';
+function snap(x,y){if(walk(x,y))return[x,y];
+  for(let r=1;r<14;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(walk(x+dx,y+dy))return[x+dx,y+dy];}return[x,y];}
+function bfs(a,b){const q=[a],prev=new Map();prev.set(a[1]*W+a[0],null);let h=0;
+  while(h<q.length){const c=q[h++];if(c[0]===b[0]&&c[1]===b[1]){const o=[];let k=c;while(k){o.push(k);k=prev.get(k[1]*W+k[0]);}return o.reverse();}
+    for(const d of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=c[0]+d[0],ny=c[1]+d[1];if(!walk(nx,ny))continue;const key=ny*W+nx;if(prev.has(key))continue;prev.set(key,c);q.push([nx,ny]);}}
+  return null;}
+let flowSegs=[],brokenLegs=[];
+// a hand-drawn path is valid if every tile is walkable and each step is 4-adjacent to the last
+function pathValid(p){for(let i=0;i<p.length;i++){if(!walk(p[i][0],p[i][1]))return false;
+  if(i>0){const dx=Math.abs(p[i][0]-p[i-1][0]),dy=Math.abs(p[i][1]-p[i-1][1]);if(dx+dy!==1)return false;}}return p.length>0;}
+function recomputeFlow(){
+  flowSegs=[];brokenLegs=[];let cur=snap(flow.start[0],flow.start[1]);
+  for(const s of flow.stops){const dst=snap(s.t[0],s.t[1]);
+    if(s.path&&s.path.length){ if(pathValid(s.path))flowSegs.push({pts:s.path,custom:true}); else brokenLegs.push((s.status||'?')+' (path)'); }
+    else{const p=bfs(cur,dst);if(!p)brokenLegs.push(s.status||'?');else flowSegs.push({pts:p,custom:false});}
+    cur=dst;}
+  const el=document.getElementById('flowStat');
+  if(brokenLegs.length===0){el.className='stat ok';el.textContent='✓ all '+flow.stops.length+' legs reachable';}
+  else{el.className='stat bad';el.textContent='✗ broken: '+brokenLegs.join(', ');}
+}
+
+/* ---------- brushes ---------- */
+const BRUSHES=[{key:'#',name:'Wall',sw:'#f48caa'},{key:'.',name:'Floor',sw:'#ebe4cd'},{key:'D',name:'Desk',sw:'#b07a3f'},{key:'M',name:'Machine',sw:'#9aa3b0'},{key:' ',name:'Void',sw:'#0a0e14'}];
+let brush='#';
+const bEl=document.getElementById('brushes');
+BRUSHES.forEach((b,i)=>{const d=document.createElement('div');d.className='brush'+(b.key===brush?' on':'');
+  d.innerHTML='<span class="sw" style="background:'+b.sw+'"></span>'+b.name+'<span style="margin-left:auto;color:var(--muted)">'+(i+1)+'</span>';
+  d.onclick=()=>{brush=b.key;[...bEl.children].forEach((c,j)=>c.classList.toggle('on',BRUSHES[j].key===brush));};bEl.appendChild(d);});
+addEventListener('keydown',e=>{if(mode!=='walls')return;const i='12345'.indexOf(e.key);if(i>=0){brush=BRUSHES[i].key;[...bEl.children].forEach((c,j)=>c.classList.toggle('on',j===i));}});
+
+/* ---------- flow panel ---------- */
+let selStop=null;
+function buildStops(){
+  document.getElementById('startXY').textContent='('+flow.start[0]+','+flow.start[1]+')';
+  document.getElementById('startRow').classList.toggle('sel',selStop==='start');
+  const wrap=document.getElementById('stops');wrap.innerHTML='';
+  flow.stops.forEach((s,i)=>{
+    const row=document.createElement('div');row.className='item'+(selStop===i?' sel':'');
+    const opts=STATUS_OPTS.includes(s.status)?STATUS_OPTS:[s.status,...STATUS_OPTS];
+    row.innerHTML='<div class="top"><span class="dot" style="background:'+s.color+'"></span>'+
+      '<select>'+opts.map(o=>'<option'+(o===s.status?' selected':'')+'>'+o+'</option>').join('')+'</select>'+
+      '<input type="color" value="'+s.color+'"></div>'+
+      '<input type="text" class="lab" placeholder="checklist label" value="'+(s.label||'').replace(/"/g,'&quot;')+'">'+
+      '<input type="text" class="whr" placeholder="status-bar text" value="'+(s.where||'').replace(/"/g,'&quot;')+'">'+
+      '<div class="meta">('+s.t[0]+','+s.t[1]+')'+
+      (s.path&&s.path.length?'<span style="color:#f48caa;margin-left:6px">✏ path('+s.path.length+')</span>':'')+
+      '<span class="sp">'+(s.path&&s.path.length?'<button class="ibtn clrp" title="clear custom path">⌫path</button>':'')+
+      '<button class="ibtn up">↑</button><button class="ibtn dn">↓</button><button class="ibtn del">✕</button></span></div>';
+    row.onclick=e=>{if(['SELECT','INPUT','BUTTON'].includes(e.target.tagName))return;selStop=i;buildStops();draw();};
+    row.querySelector('select').onchange=e=>{s.status=e.target.value;s.color=STATUS_COL[s.status]||s.color;commitFlow();};
+    row.querySelector('input[type=color]').oninput=e=>{s.color=e.target.value;commitFlow(false);};
+    row.querySelector('.lab').oninput=e=>{s.label=e.target.value;saveFlow();};
+    row.querySelector('.whr').oninput=e=>{s.where=e.target.value;saveFlow();};
+    row.querySelector('.up').onclick=()=>{if(i>0){[flow.stops[i-1],flow.stops[i]]=[flow.stops[i],flow.stops[i-1]];selStop=i-1;commitFlow();}};
+    row.querySelector('.dn').onclick=()=>{if(i<flow.stops.length-1){[flow.stops[i+1],flow.stops[i]]=[flow.stops[i],flow.stops[i+1]];selStop=i+1;commitFlow();}};
+    row.querySelector('.del').onclick=()=>{flow.stops.splice(i,1);selStop=null;commitFlow();};
+    const clrp=row.querySelector('.clrp');if(clrp)clrp.onclick=()=>{delete s.path;commitFlow();};
+    wrap.appendChild(row);
+  });
+}
+function commitFlow(rebuild=true){recomputeFlow();saveFlow();if(rebuild)buildStops();draw();}
+document.getElementById('addStop').onclick=()=>{const c=scrollCenter();
+  flow.stops.push({status:'via',label:'',where:'',color:STATUS_COL.via,t:snap(Math.round(c.x),Math.round(c.y))});
+  selStop=flow.stops.length-1;commitFlow();};
+document.getElementById('startRow').onclick=()=>{selStop='start';buildStops();draw();};
+const dpBtn=document.getElementById('drawPath');
+function setDrawPath(on){drawPathMode=on;dpBtn.classList.toggle('go',on);
+  dpBtn.textContent=on?'✏ drawing — drag on floor (click to stop)':'✏ draw custom path';
+  cv.style.cursor=on?'cell':(mode==='walls'?'crosshair':'pointer');}
+dpBtn.onclick=()=>setDrawPath(!drawPathMode);
+
+/* ---------- marks panel ---------- */
+let selMark=null;
+function buildLegend(){const el=document.getElementById('markLegend');el.innerHTML=MARK_OPTS.map(t=>'<span><i style="background:'+MARK_COL[t]+'"></i>'+t+'</span>').join('');}
+function buildMarks(){
+  const wrap=document.getElementById('marks');wrap.innerHTML='';
+  marks.forEach((m,i)=>{
+    const row=document.createElement('div');row.className='item'+(selMark===i?' sel':'');
+    const col=MARK_COL[m.type]||'#8a96a8';
+    const showWho=(m.type==='patient'||m.type==='staff'), showKind=(m.type==='decor');
+    row.innerHTML='<div class="top"><span class="dot" style="background:'+col+'"></span>'+
+      '<select class="ty">'+MARK_OPTS.map(o=>'<option'+(o===m.type?' selected':'')+'>'+o+'</option>').join('')+'</select></div>'+
+      '<input type="text" class="lab" placeholder="label (e.g. vision 1)" value="'+(m.label||'').replace(/"/g,'&quot;')+'">'+
+      (showWho?'<div class="meta">person <select class="who"><option value="">(auto)</option>'+
+        PEOPLE.map(p=>'<option value="'+p.id+'"'+(m.who===p.id?' selected':'')+'>'+p.label+'</option>').join('')+'</select></div>':'')+
+      (showKind?'<div class="meta">item <select class="kind"><option value="">(auto)</option>'+
+        DECOR_KINDS.map(o=>'<option value="'+o+'"'+(m.kind===o?' selected':'')+'>'+o+'</option>').join('')+'</select></div>':'')+
+      '<div class="meta">facing <select class="dir">'+DIR_OPTS.map(o=>'<option'+(o===m.dir?' selected':'')+'>'+(o||'—')+'</option>').join('')+'</select>'+
+      '<span style="margin-left:6px">('+m.t[0]+','+m.t[1]+')</span><span class="sp"><button class="ibtn del">✕</button></span></div>';
+    row.onclick=e=>{if(['SELECT','INPUT','BUTTON'].includes(e.target.tagName))return;selMark=i;buildMarks();draw();};
+    row.querySelector('.ty').onchange=e=>{m.type=e.target.value;commitMarks();};
+    row.querySelector('.lab').oninput=e=>{m.label=e.target.value;saveMarks();draw();};
+    const whoSel=row.querySelector('.who');if(whoSel)whoSel.onchange=e=>{const v=e.target.value;if(v)m.who=v;else delete m.who;commitMarks();};
+    const kindSel=row.querySelector('.kind');if(kindSel)kindSel.onchange=e=>{const v=e.target.value;if(v)m.kind=v;else delete m.kind;commitMarks();};
+    row.querySelector('.dir').onchange=e=>{m.dir=e.target.value==='—'?'':e.target.value;commitMarks();};
+    row.querySelector('.del').onclick=()=>{marks.splice(i,1);selMark=null;commitMarks();};
+    wrap.appendChild(row);
+  });
+}
+function commitMarks(rebuild=true){saveMarks();if(rebuild)buildMarks();draw();}
+document.getElementById('addMark').onclick=()=>{const c=scrollCenter();
+  marks.push({type:'room',label:'',dir:'',t:[Math.round(c.x),Math.round(c.y)]});
+  selMark=marks.length-1;commitMarks();};
+
+/* ---------- render ---------- */
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),stage=document.getElementById('stage');
+let cell=12,hover=null,mode='walls';
+const imgEl=new Image();let imgReady=false;
+const scrollCenter=()=>({x:(stage.scrollLeft+stage.clientWidth/2)/cell,y:(stage.scrollTop+stage.clientHeight/2)/cell});
+function fit(){cv.width=W*cell;cv.height=H*cell;ctx.imageSmoothingEnabled=false;draw();}
+function anchorAt(cx,cy){
+  if(Math.abs(flow.start[0]-cx)<=1&&Math.abs(flow.start[1]-cy)<=1)return 'start';
+  for(let i=flow.stops.length-1;i>=0;i--){const t=flow.stops[i].t;if(Math.abs(t[0]-cx)<=1&&Math.abs(t[1]-cy)<=1)return i;}return null;}
+function markAt(cx,cy){for(let i=marks.length-1;i>=0;i--){const t=marks[i].t;if(Math.abs(t[0]-cx)<=1&&Math.abs(t[1]-cy)<=1)return i;}return null;}
+function draw(){
+  const showImg=document.getElementById('showImg').checked&&imgReady;
+  const op=document.getElementById('imgOp').value/100;
+  ctx.clearRect(0,0,cv.width,cv.height);ctx.fillStyle='#070a0f';ctx.fillRect(0,0,cv.width,cv.height);
+  if(showImg){ctx.globalAlpha=op;ctx.drawImage(imgEl,0,0,cv.width,cv.height);ctx.globalAlpha=1;}
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const ch=grid[y][x];
+    if(ch==='#'){ctx.fillStyle=showImg?'rgba(244,140,170,.72)':'#f48caa';ctx.fillRect(x*cell,y*cell,cell,cell);}
+    else if(ch==='D'){ctx.fillStyle=showImg?'rgba(176,122,63,.85)':'#b07a3f';ctx.fillRect(x*cell,y*cell,cell,cell);}
+    else if(ch==='M'){ctx.fillStyle=showImg?'rgba(154,163,176,.85)':'#9aa3b0';ctx.fillRect(x*cell,y*cell,cell,cell);}
+    else if(ch==='.'){if(!showImg){ctx.fillStyle='#ebe4cd';ctx.fillRect(x*cell,y*cell,cell,cell);}}
+    else{ctx.fillStyle=showImg?'rgba(8,11,17,.5)':'#0a0e14';ctx.fillRect(x*cell,y*cell,cell,cell);}}
+  if(document.getElementById('showGrid').checked){ctx.strokeStyle='rgba(120,140,170,.18)';ctx.lineWidth=1;
+    for(let x=0;x<=W;x++){ctx.beginPath();ctx.moveTo(x*cell+.5,0);ctx.lineTo(x*cell+.5,cv.height);ctx.stroke();}
+    for(let y=0;y<=H;y++){ctx.beginPath();ctx.moveTo(0,y*cell+.5);ctx.lineTo(cv.width,y*cell+.5);ctx.stroke();}}
+  // flow overlay
+  if(document.getElementById('showFlow').checked||mode==='flow'){
+    const c=cell/2;
+    for(const seg of flowSegs){ctx.fillStyle=seg.custom?'rgba(244,140,170,.92)':'rgba(80,200,255,.85)';
+      for(const[x,y]of seg.pts){ctx.beginPath();ctx.arc(x*cell+c,y*cell+c,Math.max(2,cell*(seg.custom?0.2:0.16)),0,7);ctx.fill();}}
+    drawBox(flow.start[0],flow.start[1],'#51cf66','start',selStop==='start'&&mode==='flow');
+    flow.stops.forEach((s,i)=>drawBox(s.t[0],s.t[1],s.color,s.status,selStop===i&&mode==='flow'));
+  }
+  // marks overlay
+  if(document.getElementById('showMarks').checked||mode==='marks'){
+    drawSeatRows();
+    marks.forEach((m,i)=>drawMark(m,selMark===i&&mode==='marks'));
+  }
+  if(hover){ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(hover[0]*cell+1,hover[1]*cell+1,cell-2,cell-2);}
+}
+function label(txt,px,py){ctx.font='bold '+Math.max(8,cell*0.62)+'px sans-serif';ctx.textBaseline='bottom';
+  ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.75)';ctx.strokeText(txt,px,py);ctx.fillStyle='#fff';ctx.fillText(txt,px,py);}
+function drawBox(x,y,col,name,sel){
+  ctx.fillStyle=col;ctx.globalAlpha=.9;ctx.fillRect(x*cell+2,y*cell+2,cell-4,cell-4);ctx.globalAlpha=1;
+  ctx.strokeStyle=sel?'#fff':'rgba(0,0,0,.6)';ctx.lineWidth=sel?2.5:1.5;ctx.strokeRect(x*cell+1.5,y*cell+1.5,cell-3,cell-3);
+  label(name,x*cell,y*cell-1);}
+// preview the items generated between each "<key> start" / "<key> end" pair (seats + decor rows)
+function drawRows(type,color){
+  const items=marks.filter(m=>m.type===type), rowMap={};
+  for(const s of items){const mm=/^(.*) (start|end)$/.exec(s.label||'');if(mm){(rowMap[mm[1]]=rowMap[mm[1]]||{})[mm[2]]=s;}}
+  ctx.fillStyle=color;
+  for(const k in rowMap){const r=rowMap[k];if(!(r.start&&r.end))continue;
+    const a=r.start.t,b=r.end.t,sx=Math.sign(b[0]-a[0]),sy=Math.sign(b[1]-a[1]);
+    const steps=Math.max(Math.abs(b[0]-a[0]),Math.abs(b[1]-a[1]));
+    for(let i=1;i<steps;i++){const x=a[0]+sx*i,y=a[1]+sy*i;
+      ctx.fillRect(x*cell+cell*0.3,y*cell+cell*0.3,cell*0.4,cell*0.4);}
+  }
+}
+function drawSeatRows(){ drawRows('seat','rgba(251,191,36,.5)'); drawRows('decor','rgba(45,212,191,.5)'); }
+function drawMark(m,sel){
+  const col=MARK_COL[m.type]||'#8a96a8',cx=m.t[0]*cell+cell/2,cy=m.t[1]*cell+cell/2,r=cell*0.42;
+  ctx.beginPath();ctx.moveTo(cx,cy-r);ctx.lineTo(cx+r,cy);ctx.lineTo(cx,cy+r);ctx.lineTo(cx-r,cy);ctx.closePath();
+  ctx.fillStyle=col;ctx.globalAlpha=.92;ctx.fill();ctx.globalAlpha=1;
+  ctx.lineWidth=sel?2.5:1.4;ctx.strokeStyle=sel?'#fff':'rgba(0,0,0,.55)';ctx.stroke();
+  if(m.dir){const a={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[m.dir];if(a){const fx=cx+a[0]*r*1.5,fy=cy+a[1]*r*1.5;
+    ctx.beginPath();ctx.moveTo(cx+a[0]*r,cy+a[1]*r);ctx.lineTo(fx,fy);ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath();ctx.arc(fx,fy,Math.max(1.5,cell*0.1),0,7);ctx.fillStyle='#fff';ctx.fill();}}
+  if(m.label)label(m.label,m.t[0]*cell,m.t[1]*cell-1);}
+
+/* ---------- pointer ---------- */
+let painting=0,dragFlow=null,dragMark=null,pathDraw=0,drawPathMode=false;
+const cellAt=ev=>{const r=cv.getBoundingClientRect();const x=Math.floor((ev.clientX-r.left)/cell),y=Math.floor((ev.clientY-r.top)/cell);return(x<0||x>=W||y<0||y>=H)?null:[x,y];};
+const paintCell=(c,k)=>{if(c&&grid[c[1]][c[0]]!==k)grid[c[1]][c[0]]=k;};
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('mousedown',e=>{const c=cellAt(e);if(!c)return;e.preventDefault();
+  if(mode==='walls'){painting=e.button===2?2:1;paintCell(c,painting===2?'.':brush);recomputeFlow();draw();}
+  else if(mode==='flow'){
+    if(drawPathMode&&typeof selStop==='number'){if(!walk(c[0],c[1]))return;pathDraw=1;flow.stops[selStop].path=[[c[0],c[1]]];draw();return;}
+    const hit=anchorAt(c[0],c[1]);
+    if(hit!==null){dragFlow=hit;selStop=hit;setAnchor(hit,c);buildStops();draw();}
+    else if(selStop!==null){setAnchor(selStop,c);commitFlow();}}
+  else if(mode==='marks'){const hit=markAt(c[0],c[1]);
+    if(hit!==null){dragMark=hit;selMark=hit;marks[hit].t=[c[0],c[1]];buildMarks();draw();}
+    else if(selMark!==null){marks[selMark].t=[c[0],c[1]];commitMarks();}}
+});
+cv.addEventListener('mousemove',e=>{const c=cellAt(e);hover=c;
+  document.getElementById('hud').textContent=c?('x '+c[0]+'  y '+c[1]+'   ['+({'#':'wall','.':'floor','D':'desk','M':'machine',' ':'void'}[grid[c[1]][c[0]]]||'void')+']'):'—';
+  if(mode==='walls'&&painting){paintCell(c,painting===2?'.':brush);draw();}
+  else if(mode==='flow'&&pathDraw&&c&&walk(c[0],c[1])){const p=flow.stops[selStop].path,last=p[p.length-1];
+    if(last[0]!==c[0]||last[1]!==c[1]){const dx=Math.abs(c[0]-last[0]),dy=Math.abs(c[1]-last[1]);
+      if(dx+dy===1)p.push([c[0],c[1]]);
+      else{const br=bfs(last,c);if(br)for(let i=1;i<br.length;i++)p.push(br[i]);}
+      recomputeFlow();draw();}}
+  else if(mode==='flow'&&dragFlow!==null&&c){setAnchor(dragFlow,c);recomputeFlow();draw();}
+  else if(mode==='marks'&&dragMark!==null&&c){marks[dragMark].t=[c[0],c[1]];draw();}
+  else draw();});
+addEventListener('mouseup',()=>{
+  if(pathDraw){pathDraw=0;commitFlow();}
+  if(painting){painting=0;recomputeFlow();saveMap();draw();}
+  if(dragFlow!==null){const t=dragFlow;dragFlow=null;
+    if(t==='start')flow.start=snap(flow.start[0],flow.start[1]);else flow.stops[t].t=snap(flow.stops[t].t[0],flow.stops[t].t[1]);commitFlow();}
+  if(dragMark!==null){dragMark=null;commitMarks();}
+});
+function setAnchor(which,c){if(which==='start')flow.start=[c[0],c[1]];else flow.stops[which].t=[c[0],c[1]];}
+
+/* ---------- mode switch ---------- */
+function setMode(m){mode=m;if(m!=='flow'&&drawPathMode)setDrawPath(false);
+  document.getElementById('mWalls').classList.toggle('on',m==='walls');
+  document.getElementById('mFlow').classList.toggle('on',m==='flow');
+  document.getElementById('mMarks').classList.toggle('on',m==='marks');
+  document.getElementById('wallsPanel').style.display=m==='walls'?'':'none';
+  document.getElementById('flowPanel').style.display=m==='flow'?'':'none';
+  document.getElementById('marksPanel').style.display=m==='marks'?'':'none';
+  document.getElementById('modeHelp').innerHTML=
+    m==='walls'?'Left-drag to paint. Keys <b>1</b> wall · <b>2</b> floor · <b>3</b> desk · <b>4</b> machine · <b>5</b> void. Right-drag = floor.'
+   :m==='flow'?'Drag a dot to move it. Pick a row then click the map to place. <b>via</b> = routing waypoint. <b>✏ draw custom path</b> to hand-route a leg.'
+   :'Drag a diamond to move it. Pick a row then click the map to place. Set facing for people/equipment.';
+  cv.style.cursor=m==='walls'?'crosshair':'pointer';draw();}
+document.getElementById('mWalls').onclick=()=>setMode('walls');
+document.getElementById('mFlow').onclick=()=>{buildStops();setMode('flow');};
+document.getElementById('mMarks').onclick=()=>{buildMarks();setMode('marks');};
+
+/* ---------- controls ---------- */
+document.getElementById('zoomIn').onclick=()=>{cell=Math.min(28,cell+2);fit();};
+document.getElementById('zoomOut').onclick=()=>{cell=Math.max(6,cell-2);fit();};
+['showImg','showFlow','showMarks','showGrid'].forEach(id=>document.getElementById(id).addEventListener('change',draw));
+document.getElementById('imgOp').addEventListener('input',draw);
+document.getElementById('imgFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;
+  imgEl.onload=()=>{imgReady=true;draw();};imgEl.src=URL.createObjectURL(f);});
+function dl(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/javascript'}));a.download=name;a.click();}
+const msg=t=>document.getElementById('saveMsg').textContent=t;
+document.getElementById('expMap').onclick=()=>{saveMap();dl('map2d.js','window.CLINIC_MAP='+JSON.stringify({w:W,h:H,rows:grid.map(r=>r.join(''))})+';\n');msg('Downloaded map2d.js → drop into prototype/');};
+document.getElementById('expFlow').onclick=()=>{saveFlow();dl('flow2d.js','// Patient flow — generated by mapedit.html\nwindow.CLINIC_FLOW = '+JSON.stringify({start:flow.start,stops:flow.stops},null,2)+';\n');msg('Downloaded flow2d.js → drop into prototype/');};
+document.getElementById('expMarks').onclick=()=>{saveMarks();dl('marks2d.js','// Placement marks — generated by mapedit.html\nwindow.CLINIC_MARKS = '+JSON.stringify({marks:marks},null,2)+';\n');msg('Downloaded marks2d.js → drop into prototype/');};
+document.getElementById('revert').onclick=()=>{loadMapSrc();loadFlowSrc();loadMarksSrc();selStop=selMark=null;recomputeFlow();saveMap();saveFlow();saveMarks();buildStops();buildMarks();draw();msg('Reverted to files on disk.');};
+document.getElementById('clearLS').onclick=()=>{[LS_MAP,LS_FLOW,LS_MARKS].forEach(k=>localStorage.removeItem(k));loadMapSrc();loadFlowSrc();loadMarksSrc();selStop=selMark=null;recomputeFlow();buildStops();buildMarks();draw();msg('Autosave cleared.');};
+
+buildLegend();buildStops();buildMarks();recomputeFlow();setMode('walls');fit();
+})();
+</script>
+</body>
+</html>

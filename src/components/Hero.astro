@@ -1,0 +1,143 @@
+---
+// Opening: name + title + the FDE positioning line that frames the whole site.
+// Dynamic touch: a cursor "patient-flow" trail (path + green nodes).
+// The name's cursor-warp lives in the site-wide warp script (Base.astro).
+---
+<section id="top" class="hero-wrap">
+  <canvas class="hero-fx" aria-hidden="true"></canvas>
+  <div class="hero">
+    <div class="hero-in">
+      <p class="hero-kicker"><span class="beacon"></span> available · ontario, canada</p>
+      <h1 class="hero-name" aria-label="Shahmeer Shahid">Shahmeer&nbsp;Shahid</h1>
+      <p class="hero-role">Forward&nbsp;Deployed&nbsp;Engineer</p>
+      <p class="hero-lede">
+        I do my best work close to the problem: sitting with the people at a crossroads,
+        mapping how a fix should work, then writing the code and putting it in their hands.
+        Lately it's all healthcare, from clinic-floor automation to quantum&nbsp;ML research.
+      </p>
+      <div class="hero-cta">
+        <a class="btn" href="#projects">See my work ▸</a>
+        <a class="btn ghost" href="#about">Who I am</a>
+      </div>
+      <p class="hero-scroll" aria-hidden="true">scroll ↓</p>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  (function () {
+    const cv = document.querySelector('.hero-fx');
+    if (!cv) return;
+    if (!matchMedia('(pointer:fine)').matches) return;            // skip touch
+    if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+    const ctx = cv.getContext('2d');
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const GREEN = '#5fc88f';
+    let pts = [], nodes = [], lastX = 0, lastY = 0, acc = 0, raf = null, w = 0, h = 0;
+
+    function size() {
+      const r = cv.getBoundingClientRect();
+      w = r.width; h = r.height;
+      cv.width = w * dpr; cv.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    size();
+    addEventListener('resize', size, { passive: true });
+
+    addEventListener('pointermove', (e) => {
+      const r = cv.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      if (x < 0 || y < 0 || x > w || y > h) return;               // only over the hero
+      if (pts.length) acc += Math.hypot(x - lastX, y - lastY);
+      lastX = x; lastY = y;
+      pts.push({ x, y, a: 1 });
+      if (pts.length > 26) pts.shift();
+      if (acc > 78) {                                             // drop a green node every ~78px
+        acc = 0; nodes.push({ x, y, life: 1 });
+        if (nodes.length > 14) nodes.shift();
+      }
+      if (!raf) raf = requestAnimationFrame(loop);
+    }, { passive: true });
+
+    function loop() {
+      ctx.clearRect(0, 0, w, h);
+      for (const p of pts) p.a *= 0.92;
+      for (const n of nodes) n.life -= 0.012;
+      pts = pts.filter((p) => p.a > 0.04);
+      nodes = nodes.filter((n) => n.life > 0);
+
+      if (pts.length > 1) {
+        ctx.lineJoin = ctx.lineCap = 'round'; ctx.lineWidth = 2;
+        for (let i = 1; i < pts.length; i++) {
+          ctx.strokeStyle = 'rgba(95,200,143,' + (pts[i].a * 0.5) + ')';
+          ctx.beginPath(); ctx.moveTo(pts[i - 1].x, pts[i - 1].y); ctx.lineTo(pts[i].x, pts[i].y); ctx.stroke();
+        }
+      }
+      ctx.fillStyle = GREEN;
+      for (const n of nodes) {
+        const l = Math.max(0, n.life);
+        ctx.globalAlpha = l * 0.25;
+        ctx.beginPath(); ctx.arc(n.x, n.y, 9, 0, 7); ctx.fill();
+        ctx.globalAlpha = l;
+        ctx.beginPath(); ctx.arc(n.x, n.y, 4, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      raf = (pts.length || nodes.length) ? requestAnimationFrame(loop) : null;
+    }
+  })();
+</script>
+
+<style>
+  .hero-wrap { position: relative; overflow: hidden; }
+  .hero-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .hero {
+    position: relative; z-index: 1;
+    max-width: var(--maxw); margin: 0 auto;
+    min-height: calc(92svh - var(--bar-h));
+    display: flex; align-items: center;
+    padding: 40px var(--pad);
+  }
+  .hero-in { width: 100%; }
+  .hero-kicker {
+    font-family: var(--mono); font-size: 12.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint);
+    display: flex; align-items: center; gap: 9px; margin: 0 0 26px;
+  }
+  .hero-kicker .beacon {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 10px var(--green);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  .hero h1 {
+    font-family: var(--script);
+    font-size: clamp(50px, 9.4vw, 102px);
+    line-height: 1.04; letter-spacing: -.015em; margin: 0;
+    font-weight: 600; font-style: italic;
+  }
+  .hero-role {
+    font-family: var(--mono);
+    font-size: clamp(16px, 2.6vw, 24px);
+    letter-spacing: .02em; color: var(--green);
+    margin: 16px 0 28px;
+  }
+  .hero-lede {
+    max-width: 60ch; font-size: clamp(17px, 2.2vw, 21px);
+    color: var(--ink-dim); margin: 0 0 36px;
+  }
+  .hero-lede em { color: var(--ink); font-style: normal; border-bottom: 1px solid var(--green); }
+  .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+  .btn {
+    font-family: var(--mono); font-size: 14px;
+    padding: 12px 20px; border-radius: 9px;
+    background: var(--green); color: #06210f; font-weight: 600;
+    border: 1px solid transparent;
+  }
+  .btn:hover { text-decoration: none; filter: brightness(1.07); }
+  .btn.ghost { background: transparent; color: var(--ink-dim); border-color: var(--line); }
+  .btn.ghost:hover { color: var(--ink); border-color: var(--ink-faint); filter: none; }
+  .hero-scroll {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-faint);
+    margin: 48px 0 0; animation: bob 2.2s ease-in-out infinite;
+  }
+  @keyframes bob { 0%,100% { transform: translateY(0); opacity:.7 } 50% { transform: translateY(5px); opacity:1 } }
+</style>

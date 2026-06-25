@@ -1,0 +1,20 @@
+{
+"void": 0,
+"hall": 1,
+"room": 2,
+"roomb": 3,
+"check": 4,
+"wall": 5,
+"wall_win": 6,
+"door": 7,
+"deskH": 8,
+"chair": 9,
+"stool": 10,
+"plant": 11,
+"exam_top": 12,
+"exam_bot": 13,
+"mach_top": 14,
+"mach_bot": 15,
+"monitor": 16,
+"rug": 17
+}

@@ -1,0 +1,119 @@
+/* Faithful-enough copies of the Tri-City appointment dashboards (HVF / Vision / OCT / Doctors-Lounge),
+   sized to fit the right half of the split screen. Colours mirror the real boards. */
+.dash{
+  --d-bg:#0e1116; --d-surface:#181d25; --d-surface2:#1f252f; --d-text:#e6e9ee; --d-muted:#98a2b3; --d-border:#2a3140;
+  --d-yellow:#f5c542; --d-purple:#b18cf2; --d-green:#5fc88f; --d-red:#ec5b5b; --d-blue:#5aa7ff;
+  background:var(--d-bg); color:var(--d-text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+}
+.board{position:absolute;inset:0;display:none;flex-direction:column}
+.board.show{display:flex}
+
+/* topbar */
+.d-top{height:42px;flex:none;display:flex;align-items:center;gap:12px;padding:0 14px;background:var(--d-surface);border-bottom:1px solid var(--d-border)}
+.d-brand{font-weight:800;font-size:14px;letter-spacing:.01em}
+.d-brand .d-dim{color:var(--d-muted);font-weight:600}
+.d-spacer{margin-left:auto}
+.d-pill{font-size:11px;color:var(--d-muted);background:var(--d-surface2);border:1px solid var(--d-border);border-radius:999px;padding:3px 9px;font-variant-numeric:tabular-nums}
+.d-clock{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px}
+.d-beacon{width:8px;height:8px;border-radius:50%;background:var(--d-green);box-shadow:0 0 8px var(--d-green)}
+.d-beacon.pulse{animation:dbeacon .7s ease}
+@keyframes dbeacon{0%{transform:scale(1)}40%{transform:scale(1.9);opacity:.6}100%{transform:scale(1)}}
+
+/* board body = columns */
+.d-body{flex:1;min-height:0;display:grid;gap:10px;padding:10px}
+.board-hvf .d-body{grid-template-columns:1.35fr 1fr}
+.board-vision .d-body{grid-template-columns:.9fr 1.3fr 1.2fr}
+.board-oct .d-body{grid-template-columns:1fr 1.4fr 1.3fr}
+.board-lounge .d-body{grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr}
+
+.d-col{background:var(--d-surface);border:1px solid var(--d-border);border-radius:10px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.d-colhead{flex:none;display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:13px;font-weight:700;border-bottom:1px solid var(--d-border)}
+.d-colhead .d-cnt{margin-left:auto;font-size:12px;color:var(--d-muted);font-weight:700}
+.d-list{flex:1;min-height:0;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+
+/* queue patient card (green/yellow list item) */
+.d-card{position:relative;background:var(--d-surface2);border:1px solid var(--d-border);border-left:5px solid var(--d-green);
+  border-radius:8px;padding:8px 10px;transition:box-shadow .2s,opacity .2s}
+.d-card.yellow{border-left-color:var(--d-yellow)}
+.d-card.purple{border-left-color:var(--d-purple)}
+.d-card.hero{box-shadow:0 0 0 2px rgba(95,200,143,.55),0 6px 18px rgba(0,0,0,.4)}
+.d-card.reveal{animation:dreveal 1.5s cubic-bezier(.2,.7,.2,1)}   /* slow first appearance of the hero */
+@keyframes dreveal{0%{opacity:0;transform:translateX(34px) scale(.86)}45%{opacity:1}
+  60%{box-shadow:0 0 0 3px rgba(95,200,143,.9),0 0 26px rgba(95,200,143,.7)}100%{opacity:1;transform:none}}
+.d-card.hero.yellow{box-shadow:0 0 0 2px rgba(245,197,66,.55),0 6px 18px rgba(0,0,0,.4)}
+.d-card .d-r1{display:flex;align-items:baseline;gap:8px}
+.d-card .d-name{font-weight:800;font-size:15px}
+.d-card .d-dob{margin-left:auto;font-size:11px;color:var(--d-muted);font-variant-numeric:tabular-nums}
+.d-card .d-reason{font-size:12px;color:var(--d-muted);font-style:italic;margin-top:2px}
+.d-card .d-r3{display:flex;align-items:center;gap:8px;margin-top:4px}
+.d-card .d-dr{font-size:12px;color:var(--d-blue)}
+.d-card .d-timer{margin-left:auto;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--d-green)}
+.d-card.yellow .d-timer{color:var(--d-yellow)}
+.d-card .d-timer.amber{color:var(--d-yellow)} .d-card .d-timer.red{color:var(--d-red)}
+.d-card.ghost{opacity:.45} /* the hero, while it's actually placed in a room */
+
+/* room / machine box */
+.d-room{position:relative;background:var(--d-surface2);border:1px solid var(--d-border);border-radius:10px;padding:10px 12px;
+  min-height:74px;display:flex;flex-direction:column;justify-content:center}
+.d-room.empty{border-style:dashed;align-items:center;justify-content:center;color:var(--d-muted);font-size:12px}
+.d-room.occ{border-left:5px solid var(--d-blue);background:rgba(90,167,255,.10)}
+.d-room.occ.green{border-left-color:var(--d-green);background:rgba(95,200,143,.10)}
+.d-room .d-rlabel{position:absolute;top:7px;left:11px;font-weight:800;font-size:13px}
+.d-room .d-rlabel small{font-weight:600;font-size:10px;color:var(--d-muted);font-style:italic;margin-left:5px}
+.d-room .d-slot{margin-top:14px}
+.d-room .d-slot .d-name{font-weight:800;font-size:15px}
+.d-room .d-slot .d-meta{font-size:11px;color:var(--d-muted);margin-top:1px}
+.d-room .d-acts{display:flex;align-items:center;gap:8px;margin-top:6px}
+.d-room .d-acts .d-rm{font-size:11px;color:var(--d-muted);cursor:default}
+.d-room .d-acts .d-t{margin-left:auto;font-weight:800;font-size:13px;font-variant-numeric:tabular-nums;color:var(--d-yellow)}
+.d-room .d-acts .d-done{font-weight:800;font-size:12px;color:#0e1116;background:var(--d-green);border-radius:6px;padding:4px 12px}
+.d-room.occ.blue .d-acts .d-t{color:var(--d-blue)}
+.d-room.flash{animation:droomflash 1s ease}
+@keyframes droomflash{0%,100%{background:rgba(95,200,143,.10)}50%{background:rgba(95,200,143,.34)}}
+
+/* doctor row (oct/vision left column) */
+.d-doc{background:var(--d-surface2);border:1px solid var(--d-border);border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:8px}
+.d-doc .d-dn{font-weight:800;font-size:15px}
+.d-doc .d-dl{font-size:11px;color:var(--d-muted)}
+.d-doc .d-badge{margin-left:auto;background:rgba(177,140,242,.16);color:var(--d-purple);border-radius:999px;padding:2px 10px;font-weight:800;font-size:12px;min-width:34px;text-align:center}
+
+/* lounge doctor card with stat circles */
+.d-loungecard{background:var(--d-surface);border:1px solid var(--d-border);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.d-loungecard .d-lh{display:flex;align-items:baseline;gap:6px}
+.d-loungecard .d-lh b{font-size:15px}
+.d-loungecard .d-lh span{font-size:10px;color:var(--d-muted);margin-left:auto}
+.d-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.d-stat{aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:2px solid var(--d-border);font-variant-numeric:tabular-nums}
+.d-stat .d-sv{font-weight:800;font-size:17px;line-height:1}
+.d-stat .d-sk{font-size:8px;text-transform:uppercase;letter-spacing:.04em;opacity:.85}
+.d-stat.on{color:#0e1116}
+.d-stat.here.on{background:var(--d-green);border-color:var(--d-green)}
+.d-stat.hvf.on{background:#ec8b3c;border-color:#ec8b3c}
+.d-stat.oct.on{background:var(--d-yellow);border-color:var(--d-yellow)}
+.d-stat.wait.on{background:var(--d-purple);border-color:var(--d-purple)}
+.d-stat.billed.on{background:var(--d-blue);border-color:var(--d-blue)}
+.d-stat.sched.on{background:#c9a878;border-color:#c9a878}
+
+/* fake cursor that performs the staff action — slow + pronounced so it's easy to follow */
+.d-cursor{position:absolute;z-index:40;width:26px;height:26px;left:0;top:0;pointer-events:none;opacity:0;
+  transition:left 2.2s cubic-bezier(.45,.05,.25,1),top 2.2s cubic-bezier(.45,.05,.25,1),opacity .3s,transform .2s;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.7))}
+.d-cursor svg{display:block;width:26px;height:26px}
+.d-cursor.down{transform:scale(.82)}
+.d-cursor.down::after{content:"";position:absolute;left:-8px;top:-8px;width:30px;height:30px;border-radius:50%;
+  border:2px solid rgba(246,248,252,.8);animation:dgrab .5s ease}
+@keyframes dgrab{from{transform:scale(.4);opacity:.9}to{transform:scale(1.3);opacity:0}}
+/* a little card that the cursor "carries" while dragging */
+.d-drag{position:absolute;z-index:39;pointer-events:none;opacity:0;left:0;top:0;width:180px;
+  background:var(--d-surface2);border:1px solid var(--d-border);border-left:5px solid var(--d-green);border-radius:8px;padding:8px 10px;
+  box-shadow:0 14px 30px rgba(0,0,0,.6);transform:rotate(-3deg) scale(1.04);
+  transition:left 2.2s cubic-bezier(.45,.05,.25,1),top 2.2s cubic-bezier(.45,.05,.25,1),opacity .25s}
+.d-drag.yellow{border-left-color:var(--d-yellow)}
+.d-drag .d-name{font-weight:800;font-size:15px}
+.d-drag .d-reason{font-size:11px;color:var(--d-muted);font-style:italic}
+
+/* gray dim over the half that ISN'T the current focus — guides a first-time viewer's eye */
+.dim{position:absolute;inset:0;background:#05070b;opacity:0;pointer-events:none;transition:opacity .55s ease;z-index:46}
+.dim.on{opacity:.6}

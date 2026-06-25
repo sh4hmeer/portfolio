@@ -1,0 +1,137 @@
+---
+// A broader collection of what I've built: mostly clinic tools that take a load
+// off a real workflow, plus one playground at the end. Rendered as a grid (a
+// "collection") so it reads distinct from the Path road (a "sequence"). The
+// for-fun one (eyecase) sits last so the section doesn't over-claim "friction".
+// Cards reveal on scroll.
+const builds = [
+  {
+    name: 'EMR auto-refresh',
+    kind: 'Customer',
+    blurb: "A Chrome extension that reloads the EMR daysheet the moment a patient's status changes, so the front desk is never acting on a stale board.",
+    tags: ['Chrome MV3', 'JavaScript'],
+    accent: 'var(--blue)',
+  },
+  {
+    name: 'Clinic status boards',
+    kind: 'Customer',
+    blurb: "Live boards the desk and doctors keep open all day, read straight from OSCAR: a doctors' lounge queue, an OCT triage board, the vision and HVF rooms. Cards move themselves as patients check in and progress, so everyone sees the same picture.",
+    tags: ['FastAPI', 'Playwright'],
+    accent: 'var(--green)',
+  },
+  {
+    name: 'The device share',
+    kind: 'Customer',
+    blurb: 'A single network share that consolidates exports from roughly a dozen diagnostic machines into one place. The foundation the downstream automations depend on.',
+    tags: ['Windows', 'SMB'],
+    accent: 'var(--blue)',
+  },
+  {
+    name: 'Clinic hub',
+    kind: 'Customer',
+    blurb: "One internal landing page that pulls the clinic's tools into a single starting point, the boards, the order forms, the shared exports, so staff are never hunting for a link.",
+    tags: ['Intranet', 'Self-hosted'],
+    accent: 'var(--purple)',
+  },
+  {
+    name: 'Clinic server',
+    kind: 'Customer',
+    blurb: "Brought in a spare PC to run as the clinic's always-on server. It launches the tools each morning, keeps them updated from git, and powers down at night to save resources.",
+    tags: ['Git auto-deploy', 'Schedulers'],
+    accent: 'var(--yellow)',
+  },
+  {
+    name: 'Tri-City Eye Care site',
+    kind: 'Customer',
+    blurb: "A referral-first fresh build of the clinic's website.",
+    tags: ['Astro', 'Tailwind'],
+    accent: 'var(--green)',
+  },
+  {
+    name: 'eyecase',
+    kind: 'Playground',
+    blurb: 'A daily ophthalmology case puzzle: one case, one guess, a leaderboard. A focused, fun teaching tool that runs entirely in the browser.',
+    tags: ['Cloudflare Pages', 'Workers', 'D1'],
+    accent: 'var(--purple)',
+  },
+];
+---
+<section id="builds" class="builds section">
+  <p class="eyebrow">more builds</p>
+  <h2 class="builds-head">More of what I've built.</h2>
+  <p class="builds-sub">
+    Most quietly take a load off a real clinic workflow, niche on purpose and relied on
+    every day. The last one is just for the fun of it. All of them got shipped and have real users.
+  </p>
+
+  <div class="grid">
+    {builds.map((b, i) => (
+      <article class="build" style={`--a:${b.accent}`} data-reveal>
+        <div class="build-top">
+          <span class="build-idx">{String(i + 1).padStart(2, '0')}</span>
+          <span class="build-kind">{b.kind}</span>
+        </div>
+        <h3>{b.name}</h3>
+        <p>{b.blurb}</p>
+        <div class="tags">{b.tags.map((t) => <span class="tag">{t}</span>)}</div>
+      </article>
+    ))}
+  </div>
+</section>
+
+<script is:inline>
+  (function () {
+    const items = document.querySelectorAll('#builds [data-reveal]');
+    if (!items.length) return;
+    if (matchMedia('(prefers-reduced-motion:reduce)').matches) {
+      items.forEach((el) => el.classList.add('in'));
+      return;
+    }
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 });
+    items.forEach((el) => io.observe(el));
+  })();
+</script>
+
+<style>
+  .builds-head {
+    font-family: var(--display);
+    font-size: clamp(30px, 5.4vw, 52px);
+    letter-spacing: -.025em; line-height: 1.04; margin: 0 0 16px;
+  }
+  .builds-sub { color: var(--ink-dim); max-width: 56ch; margin: 0; }
+
+  .grid {
+    margin-top: 42px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;
+  }
+  .build {
+    position: relative;
+    padding: 22px 24px 20px; border-radius: 14px;
+    background: linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 40%, transparent) 100%);
+    border: 1px solid var(--line); border-left: 2px solid var(--a);
+    opacity: 0; transform: translateY(16px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .build.in { opacity: 1; transform: none; }
+  .build-top { display: flex; align-items: center; justify-content: space-between; }
+  .build-idx { font-family: var(--mono); font-size: 12px; color: var(--a); letter-spacing: .1em; }
+  .build-kind {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+    letter-spacing: .04em; padding: 2px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--bg-2);
+  }
+  .build h3 {
+    font-family: var(--display); font-size: 21px; font-weight: 600;
+    letter-spacing: -.01em; margin: 6px 0 8px;
+  }
+  .build p { color: var(--ink-dim); font-size: 15px; margin: 0 0 16px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint);
+    padding: 3px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--bg-2);
+  }
+  @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+</style>

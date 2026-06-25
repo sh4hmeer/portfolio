@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tri-City Patient Flow — walkable (prototype)</title>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#131820; --panel-2:#1a212c; --border:#232c3a;
+    --text:#e6edf3; --muted:#8a96a8;
+    --here:#4ade80; --hvf:#ec8b3c; --oct:#ffd43b; --waiting:#b794f6; --billed:#4dabf7;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text)}
+  body{display:flex;flex-direction:column;align-items:center;min-height:100%;padding:18px}
+  .head{width:100%;max-width:1200px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .head .eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .head h1{margin:2px 0 0;font-size:18px;font-weight:700}
+  .head h1 b{color:var(--billed)}
+  .timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:34px;padding:4px 12px;border-radius:10px;
+    background:var(--panel);border:1px solid var(--border);transition:color .3s,box-shadow .3s}
+  .timer.frozen{color:var(--billed);box-shadow:0 0 0 2px rgba(77,171,247,.5),0 0 24px rgba(77,171,247,.35)}
+
+  .stage{position:relative;width:100%;max-width:1200px;height:620px;border-radius:14px;overflow:hidden;
+    border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  #game{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;background:#0a0e14}
+
+  /* HUD status board */
+  .hud{position:absolute;top:14px;right:14px;width:236px;background:linear-gradient(180deg,rgba(19,24,32,.95),rgba(13,17,23,.95));
+    border:1px solid var(--border);border-radius:12px;padding:12px 12px 10px;backdrop-filter:blur(3px);
+    box-shadow:0 8px 24px rgba(0,0,0,.5);transition:transform .5s, opacity .5s}
+  .hud h3{margin:0 0 2px;font-size:13px}
+  .hud .sub{font-size:10px;color:var(--muted);margin-bottom:9px}
+  .step{display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:7px;font-size:12px;color:var(--muted);transition:all .35s}
+  .step .dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--border);flex:none;transition:all .35s}
+  .step.active{color:var(--text);background:rgba(255,255,255,.04)}
+  .step.active .dot{background:var(--c);border-color:var(--c);box-shadow:0 0 12px var(--c);transform:scale(1.15)}
+  .step.done{color:#cdd6e2}
+  .step.done .dot{background:color-mix(in srgb,var(--c) 55%,transparent);border-color:var(--c)}
+  .step .room{margin-left:auto;font-size:10px;color:var(--muted)}
+  .step.active .room{color:var(--c)}
+
+  .controls{width:100%;max-width:1200px;margin-top:12px;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--muted)}
+  .controls kbd{background:var(--panel-2);border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:1px 7px;color:var(--text);font-size:12px}
+  .controls .btn{margin-left:auto;background:var(--panel-2);color:var(--text);border:1px solid var(--border);padding:7px 15px;border-radius:8px;font-weight:600;cursor:pointer}
+  .controls .btn:hover{filter:brightness(1.18)}
+  .takeover-flag{color:var(--here);font-weight:600;opacity:0;transition:opacity .3s}
+  .takeover-flag.on{opacity:1}
+
+  /* finale overlay */
+  .finale{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:18px;
+    background:radial-gradient(1200px 700px at 50% 30%,rgba(20,28,42,.96),rgba(8,11,17,.99));
+    opacity:0;visibility:hidden;transition:opacity .8s,visibility .8s;padding:30px;text-align:center}
+  .finale.show{opacity:1;visibility:visible}
+  .finale .fstep{display:none;flex-direction:column;align-items:center;gap:14px;max-width:760px;width:100%}
+  .finale .fstep.on{display:flex;animation:fin .8s ease}
+  @keyframes fin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .finale h2{margin:0;font-size:22px;font-weight:700}.finale h2 b{color:var(--billed)}
+  .finale .big{font-variant-numeric:tabular-nums;font-weight:800;font-size:72px;color:var(--billed);line-height:1}
+  .finale .cap{font-size:14px;color:var(--muted);max-width:560px}.finale .cap b{color:var(--text)}
+  .sheet{width:100%;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--panel)}
+  .sheet table{width:100%;border-collapse:collapse;font-size:13px}
+  .sheet th{background:var(--panel-2);color:var(--muted);text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  .sheet td{padding:8px 12px;border-top:1px solid var(--border);font-variant-numeric:tabular-nums}
+  .sheet tr.live td{background:rgba(77,171,247,.08)}
+  .cell.lit{outline:2px solid var(--billed);background:rgba(77,171,247,.18);border-radius:5px}
+  .strike{text-decoration:line-through;color:#ff6b6b;opacity:.85}
+  .ml-row{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;width:100%}
+  .chart{position:relative;border:1px solid var(--border);border-radius:10px;background:var(--panel);height:220px;padding:8px}
+  .loss{fill:none;stroke:url(#g);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:1500;stroke-dashoffset:1500;transition:stroke-dashoffset 3.6s linear}
+  .loss.draw{stroke-dashoffset:0}
+  .mlstats{display:flex;flex-direction:column;gap:12px;justify-content:center}
+  .mlstat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:11px 14px;text-align:left}
+  .mlstat .k{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .mlstat .v{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+  .predict{background:rgba(81,207,102,.08);border:1px solid rgba(81,207,102,.35);border-radius:10px;padding:12px 16px;font-size:14px}
+  .predict b{color:#51cf66}
+  .replay2{background:var(--panel-2);color:var(--text);border:1px solid var(--border);padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer}
+  .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;z-index:5}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div>
+      <div class="eyebrow">Tri-City Eye Care · walkable patient flow</div>
+      <h1>Walk one visit — watch the board update, then see it become <b>data</b></h1>
+    </div>
+    <div class="timer" id="timer">00:00</div>
+  </div>
+
+  <div class="stage">
+    <canvas id="game"></canvas>
+    <div class="loading" id="loading">loading clinic…</div>
+
+    <div class="hud" id="hud">
+      <h3>Live status board</h3>
+      <div class="sub" id="hudWhere">at the entrance</div>
+      <div id="steps"></div>
+    </div>
+
+    <!-- finale -->
+    <div class="finale" id="finale">
+      <div class="fstep" id="fs1">
+        <h2>Visit complete. Total time door-to-door:</h2>
+        <div class="big" id="finalTime">00:00</div>
+        <div class="cap">Every status change you just walked through was timestamped automatically.</div>
+      </div>
+      <div class="fstep" id="fs2">
+        <h2>That time becomes a row — with <b>zero typing</b></h2>
+        <div class="sheet"><table>
+          <thead><tr><th>Patient</th><th>Path</th><th>Date</th><th>Door-to-door</th></tr></thead>
+          <tbody>
+            <tr><td>R. Mensah</td><td>HVF · Vision · OCT</td><td>2026-06-09</td><td>41:08</td></tr>
+            <tr><td>A. Koval</td><td>Vision · OCT</td><td>2026-06-09</td><td>38:50</td></tr>
+            <tr class="live"><td>You</td><td>HVF · Vision · OCT</td><td>2026-06-10</td><td class="cell" id="fcell">&nbsp;</td></tr>
+          </tbody>
+        </table></div>
+        <div class="cap"><span class="strike">~3 min of manual entry per visit</span> &nbsp;→&nbsp; <b>captured the instant you're billed.</b></div>
+      </div>
+      <div class="fstep" id="fs3">
+        <h2>Thousands of visits later → a model that <b>predicts the day</b></h2>
+        <div class="ml-row">
+          <div class="chart">
+            <svg viewBox="0 0 460 210" width="100%" height="100%" preserveAspectRatio="none">
+              <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ec8b3c"/><stop offset="1" stop-color="#4dabf7"/></linearGradient></defs>
+              <path class="loss" id="loss" d=""/>
+            </svg>
+            <div style="position:absolute;left:10px;top:8px;font-size:10px;color:var(--muted)">training loss</div>
+            <div style="position:absolute;right:10px;bottom:6px;font-size:10px;color:var(--muted)">epochs →</div>
+          </div>
+          <div class="mlstats">
+            <div class="mlstat"><div class="k">Epoch</div><div class="v" style="color:var(--billed)" id="mlEp">0 / 60</div></div>
+            <div class="mlstat"><div class="k">Loss</div><div class="v" style="color:var(--hvf)" id="mlLoss">0.94</div></div>
+            <div class="mlstat"><div class="k">Val accuracy</div><div class="v" style="color:#51cf66" id="mlAcc">58%</div></div>
+          </div>
+        </div>
+        <div class="predict">Predicting today: <b>peak congestion ~2:40pm</b> · pull 2 OCT slots earlier <span style="color:var(--muted)">— shorter waits, fewer bottlenecks.</span></div>
+        <button class="replay2" id="replay2">↻ Walk it again</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows to walk · it auto-walks if you don't</span>
+    <span class="takeover-flag" id="takeover">● you're driving</span>
+    <button class="btn" id="replay">↻ Restart</button>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+if(typeof THREE==='undefined'){document.getElementById('loading').textContent='Could not load 3D engine (offline?).';return;}
+
+/* ============================================================
+   COLORS / STATUS
+============================================================ */
+const C = {
+  here:0x4ade80, hvf:0xec8b3c, vision:0x34d399, oct:0xffd43b, waiting:0xb794f6, billed:0x4dabf7,
+  roomFloor:0xc4cdd8, roomFloorWarm:0xd9d3c5,
+  wall:0xe9eef4, wallTrim:0x9aa7b6,
+  chair:0x4a72a8, examChair:0x3f6f5f, machine:0xeaeff5, machineHead:0x5a6478,
+  desk:0xb08a57, monitor:0x1d2530, stool:0x6a7382, plantPot:0x8a5a40, plant:0x46a05f
+};
+const css = h => '#'+h.toString(16).padStart(6,'0');
+
+/* HUD steps definition */
+const STEPS = [
+  {key:'here',    label:'Checked in (Here)', color:C.here},
+  {key:'hvf',     label:'HVF room',          color:C.hvf},
+  {key:'vision',  label:'Vision room',       color:C.vision},
+  {key:'octwait', label:'Waiting for OCT',   color:C.oct},
+  {key:'oct',     label:'OCT room',          color:C.oct},
+  {key:'drwait',  label:'Waiting for Dr',    color:C.waiting},
+  {key:'doctor',  label:'With the doctor',   color:C.waiting},
+  {key:'billed',  label:'Billed — done',     color:C.billed},
+];
+const stepIndex = k => STEPS.findIndex(s=>s.key===k);
+
+/* ============================================================
+   PROCEDURAL PIXEL TEXTURES
+============================================================ */
+function tex(canvas){const t=new THREE.CanvasTexture(canvas);t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;return t;}
+
+function floorTex(){
+  const s=64,c=document.createElement('canvas');c.width=c.height=s;const x=c.getContext('2d');
+  x.fillStyle='#20262f';x.fillRect(0,0,s,s);
+  // tile grout
+  x.strokeStyle='#161b22';x.lineWidth=2;
+  for(let i=0;i<=s;i+=32){x.beginPath();x.moveTo(i,0);x.lineTo(i,s);x.stroke();x.beginPath();x.moveTo(0,i);x.lineTo(s,i);x.stroke();}
+  // subtle speckle
+  for(let i=0;i<40;i++){x.fillStyle='rgba(255,255,255,'+(Math.random()*0.03)+')';x.fillRect((Math.random()*s)|0,(Math.random()*s)|0,2,2);}
+  const t=tex(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;
+}
+
+/* patient/person sprite, tintable by shirt color (hex string) */
+function personTex(shirt, opts){
+  opts=opts||{};
+  const W=24,H=40,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  x.imageSmoothingEnabled=false;
+  const skin=opts.skin||'#e8b88f', hair=opts.hair||'#3a2a1d', pants=opts.pants||'#222a36';
+  // shadow
+  x.fillStyle='rgba(0,0,0,.35)';x.beginPath();x.ellipse(W/2,H-3,8,3,0,0,7);x.fill();
+  // legs
+  x.fillStyle=pants;x.fillRect(8,27,3,10);x.fillRect(13,27,3,10);
+  // shoes
+  x.fillStyle='#11161d';x.fillRect(7,36,5,3);x.fillRect(12,36,5,3);
+  // body / shirt
+  x.fillStyle=shirt;x.fillRect(6,17,12,12);
+  // arms
+  x.fillStyle=shirt;x.fillRect(3,18,3,8);x.fillRect(18,18,3,8);
+  x.fillStyle=skin;x.fillRect(3,25,3,3);x.fillRect(18,25,3,3);
+  // neck + head
+  x.fillStyle=skin;x.fillRect(10,14,4,3);
+  x.fillRect(8,6,8,9);
+  // hair
+  x.fillStyle=hair;x.fillRect(7,4,10,4);x.fillRect(7,7,2,3);x.fillRect(15,7,2,3);
+  // eyes
+  x.fillStyle='#10151c';x.fillRect(10,10,1,2);x.fillRect(13,10,1,2);
+  // outline-ish glow ring for the player
+  if(opts.glow){x.strokeStyle=shirt;x.globalAlpha=.5;x.lineWidth=1;x.strokeRect(5,16,14,14);x.globalAlpha=1;}
+  return tex(c);
+}
+
+function labelSprite(text, color){
+  const pad=8,fs=22,c=document.createElement('canvas');const ctx=c.getContext('2d');
+  ctx.font='700 '+fs+'px "Segoe UI",sans-serif';const w=Math.ceil(ctx.measureText(text).width);
+  c.width=w+pad*2;c.height=fs+pad*2;
+  const x=c.getContext('2d');x.font='700 '+fs+'px "Segoe UI",sans-serif';x.textBaseline='middle';
+  x.fillStyle='rgba(10,14,20,.78)';roundRect(x,0,0,c.width,c.height,8);x.fill();
+  x.fillStyle=color||'#cdd6e2';x.fillText(text,pad,c.height/2+1);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex(c),transparent:true,depthTest:false}));
+  sp.scale.set(c.width/20,c.height/20,1);sp.renderOrder=10;
+  sp.userData.base=c.width/20; return sp;
+}
+function roundRect(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath();}
+
+/* ============================================================
+   SCENE SETUP
+============================================================ */
+const canvas=document.getElementById('game');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:false});
+renderer.setClearColor(0x0a0e14,1);
+const scene=new THREE.Scene();
+scene.fog=new THREE.Fog(0x0a0e14, 120, 260);
+const camera=new THREE.PerspectiveCamera(46, 16/9, 0.1, 600);
+
+// pixelate: render at low internal resolution, CSS upscales (canvas is image-rendering:pixelated)
+function resize(){
+  const r=canvas.getBoundingClientRect();
+  const targetW=460; const scale=targetW/r.width;
+  const w=Math.max(1,Math.round(r.width*scale)), h=Math.max(1,Math.round(r.height*scale));
+  renderer.setPixelRatio(1); renderer.setSize(w,h,false);
+  camera.aspect=r.width/r.height; camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',resize);
+
+// lights
+scene.add(new THREE.HemisphereLight(0xd2e0ff,0x2a2f38,1.05));
+const dir=new THREE.DirectionalLight(0xfff2dd,0.75);dir.position.set(40,80,30);scene.add(dir);
+
+/* ---- world helpers: blueprint (0..120) -> world (centered) ---- */
+const OX=60, OZ=58;                // center offsets
+const W = (bx,bz)=> new THREE.Vector3(bx-OX, 0, bz-OZ);
+
+/* big floor */
+const ft=floorTex();ft.repeat.set(40,40);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(300,300),new THREE.MeshStandardMaterial({map:ft,roughness:1}));
+floor.rotation.x=-Math.PI/2;scene.add(floor);
+
+/* ============================================================
+   CLINIC MAP (from the blueprint)  bx,bz = corner ; w,d = size
+============================================================ */
+const ROOMS = [
+  // top exam row
+  {id:'exA',label:'EXAM',bx:2,bz:2,w:13,d:17,kind:'exam'},
+  {id:'exB',label:'EXAM',bx:15,bz:2,w:13,d:17,kind:'exam'},
+  {id:'exC',label:'EXAM',bx:28,bz:2,w:13,d:17,kind:'exam'},
+  {id:'exD',label:'EXAM',bx:41,bz:2,w:13,d:17,kind:'exam'},
+  {id:'scanTop',label:'SCAN',bx:54,bz:2,w:13,d:17,kind:'misc'},
+  // bottom exam row
+  {id:'exE',label:'EXAM',bx:8,bz:40,w:14,d:18,kind:'exam'},
+  {id:'exF',label:'EXAM',bx:23,bz:40,w:14,d:18,kind:'exam'},
+  {id:'exG',label:'EXAM',bx:38,bz:40,w:14,d:18,kind:'exam'},
+  {id:'exH',label:'EXAM',bx:53,bz:40,w:14,d:18,kind:'exam'},
+  // center column
+  {id:'exCtr',label:'EXAM',bx:74,bz:19,w:12,d:18,kind:'misc'},
+  {id:'oct2',label:'OCT 2',bx:87,bz:25,w:14,d:18,kind:'oct'},
+  {id:'vision3',label:'VISION 3',bx:87,bz:44,w:14,d:12,kind:'vision'},
+  {id:'surg',label:'SURGICAL',bx:69,bz:48,w:14,d:20,kind:'misc'},
+  {id:'hvf',label:'HVF',bx:77,bz:69,w:10,d:11,kind:'hvf'},
+  {id:'vision2',label:'VISION 2',bx:88,bz:69,w:13,d:11,kind:'vision'},
+  {id:'vision1',label:'VISION 1',bx:102,bz:69,w:15,d:11,kind:'vision'},
+  // right column
+  {id:'oct1',label:'OCT 1',bx:104,bz:4,w:14,d:11,kind:'oct'},
+  {id:'oct3',label:'OCT 3',bx:104,bz:18,w:14,d:9,kind:'oct'},
+  {id:'vision4',label:'VISION 4',bx:104,bz:30,w:14,d:9,kind:'vision'},
+];
+const WAITING = [
+  {id:'tertiary',label:'TERTIARY WAITING',bx:73,bz:2,w:30,d:13,seats:18,color:C.oct},
+  {id:'quaternary',label:'QUATERNARY WAITING',bx:10,bz:26,w:52,d:10,seats:16,color:C.waiting},
+  {id:'secondary',label:'SECONDARY WAITING',bx:104,bz:44,w:13,d:11,seats:8,color:C.here},
+  {id:'reception',label:'RECEPTION',bx:88,bz:84,w:28,d:22,seats:20,color:C.here},
+];
+const roomById={};[...ROOMS,...WAITING].forEach(r=>roomById[r.id]=r);
+function center(r){return W(r.bx+r.w/2, r.bz+r.d/2);}
+
+/* ---- furniture helpers (simple, colored, retro props) ---- */
+function addBox(x,y,z,w,h,d,color,opts){opts=opts||{};
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:opts.rough==null?0.95:opts.rough,metalness:opts.metal||0,emissive:opts.emissive||0x000000,emissiveIntensity:opts.ei||0}));
+  m.position.set(x,y,z);scene.add(m);return m;}
+function fChair(x,z,color,back){color=color==null?C.chair:color;
+  addBox(x,0.45,z,1.25,0.5,1.25,color); addBox(x,0.2,z,0.22,0.4,0.22,0x20262c);
+  if(back==='n')addBox(x,1.0,z-0.5,1.25,1.0,0.22,color);
+  else if(back==='s')addBox(x,1.0,z+0.5,1.25,1.0,0.22,color);
+  else if(back==='e')addBox(x+0.5,1.0,z,0.22,1.0,1.25,color);
+  else addBox(x-0.5,1.0,z,0.22,1.0,1.25,color);}
+function fExamChair(x,z){addBox(x,0.55,z,1.8,0.5,3.0,C.examChair);addBox(x,1.5,z-1.3,1.8,1.9,0.4,C.examChair);addBox(x,0.35,z+1.5,1.6,0.3,1.0,C.examChair);addBox(x,0.25,z,0.5,0.5,0.5,0x20262c);}
+function fMachine(x,z){addBox(x,0.6,z-0.4,2.4,1.2,1.8,C.machine);addBox(x,1.75,z-0.9,1.7,1.5,1.0,C.machineHead);addBox(x,1.15,z+0.5,0.35,0.5,0.9,C.machineHead);addBox(x+1.5,1.25,z-0.4,0.12,0.9,1.0,C.monitor,{emissive:0x14304a,ei:0.5});}
+function fStool(x,z){addBox(x,0.5,z,0.95,0.9,0.95,C.stool);}
+function fDesk(x,z){addBox(x,0.75,z,2.4,0.18,1.1,C.desk);addBox(x-0.9,0.38,z,0.16,0.75,0.9,C.desk);addBox(x+0.9,0.38,z,0.16,0.75,0.9,C.desk);addBox(x,1.35,z-0.35,1.0,0.7,0.1,C.monitor,{emissive:0x14304a,ei:0.5});}
+function fPlant(x,z){addBox(x,0.45,z,0.85,0.9,0.85,C.plantPot);const f=new THREE.Mesh(new THREE.SphereGeometry(0.95,8,6),new THREE.MeshStandardMaterial({color:C.plant,roughness:1}));f.position.set(x,1.55,z);f.scale.set(1,1.15,1);scene.add(f);}
+
+/* ---- build a furnished, cut-away room (near wall omitted so camera sees in) ---- */
+const roomVisuals={};
+const WALLS=[];
+function aabb(x,z,w,d){return {minX:x-w/2,maxX:x+w/2,minZ:z-d/2,maxZ:z+d/2};}
+function rwall(x,z,len,h,vertical){const geo=vertical?new THREE.BoxGeometry(0.45,h,len):new THREE.BoxGeometry(len,h,0.45);
+  const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:C.wall,roughness:1}));m.position.set(x,h/2,z);scene.add(m);}
+function trimBar(x,z,w,d,y,mat){const m=new THREE.Mesh(new THREE.BoxGeometry(w,0.08,d),mat);m.position.set(x,y,z);scene.add(m);}
+function buildRoom(r,isWait){
+  const c=center(r),hw=r.w/2,hd=r.d/2;
+  // lit room-floor island on the dark corridor floor
+  const slab=new THREE.Mesh(new THREE.BoxGeometry(r.w-0.4,0.3,r.d-0.4),new THREE.MeshStandardMaterial({color:isWait?C.roomFloorWarm:C.roomFloor,roughness:1}));
+  slab.position.set(c.x,0.16,c.z);scene.add(slab);
+  // shared accent material (floor outline + far-wall header) so flashRoomFor can light it
+  const accentColor=isWait?r.color:(C[r.kind]||C.wallTrim);
+  const frameMat=new THREE.MeshBasicMaterial({color:accentColor,transparent:true,opacity:isWait?0.5:0.34});
+  trimBar(c.x,c.z-hd+0.2,r.w-0.4,0.34,0.33,frameMat);
+  trimBar(c.x,c.z+hd-0.2,r.w-0.4,0.34,0.33,frameMat);
+  trimBar(c.x-hw+0.2,c.z,0.34,r.d-0.4,0.33,frameMat);
+  trimBar(c.x+hw-0.2,c.z,0.34,r.d-0.4,0.33,frameMat);
+  if(!isWait){
+    const wh=2.8;
+    rwall(c.x,c.z-hd,r.w,wh,false);   // north (far)
+    rwall(c.x-hw,c.z,r.d,wh,true);    // west
+    rwall(c.x+hw,c.z,r.d,wh,true);    // east  (south omitted = cut-away view)
+    trimBar(c.x,c.z-hd,r.w,0.5,wh,frameMat); // accent header on far wall (shares frameMat)
+    furnish(r,c);
+  }
+  const lab=labelSprite(r.label,isWait?css(r.color):css(accentColor));
+  lab.position.set(c.x,isWait?3.4:4.0,c.z);scene.add(lab);
+  roomVisuals[r.id]={slab,frameMat,accentColor,label:lab,center:c};
+}
+function furnish(r,c){
+  const k=r.kind,hw=r.w/2,hd=r.d/2;
+  if(k==='exam'){ fExamChair(c.x-1.5,c.z-0.5); fStool(c.x+1.8,c.z+1.4); fDesk(c.x+hw-1.8,c.z+hd-1.9); }
+  else if(k==='oct'||k==='vision'||k==='hvf'){ fMachine(c.x,c.z-0.4); fStool(c.x,c.z+1.9); }
+  else { fDesk(c.x,c.z-0.4); fStool(c.x,c.z+1.2); }
+}
+ROOMS.forEach(r=>buildRoom(r,false));
+WAITING.forEach(r=>buildRoom(r,true));
+
+/* seating clusters in waiting areas + reception NPCs (deterministic so headless == live) */
+const npcShirts=[0x5b6675,0x6b7585,0x4d6a8a,0x7a5f6f,0x5f7a63,0x86736b,0x8a8f99];
+let _seed=7; function rng(){_seed=(_seed*9301+49297)%233280;return _seed/233280;}
+function seatNPC(x,z){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:personTex(css(npcShirts[(rng()*npcShirts.length)|0])),transparent:true}));
+  sp.center.set(0.5,0);sp.scale.set(2.3,3.8,1);sp.position.set(x,0.62,z);scene.add(sp);}
+function addChairs(r){
+  const c=center(r),cols=Math.max(2,Math.round(r.w/3.2)),rows=Math.max(1,Math.ceil(r.seats/cols));
+  const gx=(r.w-3)/Math.max(1,cols-1),gz=(r.d-3)/Math.max(1,rows-1);let n=0;
+  for(let i=0;i<rows;i++)for(let j=0;j<cols&&n<r.seats;j++,n++){
+    const px=c.x-(r.w/2-1.5)+j*gx, pz=c.z-(r.d/2-1.5)+i*gz;
+    fChair(px,pz,C.chair,'n');
+    if(rng()<0.5) seatNPC(px,pz-0.1);
+  }
+  fPlant(c.x-r.w/2+1.2,c.z+r.d/2-1.2); fPlant(c.x+r.w/2-1.2,c.z+r.d/2-1.2);
+}
+WAITING.forEach(addChairs);
+
+/* front desk counter (L-shape) near reception */
+(function desk(){
+  const dm=new THREE.MeshStandardMaterial({color:C.desk,roughness:.9});
+  const a=new THREE.Mesh(new THREE.BoxGeometry(10,1.8,1.4),dm);a.position.copy(W(80,82));a.position.y=0.9;scene.add(a);WALLS.push(aabb(a.position.x,a.position.z,10,1.4));
+  const b=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.8,10),dm);b.position.copy(W(75,86));b.position.y=0.9;scene.add(b);WALLS.push(aabb(b.position.x,b.position.z,1.4,10));
+  const lab=labelSprite('FRONT DESK','#cdd6e2');lab.position.copy(W(80,82));lab.position.y=3.6;scene.add(lab);
+  // a worker sprite behind the desk
+  const wk=new THREE.Sprite(new THREE.SpriteMaterial({map:personTex('#2b6cb0',{hair:'#1a1a1a'}),transparent:true}));
+  wk.center.set(0.5,0);wk.scale.set(2.6,4.3,1);wk.position.copy(W(82,80));wk.position.y=0.5;scene.add(wk);
+})();
+
+/* exterior walls */
+const BOUNDS={minX:-60,maxX:60,minZ:-60,maxZ:60};
+(function exterior(){
+  const mat=new THREE.MeshStandardMaterial({color:0x2a3240,roughness:1});
+  const minX=W(0,0).x-2,maxX=W(120,0).x+2,minZ=W(0,0).z-2,maxZ=W(0,110).z+2;
+  const mk=(x,z,w,d)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,3.2,d),mat);m.position.set(x,1.6,z);scene.add(m);};
+  mk((minX+maxX)/2,minZ,maxX-minX,0.6);mk((minX+maxX)/2,maxZ,maxX-minX,0.6);
+  mk(minX,(minZ+maxZ)/2,0.6,maxZ-minZ);mk(maxX,(minZ+maxZ)/2,0.6,maxZ-minZ);
+  BOUNDS.minX=minX+1.2;BOUNDS.maxX=maxX-1.2;BOUNDS.minZ=minZ+1.2;BOUNDS.maxZ=maxZ-1.2;
+})();
+
+/* ============================================================
+   PLAYER + CAMERA
+============================================================ */
+const player=new THREE.Sprite(new THREE.SpriteMaterial({map:personTex(css(C.billed),{glow:true}),transparent:true}));
+player.center.set(0.5,0);player.scale.set(2.8,4.6,1);
+const START=W(117,92); player.position.copy(START);player.position.y=0.5;scene.add(player);
+function setPlayerColor(hex){player.material.map=personTex(css(hex),{glow:true});player.material.needsUpdate=true;}
+
+// closer + steeper, FIXED orientation: camera only PANS to follow (no per-frame re-aim = no sway)
+const camOff=new THREE.Vector3(0,25,17);
+let camReady=false;
+function updateCamera(instant){
+  const want=new THREE.Vector3(player.position.x+camOff.x, camOff.y, player.position.z+camOff.z);
+  if(instant||!camReady){camera.position.copy(want);camera.lookAt(player.position.x,2.5,player.position.z-6);camReady=true;}
+  else{camera.position.lerp(want,0.14);}
+}
+updateCamera(true);
+
+/* ============================================================
+   GUIDE PATH (glowing ribbon on floor)
+============================================================ */
+let guideMesh=null;
+const guideMat=new THREE.MeshBasicMaterial({color:C.here,transparent:true,opacity:0.55,depthWrite:false,blending:THREE.AdditiveBlending});
+function setGuide(points,color){
+  if(guideMesh){scene.remove(guideMesh);guideMesh.geometry.dispose();}
+  guideMat.color.setHex(color);
+  const g=new THREE.BufferGeometry();const verts=[];const wHalf=0.7;
+  for(let i=0;i<points.length-1;i++){
+    const a=points[i],b=points[i+1];const dx=b.x-a.x,dz=b.z-a.z;const len=Math.hypot(dx,dz)||1;
+    const nx=-dz/len*wHalf, nz=dx/len*wHalf;
+    const y=0.40;
+    const p1=[a.x+nx,y,a.z+nz],p2=[a.x-nx,y,a.z-nz],p3=[b.x+nx,y,b.z+nz],p4=[b.x-nx,y,b.z-nz];
+    verts.push(...p1,...p2,...p3, ...p2,...p4,...p3);
+  }
+  g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  guideMesh=new THREE.Mesh(g,guideMat);guideMesh.renderOrder=2;scene.add(guideMesh);
+}
+// L-shaped route between two points (manhattan, through open space)
+function route(a,b){
+  const mid=new THREE.Vector3(b.x,0,a.z);
+  return [new THREE.Vector3(a.x,0,a.z),mid,new THREE.Vector3(b.x,0,b.z)];
+}
+
+/* ============================================================
+   THE JOURNEY (waypoints + status)
+============================================================ */
+function near(roomId, dz){const c=roomVisuals[roomId].center; return new THREE.Vector3(c.x, 0, c.z+(dz||0));}
+const JOURNEY = [
+  {to:W(80,79), status:null,    where:'walking to the front desk'},
+  {to:W(80,79), status:'here',  where:'front desk — marked “Here”'},
+  {to:near('hvf',5), status:'hvf', where:'HVF visual-field test'},
+  {to:W(96,90),  status:'here', where:'back to seating'},
+  {to:near('vision1',5), status:'vision', where:'Vision Room 1'},
+  {to:center(roomById['tertiary']), status:'octwait', where:'tertiary waiting — waiting for OCT'},
+  {to:near('oct1',5), status:'oct', where:'OCT Room 1'},
+  {to:center(roomById['quaternary']), status:'drwait', where:'quaternary waiting — waiting for Dr'},
+  {to:near('exF',5), status:'doctor', where:'with the doctor'},
+  {to:W(80,79), status:'billed', where:'back at the desk — billed'},
+];
+let leg=0, legPts=[], legSeg=0, doneStatus=new Set();
+
+function startLeg(i){
+  leg=i;
+  if(i>=JOURNEY.length){return;}
+  const from=player.position.clone();from.y=0;
+  const j=JOURNEY[i];
+  legPts=route(from,j.to);legSeg=1;
+  const col = j.status? C[j.status] : C.here;
+  setGuide(legPts, col);
+  hudWhere.textContent=j.where;
+}
+function arriveLeg(){
+  const j=JOURNEY[leg];
+  if(j.status){applyStatus(j.status);}
+  if(j.status==='billed'){ setTimeout(runFinale, 900); return; }
+  // dwell, then next leg
+  dwell = (j.status && j.status!=='here') ? 1.1 : 0.5;
+  pendingNext = true;
+}
+let dwell=0, dwellT=0, pendingNext=false;
+
+/* ============================================================
+   STATUS / HUD
+============================================================ */
+const stepsEl=document.getElementById('steps');
+const hudWhere=document.getElementById('hudWhere');
+STEPS.forEach((s,i)=>{
+  const el=document.createElement('div');el.className='step';el.id='step-'+s.key;
+  el.style.setProperty('--c',css(s.color));
+  el.innerHTML=`<span class="dot"></span><span>${s.label}</span><span class="room" id="room-${s.key}"></span>`;
+  stepsEl.appendChild(el);
+});
+function applyStatus(key){
+  const idx=stepIndex(key);
+  STEPS.forEach((s,i)=>{
+    const el=document.getElementById('step-'+s.key);el.classList.remove('active');
+    if(i<idx){el.classList.add('done');}
+    else if(i===idx){el.classList.add('active');}
+  });
+  setPlayerColor(STEPS[idx].color);
+  // pulse the room the player is in
+  const j=JOURNEY[leg];
+  // light current room frame
+  flashRoomFor(key);
+  if(timer.running===false && key==='here') startTimer();
+  if(key==='billed') stopTimer();
+}
+function flashRoomFor(key){
+  const map={hvf:'hvf',vision:'vision1',oct:'oct1',octwait:'tertiary',drwait:'quaternary',doctor:'exF',here:'reception'};
+  const rid=map[key];if(!rid||!roomVisuals[rid])return;
+  const rv=roomVisuals[rid];const col=STEPS[stepIndex(key)].color;
+  rv.frameMat.color.setHex(col);rv.frameMat.opacity=0.9;
+  rv.label.material.map=labelSprite(roomById[rid].label,css(col)).material.map;rv.label.material.needsUpdate=true;
+}
+
+/* ============================================================
+   MASTER TIMER (accelerated visit time)
+============================================================ */
+const timerEl=document.getElementById('timer');
+const timer={running:false,secs:0,acc:0,frozen:'00:00'};
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');
+function startTimer(){timer.running=true;timer.secs=0;timerEl.classList.remove('frozen');}
+function stopTimer(){timer.running=false;timer.frozen=timerEl.textContent;timerEl.classList.add('frozen');}
+
+/* ============================================================
+   INPUT (auto-walk + takeover)
+============================================================ */
+const keys={};let manual=false,idleT=0;
+const takeoverFlag=document.getElementById('takeover');
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){keys[k]=true;manual=true;idleT=0;takeoverFlag.classList.add('on');e.preventDefault();}});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+
+function moveManual(dt){
+  let dx=0,dz=0;const sp=22*dt;
+  if(keys['w']||keys['arrowup'])dz-=1;if(keys['s']||keys['arrowdown'])dz+=1;
+  if(keys['a']||keys['arrowleft'])dx-=1;if(keys['d']||keys['arrowright'])dx+=1;
+  if(dx||dz){const l=Math.hypot(dx,dz);dx/=l;dz/=l;tryMove(dx*sp,dz*sp);idleT=0;}
+  else {idleT+=dt; if(idleT>3.5){manual=false;takeoverFlag.classList.remove('on');startLeg(leg);} }
+}
+function tryMove(dx,dz){
+  let nx=player.position.x+dx, nz=player.position.z+dz;
+  // bounds
+  nx=Math.max(BOUNDS.minX,Math.min(BOUNDS.maxX,nx));
+  nz=Math.max(BOUNDS.minZ,Math.min(BOUNDS.maxZ,nz));
+  // wall collision (block axis that collides)
+  if(!hitsWall(nx,player.position.z))player.position.x=nx;
+  if(!hitsWall(player.position.x,nz))player.position.z=nz;
+}
+function hitsWall(x,z){const pad=0.6;for(const w of WALLS){if(x>w.minX-pad&&x<w.maxX+pad&&z>w.minZ-pad&&z<w.maxZ+pad)return true;}return false;}
+
+function walkAuto(dt){
+  if(pendingNext){dwellT+=dt;if(dwellT>=dwell){dwellT=0;pendingNext=false;startLeg(leg+1);}return;}
+  if(leg>=JOURNEY.length||legSeg>=legPts.length)return;
+  const tgt=legPts[legSeg];const d=new THREE.Vector3(tgt.x-player.position.x,0,tgt.z-player.position.z);
+  const dist=d.length();const sp=20*dt;
+  if(dist<=sp){player.position.x=tgt.x;player.position.z=tgt.z;legSeg++;if(legSeg>=legPts.length)arriveLeg();}
+  else{d.normalize();player.position.x+=d.x*sp;player.position.z+=d.z*sp;}
+}
+
+/* ============================================================
+   FINALE
+============================================================ */
+let finished=false;
+function runFinale(){
+  finished=true;
+  const f=document.getElementById('finale');f.classList.add('show');
+  document.getElementById('finalTime').textContent=timer.frozen;
+  show('fs1');
+  setTimeout(()=>{show('fs2');typeCell();},2600);
+  setTimeout(()=>{show('fs3');runML();},6200);
+}
+function show(id){document.querySelectorAll('.fstep').forEach(e=>e.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function typeCell(){const cell=document.getElementById('fcell');cell.classList.add('lit');setTimeout(()=>{cell.textContent=timer.frozen;},700);setTimeout(()=>cell.classList.remove('lit'),2200);}
+function lossPath(){const Wd=460,H=210,n=60;let d='';for(let i=0;i<=n;i++){const x=i/n*Wd;const base=0.94*Math.exp(-i/16)+0.06;const y=(base+Math.sin(i*1.6)*0.018*Math.exp(-i/22))*(H-26)+8;d+=(i?'L':'M')+x.toFixed(1)+','+y.toFixed(1)+' ';}return d;}
+function runML(){
+  const p=document.getElementById('loss');p.setAttribute('d',lossPath());p.classList.remove('draw');void p.getBoundingClientRect();p.classList.add('draw');
+  const ep=document.getElementById('mlEp'),ls=document.getElementById('mlLoss'),ac=document.getElementById('mlAcc');
+  const dur=3600,t0=performance.now();
+  (function tick(now){const t=Math.min(1,(now-t0)/dur);ep.textContent=Math.round(t*60)+' / 60';ls.textContent=(0.94*Math.exp(-t*3)+0.06).toFixed(3);ac.textContent=Math.round(58+t*36)+'%';if(t<1)requestAnimationFrame(tick);})(t0);
+}
+
+/* ============================================================
+   MAIN LOOP
+============================================================ */
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(!finished){
+    if(manual)moveManual(dt);else walkAuto(dt);
+    if(timer.running){timer.acc+=dt;timer.secs+=dt*8;timerEl.textContent=fmt(timer.secs);}
+    // guide pulse
+    if(guideMesh){guideMat.opacity=0.4+Math.sin(now/300)*0.18;}
+  }
+  player.position.y=0.5+Math.sin(now/180)*0.06*(manual||(leg<JOURNEY.length&&!pendingNext)?1:0); // tiny bob while moving
+  updateCamera(false);
+  renderer.render(scene,camera);
+  requestAnimationFrame(loop);
+}
+
+/* boot */
+resize();
+document.getElementById('loading').style.display='none';
+startLeg(0);
+requestAnimationFrame(loop);
+
+/* restart handlers */
+function restart(){
+  finished=false;document.getElementById('finale').classList.remove('show');
+  player.position.copy(START);player.position.y=0.5;setPlayerColor(C.billed);
+  STEPS.forEach(s=>{const el=document.getElementById('step-'+s.key);el.classList.remove('active','done');});
+  timer.running=false;timer.secs=0;timerEl.textContent='00:00';timerEl.classList.remove('frozen');
+  manual=false;takeoverFlag.classList.remove('on');pendingNext=false;dwellT=0;
+  updateCamera(true);startLeg(0);
+}
+document.getElementById('replay').onclick=restart;
+document.getElementById('replay2').onclick=restart;
+})();
+</script>
+</body>
+</html>

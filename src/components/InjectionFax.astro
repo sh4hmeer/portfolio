@@ -1,0 +1,658 @@
+---
+// One-Tap Injection Fax — Manual (write / walk / print) vs Automated (one tap).
+// Ported faithfully from his design handoff "Manual vs One-Tap.standalone.html":
+// markup is the authored scene verbatim, the DCLogic `Component` class is reproduced
+// as a plain class (element lookups scoped to the component root, the {{ start }}/
+// {{ reset }} bindings replaced with data-attrs, auto-run on scroll-into-view, and a
+// scale-to-fit so the whole stage is visible in the pinned viewport). All motion lives
+// in SVG user-space, so a single CSS transform on the scene is safe (no rect math).
+// Text tailored to the real clinic: Tri-City Eye Care injection orders, same patient
+// "Carl Shen" as the biometry race for continuity. Patients are fictional.
+---
+<div class="bench-scene" data-bench-scene>
+<div id="scene-root" class="onetap-scene" style="width:1200px;margin:0 auto;padding:24px 30px 28px;font-family:'IBM Plex Sans',sans-serif;color:#E6E8EC;background:#131418;">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid #23262d;padding-bottom:15px;">
+    <div style="display:flex;flex-direction:column;gap:7px;">
+      <div style="font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#6f7681;">Automation Benchmark · Injection Orders</div>
+      <div style="font-size:16px;font-weight:600;letter-spacing:-.01em;color:#EEF0F3;white-space:nowrap;">Injection order <span style="color:#6f7681;font-weight:400;">→</span> fax-ready document</div>
+      <div style="display:flex;gap:18px;margin-top:3px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#2E9E6B;"></span><span style="font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#8a929c;">Automated · fast</span></div>
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:2px;background:#F76B54;"></span><span style="font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#8a929c;">Manual · slow</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+      <div style="font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#6f7681;">Shared stopwatch</div>
+      <div id="clock" style="font-family:'IBM Plex Mono',monospace;font-size:46px;font-weight:500;letter-spacing:-.01em;line-height:1;color:#EEF0F3;font-variant-numeric:tabular-nums;">00:00.00</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:7px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="statusDot" style="width:9px;height:9px;border-radius:50%;background:#3a3f48;"></span>
+        <span id="statusTxt" style="font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#8a929c;">Idle</span>
+      </div>
+      <div style="font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#8a929c;">Same source · same output</div>
+    </div>
+  </div>
+
+  <!-- STAGE -->
+  <svg viewBox="0 226 1200 388" width="100%" style="display:block;margin-top:4px;" font-family="'IBM Plex Sans',sans-serif">
+    <defs>
+      <linearGradient id="floorFade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#1b1d23"></stop>
+        <stop offset="1" stop-color="#131418"></stop>
+      </linearGradient>
+
+      <!-- FAX-READY DOCUMENT master (cloned via <use>) -->
+      <g id="faxMaster">
+        <rect x="0" y="0" width="214" height="290" rx="5" fill="#FCFBF8" stroke="#e6e2d8"></rect>
+        <text x="14" y="26" font-size="11.5" font-weight="600" fill="#26262a">TRI-CITY EYE CARE</text>
+        <text x="14" y="40" font-size="6.5" fill="#a39d92">Unit 12 · 600 Hespeler Rd · (519) 555-0192</text>
+        <rect x="169" y="11" width="33" height="16" rx="3" fill="#26262a"></rect>
+        <text x="185" y="23" text-anchor="middle" font-size="7.5" letter-spacing="1" fill="#FCFBF8">FAX</text>
+        <text x="200" y="52" text-anchor="end" font-size="6.5" fill="#b3ad9f">Page 1 of 1</text>
+        <line x1="14" y1="58" x2="200" y2="58" stroke="#e6e2d8"></line>
+        <text x="14" y="76" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#5a564d">TO: Injection Pharmacy</text>
+        <text x="200" y="76" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#5a564d">DATE: Jun 23, 2026</text>
+        <text x="14" y="90" font-family="'IBM Plex Mono',monospace" font-size="8" fill="#5a564d">FROM: Tri-City Ordering</text>
+        <text x="14" y="116" font-size="7" letter-spacing="1" fill="#c2705a">PATIENT</text>
+        <text x="14" y="135" font-size="13" font-weight="600" fill="#222">Carl Shen</text>
+        <text x="94" y="135" font-family="'IBM Plex Mono',monospace" font-size="8.5" fill="#8a857a">MRN 04417</text>
+        <line x1="14" y1="150" x2="200" y2="150" stroke="#eeebe2"></line>
+        <text x="14" y="170" font-size="7" letter-spacing="1" fill="#c2705a">MEDICATION ORDER</text>
+        <text x="14" y="188" font-family="'IBM Plex Mono',monospace" font-size="8.5" fill="#2b2a26">Aflibercept 2 mg · intravitreal OD · q4 wk</text>
+        <text x="14" y="212" font-size="7" letter-spacing="1" fill="#c2705a">INDICATION</text>
+        <text x="14" y="230" font-size="10" fill="#2b2a26">Neovascular AMD</text>
+        <rect x="128" y="219" width="42" height="15" rx="7" fill="#fbe6e0"></rect>
+        <text x="149" y="230" text-anchor="middle" font-size="8" fill="#d06a50">H35.32</text>
+        <line x1="14" y1="244" x2="200" y2="244" stroke="#eeebe2"></line>
+        <text x="14" y="262" font-size="7" letter-spacing="1" fill="#c2705a">ORDERED BY</text>
+        <text x="14" y="279" font-size="10" fill="#2b2a26">Dr. H. Gulamhusein, MD</text>
+        <rect x="120" y="251" width="86" height="27" rx="5" fill="#e3f3ea"></rect>
+        <polyline points="130,265 135,270 144,259" fill="none" stroke="#2E9E6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        <text x="151" y="263" font-size="7" letter-spacing="0.5" fill="#2E9E6B">READY TO</text>
+        <text x="151" y="273" font-size="7" letter-spacing="0.5" fill="#2E9E6B">SEND</text>
+      </g>
+    </defs>
+
+    <!-- floor -->
+    <rect x="0" y="520" width="1200" height="70" fill="url(#floorFade)"></rect>
+    <line x1="30" y1="540" x2="1170" y2="540" stroke="#272b33" stroke-width="1"></line>
+
+    <!-- station labels -->
+    <text x="312" y="566" text-anchor="middle" fill="#8a929c" font-size="9" letter-spacing="2.2">DESK · HANDWRITE</text>
+    <text x="690" y="566" text-anchor="middle" fill="#8a929c" font-size="9" letter-spacing="2.2">ORDER → FAX TOOL</text>
+    <text x="905" y="566" text-anchor="middle" fill="#8a929c" font-size="9" letter-spacing="2.2">PRINTER</text>
+    <text x="1050" y="566" text-anchor="middle" fill="#8a929c" font-size="9" letter-spacing="2.2">READY TO SEND</text>
+
+    <!-- DESK + intake doc -->
+    <g>
+      <rect x="296" y="470" width="244" height="11" rx="2" fill="#414956" stroke="#555d6b" stroke-width="0.75"></rect>
+      <rect x="308" y="481" width="9" height="59" fill="#363d49"></rect>
+      <rect x="519" y="481" width="9" height="59" fill="#363d49"></rect>
+    </g>
+    <g id="intakeDoc" transform="translate(316,254)">
+      <rect x="0" y="0" width="210" height="214" rx="5" fill="#F5F1E8" stroke="#e2dccb"></rect>
+      <rect x="0" y="0" width="210" height="27" rx="5" fill="#ECE6D7"></rect>
+      <rect x="0" y="14" width="210" height="13" fill="#ECE6D7"></rect>
+      <text x="12" y="18" font-size="8.5" letter-spacing="0.5" fill="#8a7f6a">INJECTION ORDER · INTAKE</text>
+      <text x="198" y="18" text-anchor="end" font-size="7.5" fill="#b3a890">#OR-2291</text>
+      <!-- labels -->
+      <text x="12" y="55" font-size="7" letter-spacing="0.5" fill="#c2705a">PATIENT</text>
+      <text x="12" y="75" font-size="7" letter-spacing="0.5" fill="#c2705a">MEDICATION</text>
+      <text x="12" y="95" font-size="7" letter-spacing="0.5" fill="#c2705a">DOSE</text>
+      <text x="12" y="115" font-size="7" letter-spacing="0.5" fill="#c2705a">ROUTE</text>
+      <text x="12" y="135" font-size="7" letter-spacing="0.5" fill="#c2705a">FREQUENCY</text>
+      <text x="12" y="155" font-size="7" letter-spacing="0.5" fill="#c2705a">DX / ICD</text>
+      <text x="12" y="175" font-size="7" letter-spacing="0.5" fill="#c2705a">PRESCRIBER</text>
+      <text x="12" y="195" font-size="7" letter-spacing="0.5" fill="#c2705a">DATE</text>
+      <!-- handwritten values (revealed as red writes) -->
+      <text id="ival0" x="84" y="55" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#28406b">Carl Shen</text>
+      <text id="ival1" x="84" y="75" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#28406b">Aflibercept</text>
+      <text id="ival2" x="84" y="95" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#28406b">2 mg</text>
+      <text id="ival3" x="84" y="115" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#28406b">Intravitreal</text>
+      <text id="ival4" x="84" y="135" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#28406b">q4 weeks</text>
+      <text id="ival5" x="84" y="155" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#28406b">Wet AMD · H35.32</text>
+      <text id="ival6" x="84" y="175" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#28406b">H. Gulamhusein, MD</text>
+      <text id="ival7" x="84" y="195" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#28406b">2026-06-23</text>
+    </g>
+
+    <!-- COMPUTER / TOOL -->
+    <g>
+      <rect x="600" y="470" width="232" height="11" rx="2" fill="#414956" stroke="#555d6b" stroke-width="0.75"></rect>
+      <rect x="612" y="481" width="9" height="59" fill="#363d49"></rect>
+      <rect x="812" y="481" width="9" height="59" fill="#363d49"></rect>
+      <!-- monitor -->
+      <g id="monitor" transform="translate(620,352)">
+        <rect x="0" y="0" width="140" height="100" rx="6" fill="#0f141b" stroke="#454e5c"></rect>
+        <rect x="64" y="100" width="12" height="16" fill="#3b424e"></rect>
+        <rect x="48" y="116" width="44" height="6" rx="2" fill="#454c59"></rect>
+        <text x="12" y="18" font-size="7" letter-spacing="0.5" fill="#7f8893">ORDER → FAX GENERATOR</text>
+        <rect id="monR0" x="12" y="28" width="92" height="5" rx="2" fill="#232c38"></rect>
+        <rect id="monR1" x="12" y="38" width="112" height="5" rx="2" fill="#232c38"></rect>
+        <rect id="monR2" x="12" y="48" width="74" height="5" rx="2" fill="#232c38"></rect>
+        <rect id="monR3" x="12" y="58" width="98" height="5" rx="2" fill="#232c38"></rect>
+        <text id="monFields" x="12" y="92" font-family="'IBM Plex Mono',monospace" font-size="7" fill="#5a616b">FIELDS 0/8</text>
+        <rect id="monBtn" x="78" y="71" width="54" height="19" rx="4" fill="#2E9E6B"></rect>
+        <text id="monBtnTxt" x="105" y="84" text-anchor="middle" font-size="7" font-weight="600" letter-spacing="0.5" fill="#07120c">GENERATE</text>
+      </g>
+      <!-- desktop printer -->
+      <g transform="translate(742,440)">
+        <rect x="0" y="0" width="74" height="30" rx="3" fill="#363d49" stroke="#4c5462" stroke-width="0.75"></rect>
+        <rect x="9" y="6" width="56" height="3" rx="1.5" fill="#15171c"></rect>
+        <circle id="gLight" cx="64" cy="22" r="3" fill="#3a3f48"></circle>
+      </g>
+      <!-- keyboard green taps -->
+      <rect x="624" y="462" width="120" height="8" rx="2" fill="#343c46"></rect>
+    </g>
+
+    <!-- BIG PRINTER -->
+    <g>
+      <rect x="848" y="430" width="118" height="66" rx="6" fill="#363d49" stroke="#4c5462" stroke-width="0.75"></rect>
+      <rect x="848" y="430" width="118" height="18" rx="6" fill="#414956"></rect>
+      <rect x="864" y="442" width="86" height="4" rx="2" fill="#15171c"></rect>
+      <circle id="bigLight" cx="952" cy="474" r="4" fill="#3a3f48"></circle>
+      <rect x="866" y="496" width="82" height="6" rx="2" fill="#2d333d"></rect>
+      <rect x="873" y="502" width="9" height="38" fill="#363d49"></rect>
+      <rect x="932" y="502" width="9" height="38" fill="#363d49"></rect>
+    </g>
+
+    <!-- ghost trails -->
+    <g id="trails"></g>
+
+    <!-- printed fax documents (cloned) -->
+    <g id="faxRed" opacity="0" transform="translate(880,470) scale(0.9)"><use href="#faxMaster"></use></g>
+    <g id="faxGreen" opacity="0" transform="translate(760,470) scale(0.9)"><use href="#faxMaster"></use></g>
+
+    <!-- FIGURE: RED (manual / coral) -->
+    <g id="figR" transform="translate(-130,540)" style="opacity:0.92">
+      <ellipse cx="0" cy="6" rx="29" ry="6.5" fill="#000" opacity="0.3"></ellipse>
+      <line id="figR_legB" x1="-7" y1="-46" x2="-7" y2="0" stroke="#F76B54" stroke-width="15" stroke-linecap="round" opacity="0.7"></line>
+      <line id="figR_legF" x1="7" y1="-46" x2="7" y2="0" stroke="#F76B54" stroke-width="15" stroke-linecap="round"></line>
+      <line id="figR_armL" x1="-12" y1="-112" x2="-12" y2="-54" stroke="#F76B54" stroke-width="12" stroke-linecap="round" opacity="0.82"></line>
+      <rect x="-17" y="-122" width="34" height="82" rx="17" fill="#F76B54"></rect>
+      <line id="figR_armR" x1="12" y1="-112" x2="12" y2="-54" stroke="#F76B54" stroke-width="12" stroke-linecap="round"></line>
+      <g id="figR_pencil" opacity="0">
+        <line x1="12" y1="-58" x2="12" y2="-30" stroke="#E0A23C" stroke-width="4.5" stroke-linecap="butt"></line>
+        <line x1="12" y1="-33" x2="12" y2="-25" stroke="#d8d2c4" stroke-width="4.5" stroke-linecap="butt"></line>
+        <line x1="12" y1="-27" x2="12" y2="-22" stroke="#2b2a26" stroke-width="4" stroke-linecap="round"></line>
+      </g>
+      <g id="figR_head"><circle cx="0" cy="-143" r="19" fill="#F76B54"></circle></g>
+    </g>
+
+    <!-- FIGURE: GREEN (automated) -->
+    <g id="figG" transform="translate(-130,540)" style="opacity:0.92">
+      <ellipse cx="0" cy="6" rx="29" ry="6.5" fill="#000" opacity="0.3"></ellipse>
+      <line id="figG_legB" x1="-7" y1="-46" x2="-7" y2="0" stroke="#2E9E6B" stroke-width="15" stroke-linecap="round" opacity="0.7"></line>
+      <line id="figG_legF" x1="7" y1="-46" x2="7" y2="0" stroke="#2E9E6B" stroke-width="15" stroke-linecap="round"></line>
+      <line id="figG_armL" x1="-12" y1="-112" x2="-12" y2="-54" stroke="#2E9E6B" stroke-width="12" stroke-linecap="round" opacity="0.82"></line>
+      <rect x="-17" y="-122" width="34" height="82" rx="17" fill="#2E9E6B"></rect>
+      <line id="figG_armR" x1="12" y1="-112" x2="12" y2="-54" stroke="#2E9E6B" stroke-width="12" stroke-linecap="round"></line>
+      <g id="figG_head"><circle cx="0" cy="-143" r="19" fill="#2E9E6B"></circle></g>
+    </g>
+
+    <!-- gaze / field-mapping eye trail (compare beat) -->
+    <g id="gazeLayer" opacity="0">
+      <line id="gazeLine0" x1="0" y1="0" x2="0" y2="0" stroke="#F7B0A2" stroke-width="1.3" stroke-dasharray="3 4" stroke-linecap="round" opacity="0"></line>
+      <line id="gazeLine1" x1="0" y1="0" x2="0" y2="0" stroke="#F7B0A2" stroke-width="1.3" stroke-dasharray="3 4" stroke-linecap="round" opacity="0"></line>
+      <line id="gazeLine2" x1="0" y1="0" x2="0" y2="0" stroke="#F7B0A2" stroke-width="1.3" stroke-dasharray="3 4" stroke-linecap="round" opacity="0"></line>
+      <line id="gazeLine3" x1="0" y1="0" x2="0" y2="0" stroke="#F7B0A2" stroke-width="1.3" stroke-dasharray="3 4" stroke-linecap="round" opacity="0"></line>
+      <circle id="gazeRing" cx="0" cy="0" r="7" fill="none" stroke="#F76B54" stroke-width="1.8"></circle>
+      <circle id="gazeDot" cx="0" cy="0" r="2" fill="#F76B54"></circle>
+    </g>
+
+    <!-- start signal flash -->
+    <circle id="startFlash" cx="-130" cy="400" r="10" fill="none" stroke="#E6E8EC" stroke-width="2" opacity="0"></circle>
+
+    <!-- split chips -->
+    <g id="chipG" opacity="0" transform="translate(1048,264)">
+      <rect x="-92" y="-21" width="184" height="42" rx="6" fill="#13201a" stroke="#2E9E6B" stroke-opacity="0.55"></rect>
+      <text x="-78" y="-3" fill="#5fc795" font-size="9" letter-spacing="2.2">AUTOMATED</text>
+      <text x="-78" y="14" fill="#7fd6a6" font-family="'IBM Plex Mono',monospace" font-size="15">00:07 · READY</text>
+    </g>
+    <g id="chipR" opacity="0" transform="translate(1048,316)">
+      <rect x="-92" y="-21" width="184" height="42" rx="6" fill="#1f1714" stroke="#F76B54" stroke-opacity="0.55"></rect>
+      <text x="-78" y="-3" fill="#f7a193" font-size="9" letter-spacing="2.2">MANUAL</text>
+      <text x="-78" y="14" fill="#f7a193" font-family="'IBM Plex Mono',monospace" font-size="15">07:03 · READY</text>
+    </g>
+  </svg>
+
+  <!-- RESULT STRIP -->
+  <div id="result" style="display:none;opacity:0;margin-top:6px;align-items:stretch;gap:14px;">
+    <div style="flex:1;display:flex;flex-direction:column;gap:7px;padding:16px 20px;border:1px solid #3a2620;border-left:3px solid #F76B54;border-radius:6px;background:#1c1714;">
+      <div style="font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#f7a193;">Manual · write · walk · print · verify</div>
+      <div id="manualVal" style="font-family:'IBM Plex Mono',monospace;font-size:36px;font-weight:500;color:#F76B54;line-height:1;font-variant-numeric:tabular-nums;">00:00</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:7px;padding:16px 20px;border:1px solid #1f3a2c;border-left:3px solid #2E9E6B;border-radius:6px;background:#13201a;">
+      <div style="font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#5fc795;">Automated · one tap</div>
+      <div id="toolVal" style="font-family:'IBM Plex Mono',monospace;font-size:36px;font-weight:500;color:#2E9E6B;line-height:1;font-variant-numeric:tabular-nums;">00:00</div>
+    </div>
+    <div id="factor" style="display:none;opacity:0;flex:0 0 240px;flex-direction:column;justify-content:center;gap:6px;padding:16px 22px;border:1px solid #2a2f38;border-radius:6px;background:#171a20;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:38px;font-weight:500;color:#EEF0F3;line-height:1;">60×</div>
+      <div style="font-size:11px;letter-spacing:.04em;color:#8a929c;">faster. Seven minutes becomes seven seconds.</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div style="display:flex;gap:12px;margin-top:16px;align-items:center;">
+    <button data-start style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:#07120c;background:#2E9E6B;border:none;padding:13px 26px;border-radius:5px;cursor:pointer;">Run benchmark</button>
+    <button data-reset style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:#8a929c;background:transparent;border:1px solid #2f343d;padding:13px 24px;border-radius:5px;cursor:pointer;">Reset</button>
+    <div style="margin-left:auto;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#8a929c;">Both start from the same intake order</div>
+  </div>
+
+</div>
+
+  <!-- first-view context card; the benchmark waits behind a Begin click (like the clinic intro) -->
+  <div class="bench-intro" data-intro style="--accent:#2E9E6B;">
+    <div class="bench-intro-card">
+      <p class="bi-eyebrow">workflow benchmark &middot; 02</p>
+      <h3>One injection order, two ways to a fax.</h3>
+      <p class="bi-lede">An intake order for an eye-injection has to reach the pharmacy as a clean, fax-ready document. Same order, same output, two very different trips there.</p>
+      <div class="bi-rows">
+        <div class="bi-row"><span class="bi-dot" style="background:#F76B54;"></span><div><b>Manual.</b> <span>Write it out, walk it to the printer, collect it, verify. About seven minutes.</span></div></div>
+        <div class="bi-row"><span class="bi-dot" style="background:#2E9E6B;"></span><div><b>One-tap tool.</b> <span>The order becomes a formatted, fax-ready document in a single tap. About seven seconds.</span></div></div>
+      </div>
+      <button class="bi-start" data-begin type="button">&#9654; Run the benchmark</button>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    const root = document.getElementById('scene-root');
+    if (!root) return;
+    const intro = root.closest('[data-bench-scene]')?.querySelector('[data-intro]');
+
+    class OneTap {
+      eOut = (t) => 1 - Math.pow(1 - t, 3);
+      eInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+      clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+      lerp = (a, b, t) => a + (b - a) * t;
+      pad = (n) => String(Math.floor(n)).padStart(2, "0");
+      fmt = (sec) => this.pad(sec / 60) + ":" + this.pad(sec % 60) + "." + this.pad((sec * 100) % 100);
+      mmss = (sec) => this.pad(sec / 60) + ":" + this.pad(sec % 60);
+      seg = (t, a, b) => this.clamp((t - a) / (b - a));
+      segE = (t, a, b) => this.eInOut(this.clamp((t - a) / (b - a)));
+
+      tween = (dur, onP, onD) => {
+        const t0 = Date.now();
+        const id = setInterval(() => {
+          let p = (Date.now() - t0) / dur;
+          if (p >= 1) { p = 1; clearInterval(id); onP(1); onD && onD(); }
+          else onP(this.eOut(p));
+        }, 16);
+        this._tweens.push(id);
+        return id;
+      };
+
+      constructor(root) {
+        this.root = root;
+        this.props = { durationSec: 19, showGhostTrails: true };
+        this._tweens = [];
+        this.scale = 1;
+        this.mount();
+      }
+
+      mount() {
+        const $ = (id) => this.root.querySelector('#' + id);
+        const ids = ["clock", "statusDot", "statusTxt", "intakeDoc", "faxRed", "faxGreen",
+          "figR", "figR_armL", "figR_armR", "figR_legF", "figR_legB", "figR_head", "figR_pencil",
+          "figG", "figG_armL", "figG_armR", "figG_legF", "figG_legB", "figG_head",
+          "monitor", "monBtn", "monBtnTxt", "monFields", "monR0", "monR1", "monR2", "monR3",
+          "gLight", "bigLight", "startFlash", "chipG", "chipR",
+          "gazeLayer", "gazeLine0", "gazeLine1", "gazeLine2", "gazeLine3", "gazeRing", "gazeDot",
+          "result", "manualVal", "toolVal", "factor"];
+        this.els = {}; ids.forEach((i) => (this.els[i] = $(i)));
+        this.ivals = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => $("ival" + i));
+
+        this.FLOOR = 540;
+        this.ENTER = -130;
+        this.RED_DESK = 268;
+        this.GREEN_TAP = 620;
+        this.GREEN_GRAB = 700;
+        this.RED_PRINT = 812;
+        this.RED_MEET = 935;
+        this.GREEN_MEET = 1065;
+
+        this.P = {
+          gIn: [0, 1.4], gReach: [1.35, 1.9], gPress: [1.85, 2.2], gGen: [2.0, 2.7],
+          gOut: [2.5, 3.1], gStep: [2.45, 3.1], gGrab: [3.0, 3.55], gExit: [4.7, 6.6], gLock: 3.15,
+          rIn: [0, 2.7], rWrite: [3.0, 9.8], rToPrint: [9.8, 11.6], rPrint: [11.6, 13.4],
+          rCollect: [13.3, 14.0], rBack: [14.1, 16.1], rCompare: [16.1, 18.4], rLock: 18.4,
+          rExit: [18.4, 20.4], finish: 20.5,
+        };
+
+        this.running = false; this.timer = null;
+
+        const NS = "http://www.w3.org/2000/svg";
+        const tg = $("trails");
+        this.trails = [];
+        for (let i = 0; i < 20; i++) {
+          const cl = document.createElementNS(NS, "g");
+          cl.setAttribute("opacity", "0");
+          cl.innerHTML =
+            '<line x1="-7" y1="-46" x2="-7" y2="0" stroke="currentColor" stroke-width="15" stroke-linecap="round"></line>' +
+            '<line x1="7" y1="-46" x2="7" y2="0" stroke="currentColor" stroke-width="15" stroke-linecap="round"></line>' +
+            '<rect x="-17" y="-122" width="34" height="82" rx="17" fill="currentColor"></rect>' +
+            '<circle cx="0" cy="-143" r="19" fill="currentColor"></circle>';
+          tg.appendChild(cl);
+          this.trails.push({ el: cl, birth: -1 });
+        }
+        this._trailIdx = 0; this._lastTrail = -1;
+
+        this.reset();
+
+        const s = this.root.querySelector('[data-start]'); if (s) s.addEventListener('click', () => this.start());
+        const r = this.root.querySelector('[data-reset]'); if (r) r.addEventListener('click', () => this.reset());
+
+        this.fit();
+        addEventListener('resize', () => this.fit(), { passive: true });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.fit());
+      }
+
+      // scale the whole 1200px scene to fit the pinned viewport. all motion is in SVG
+      // user-space, so a CSS transform on the root is safe (no rect-based arrow math).
+      // measure with the result strip shown so it doesn't overflow when it appears.
+      fit() {
+        const root = this.root;
+        root.style.transform = 'none';
+        const res = this.els.result, fac = this.els.factor;
+        const rd = res.style.display, ro = res.style.opacity, fd = fac.style.display, fo = fac.style.opacity;
+        res.style.display = 'flex'; res.style.opacity = '0';
+        fac.style.display = 'flex'; fac.style.opacity = '0';
+        const w = root.offsetWidth, h = root.offsetHeight;
+        res.style.display = rd; res.style.opacity = ro; fac.style.display = fd; fac.style.opacity = fo;
+        const pinned = window.matchMedia('(min-width:761px)').matches;
+        const RES = pinned ? 88 : 0;  // leave room for the bench slider tab strip
+        const s = Math.min(1, (window.innerWidth - 24) / w, (window.innerHeight - 20 - RES) / h);
+        this.scale = s;
+        const ty = pinned ? RES + Math.max(0, (window.innerHeight - RES - h * s) / 2) : 0;
+        root.style.transformOrigin = 'top center';
+        root.style.transform = `translateY(${ty.toFixed(1)}px) scale(${s.toFixed(4)})`;
+      }
+
+      _clearTimers() {
+        if (this.timer) { clearInterval(this.timer); this.timer = null; }
+        (this._tweens || []).forEach(clearInterval);
+        this._tweens = [];
+      }
+
+      aim(figX, pivotX, tx, ty) {
+        const sx = figX + pivotX, sy = this.FLOOR - 112;
+        return Math.atan2(ty - sy, tx - sx) * 180 / Math.PI - 90;
+      }
+
+      handWorld(rx, pivotX, armDeg) {
+        const a = armDeg * Math.PI / 180;
+        return { x: rx + pivotX + 58 * Math.sin(a), y: this.FLOOR - 112 + 58 * Math.cos(a) };
+      }
+
+      updateGaze(t) {
+        const P = this.P, e = this.els;
+        if (!(t >= P.rCompare[0] && t <= P.rCompare[1]) || !this._cmp) { e.gazeLayer.setAttribute("opacity", "0"); return; }
+        e.gazeLayer.setAttribute("opacity", "1");
+        const { itx, ity, ftx, fty, cs } = this._cmp;
+        const IL = [[120, 51], [120, 91], [120, 151], [120, 171]];
+        const FL = [[46, 131], [92, 184], [64, 226], [92, 258]];
+        const iW = (k) => ({ x: itx + cs * IL[k][0], y: ity + cs * IL[k][1] });
+        const fW = (k) => ({ x: ftx + cs * FL[k][0], y: fty + cs * FL[k][1] });
+        const gp = this.clamp(this.seg(t, P.rCompare[0], P.rCompare[1]));
+        const stepF = gp * 4, k = this.clamp(Math.floor(stepF), 0, 3), sub = this.clamp(stepF - k), mv = this.clamp(sub / 0.5);
+        const a = iW(k), b = fW(k);
+        const dx = this.lerp(a.x, b.x, this.eInOut(mv)), dy = this.lerp(a.y, b.y, this.eInOut(mv));
+        e.gazeRing.setAttribute("cx", dx.toFixed(1)); e.gazeRing.setAttribute("cy", dy.toFixed(1));
+        e.gazeDot.setAttribute("cx", dx.toFixed(1)); e.gazeDot.setAttribute("cy", dy.toFixed(1));
+        const lines = [e.gazeLine0, e.gazeLine1, e.gazeLine2, e.gazeLine3];
+        for (let j = 0; j < 4; j++) {
+          const aa = iW(j); let ex = fW(j).x, ey = fW(j).y, op = 0;
+          if (j < k) op = 0.42;
+          else if (j === k) { op = 0.8; ex = dx; ey = dy; }
+          lines[j].setAttribute("x1", aa.x.toFixed(1)); lines[j].setAttribute("y1", aa.y.toFixed(1));
+          lines[j].setAttribute("x2", ex.toFixed(1)); lines[j].setAttribute("y2", ey.toFixed(1));
+          lines[j].setAttribute("opacity", String(op));
+        }
+      }
+
+      walk(t, env, freq) {
+        const ph = t * freq;
+        return {
+          legF: Math.sin(ph) * 24 * env,
+          legB: -Math.sin(ph) * 24 * env,
+          arm: Math.sin(ph + Math.PI) * 16 * env,
+          bob: Math.abs(Math.sin(ph)) * 5 * env,
+        };
+      }
+
+      poseFig(p, x, bob, legF, legB, armR, armL, headDx) {
+        const e = this.els;
+        e["fig" + p].setAttribute("transform", "translate(" + x.toFixed(1) + "," + (this.FLOOR - bob).toFixed(1) + ")");
+        e["fig" + p + "_legF"].setAttribute("transform", "rotate(" + legF.toFixed(1) + ",7,-46)");
+        e["fig" + p + "_legB"].setAttribute("transform", "rotate(" + legB.toFixed(1) + ",-7,-46)");
+        e["fig" + p + "_armR"].setAttribute("transform", "rotate(" + armR.toFixed(1) + ",12,-112)");
+        e["fig" + p + "_armL"].setAttribute("transform", "rotate(" + armL.toFixed(1) + ",-12,-112)");
+        e["fig" + p + "_head"].setAttribute("transform", "translate(" + (headDx || 0).toFixed(1) + ",0)");
+      }
+
+      start() {
+        if (this.running) return;
+        this._clearTimers();
+        this.k = (this.props.durationSec || 19) / 19;
+        this.useTrails = this.props.showGhostTrails !== false;
+        this.clearVisuals();
+        this._gDone = false; this._rDone = false; this._finished = false;
+        this.running = true;
+        this.els.statusDot.style.background = "#2E9E6B";
+        this.els.statusTxt.textContent = "Running";
+        this.els.startFlash.setAttribute("opacity", "0");
+        this.tween(700, (p) => {
+          this.els.startFlash.setAttribute("r", String(10 + p * 70));
+          this.els.startFlash.setAttribute("opacity", String((1 - p) * 0.6));
+        }, () => this.els.startFlash.setAttribute("opacity", "0"));
+
+        this.t0 = Date.now();
+        this.timer = setInterval(() => {
+          const t = (Date.now() - this.t0) / 1000 / this.k;
+          this.els.statusDot.style.opacity = String(0.45 + 0.55 * Math.abs(Math.sin(t * 4)));
+          if (t >= this.P.finish) { this.tick(this.P.finish); this.finish(); return; }
+          this.tick(t);
+        }, 33);
+      }
+
+      clockAt(t) {
+        const P = this.P;
+        if (t <= P.gLock) return (t / P.gLock) * 7;
+        if (t <= P.rLock) return 7 + (t - P.gLock) / (P.rLock - P.gLock) * 416;
+        return 423;
+      }
+
+      finish() {
+        if (this.timer) { clearInterval(this.timer); this.timer = null; }
+        this.running = false; this._finished = true;
+        this.els.statusDot.style.background = "#2E9E6B";
+        this.els.statusDot.style.opacity = "1";
+        this.els.statusTxt.textContent = "Complete";
+        const r = this.els.result; r.style.display = "flex";
+        this.tween(450, (p) => { r.style.opacity = String(p); });
+        this.tween(1300,
+          (p) => { this.els.manualVal.textContent = this.mmss(p * 423); this.els.toolVal.textContent = this.mmss(p * 7); },
+          () => { this.els.manualVal.textContent = "07:03"; this.els.toolVal.textContent = "00:07"; this.fadeIn(this.els.factor, true); }
+        );
+      }
+
+      fadeIn(el, flex) { el.style.display = flex ? "flex" : ""; this.tween(400, (p) => { el.style.opacity = String(p); }); }
+
+      clearVisuals() {
+        this.els.clock.textContent = "00:00.00";
+        [this.els.chipG, this.els.chipR].forEach((e) => { e.style.opacity = "0"; e.setAttribute("opacity", "0"); });
+        this.els.faxRed.setAttribute("opacity", "0");
+        this.els.faxGreen.setAttribute("opacity", "0");
+        this.els.intakeDoc.setAttribute("transform", "translate(316,254)");
+        this.els.result.style.display = "none"; this.els.result.style.opacity = "0";
+        this.els.factor.style.display = "none"; this.els.factor.style.opacity = "0";
+        this.els.gLight.setAttribute("fill", "#3a3f48");
+        this.els.bigLight.setAttribute("fill", "#3a3f48");
+        this.els.gazeLayer.setAttribute("opacity", "0");
+        this.setMonitor(false);
+        this.ivals.forEach((v) => { v.style.clipPath = "inset(0 100% 0 0)"; });
+        (this.trails || []).forEach((t) => { t.birth = -1; t.el.setAttribute("opacity", "0"); });
+        this._trailIdx = 0; this._lastTrail = -1;
+      }
+
+      setMonitor(on) {
+        const e = this.els;
+        const rows = [e.monR0, e.monR1, e.monR2, e.monR3];
+        rows.forEach((r) => r.setAttribute("fill", on ? "#2E9E6B" : "#232c38"));
+        e.monFields.textContent = on ? "FIELDS 8/8" : "FIELDS 0/8";
+        e.monFields.setAttribute("fill", on ? "#2E9E6B" : "#5a616b");
+        e.monBtnTxt.textContent = on ? "✓ COMPOSED" : "GENERATE";
+      }
+
+      reset() {
+        this._clearTimers();
+        this.running = false; this._finished = false;
+        this._gDone = false; this._rDone = false;
+        this.k = (this.props.durationSec || 19) / 19;
+        this.useTrails = this.props.showGhostTrails !== false;
+        this.clearVisuals();
+        this.els.statusDot.style.background = "#3a3f48";
+        this.els.statusDot.style.opacity = "1";
+        this.els.statusTxt.textContent = "Idle";
+        this.tick(0);
+      }
+
+      tick(t) {
+        const P = this.P, e = this.els;
+        e.clock.textContent = this.fmt(this.clockAt(t));
+
+        // ============ GREEN (automated) ============
+        let gx, gbob = 0, glegF = 0, glegB = 0, gArmR = 0, gArmL = 0, gWalk = false, gEnv = 0;
+        if (t <= P.gIn[1]) { gx = this.lerp(this.ENTER, this.GREEN_TAP, this.eOut(this.seg(t, P.gIn[0], P.gIn[1]))); gWalk = true; gEnv = Math.sin(this.seg(t, P.gIn[0], P.gIn[1]) * Math.PI); }
+        else if (t <= P.gStep[1]) { gx = this.lerp(this.GREEN_TAP, this.GREEN_GRAB, this.segE(t, P.gStep[0], P.gStep[1])); }
+        else if (t <= P.gExit[0]) { gx = this.GREEN_GRAB; }
+        else { gx = this.lerp(this.GREEN_GRAB, this.GREEN_MEET, this.segE(t, P.gExit[0], P.gExit[1])); if (t > P.gExit[0] && t < P.gExit[1]) { gWalk = true; gEnv = Math.sin(this.seg(t, P.gExit[0], P.gExit[1]) * Math.PI); } }
+
+        if (gWalk) { const w = this.walk(t, gEnv, 11.5); glegF = w.legF; glegB = w.legB; gArmR = w.arm; gArmL = -w.arm; gbob = w.bob; }
+        if (t >= P.gReach[0] && t <= P.gGrab[0]) {
+          const base = this.aim(gx, 12, gx + 55, this.FLOOR - 70);
+          let dip = 0;
+          if (t >= P.gPress[0] && t <= P.gPress[1]) dip = Math.sin(this.seg(t, P.gPress[0], P.gPress[1]) * Math.PI) * 10;
+          gArmR = base + dip; gArmL = 6;
+        }
+        if (t >= P.gGrab[0] && t <= P.gExit[0]) { gArmR = this.aim(gx, 12, gx + 52, this.FLOOR - 178); gArmL = -14; }
+        if (t > P.gExit[0]) { if (!gWalk) gArmR = 14; gArmL = -28; }
+        this.poseFig("G", gx, gbob, glegF, glegB, gArmR, gArmL, 0);
+
+        const genOn = t >= P.gGen[0];
+        this.setMonitor(genOn);
+        e.monitor.setAttribute("transform", "translate(620,352)" + (t >= P.gPress[0] && t <= P.gPress[1] ? " scale(0.995)" : ""));
+        e.gLight.setAttribute("fill", t >= P.gGen[0] ? (t >= P.gOut[1] ? "#2E9E6B" : "#F7C25B") : "#3a3f48");
+        let fgX, fgY, fgS = 0.14, fgOp = 0;
+        if (t >= P.gOut[0]) {
+          fgOp = 1;
+          if (t <= P.gGrab[0]) { const p = this.eOut(this.seg(t, P.gOut[0], P.gOut[1])); fgS = 0.14; fgX = 770; fgY = this.lerp(452, 432, p); fgOp = p < 0.22 ? p / 0.22 : 1; }
+          else if (t <= P.gGrab[1]) { const p = this.eInOut(this.seg(t, P.gGrab[0], P.gGrab[1])); fgS = this.lerp(0.14, 0.82, p); fgX = this.lerp(770, gx + 16, p); fgY = this.lerp(432, 258, p); }
+          else if (t <= P.gExit[0]) { fgS = 0.82; fgX = gx + 16; fgY = 258; }
+          else { const p = this.segE(t, P.gExit[0], P.gExit[1]); fgS = this.lerp(0.82, 0.42, p); fgX = gx + 10; fgY = this.lerp(258, this.FLOOR - 158, p); }
+        }
+        if (fgOp) { e.faxGreen.setAttribute("transform", "translate(" + fgX.toFixed(1) + "," + fgY.toFixed(1) + ") scale(" + fgS + ")"); }
+        e.faxGreen.setAttribute("opacity", String(fgOp));
+
+        // ============ RED (manual) ============
+        let rx, rbob = 0, rlegF = 0, rlegB = 0, rArmR = 0, rArmL = 0, rWalk = false, rEnv = 0, rHeadDx = 0;
+        if (t <= P.rIn[1]) { rx = this.lerp(this.ENTER, this.RED_DESK, this.eOut(this.seg(t, P.rIn[0], P.rIn[1]))); rWalk = true; rEnv = Math.sin(this.seg(t, P.rIn[0], P.rIn[1]) * Math.PI); }
+        else if (t <= P.rToPrint[0]) { rx = this.RED_DESK; }
+        else if (t <= P.rToPrint[1]) { rx = this.lerp(this.RED_DESK, this.RED_PRINT, this.segE(t, P.rToPrint[0], P.rToPrint[1])); rWalk = true; rEnv = Math.sin(this.seg(t, P.rToPrint[0], P.rToPrint[1]) * Math.PI); }
+        else if (t <= P.rBack[0]) { rx = this.RED_PRINT; }
+        else if (t <= P.rBack[1]) { rx = this.lerp(this.RED_PRINT, this.RED_DESK, this.segE(t, P.rBack[0], P.rBack[1])); rWalk = true; rEnv = Math.sin(this.seg(t, P.rBack[0], P.rBack[1]) * Math.PI); }
+        else if (t <= P.rExit[0]) { rx = this.RED_DESK; }
+        else { rx = this.lerp(this.RED_DESK, this.RED_MEET, this.segE(t, P.rExit[0], P.rExit[1])); rWalk = true; rEnv = Math.sin(this.seg(t, P.rExit[0], P.rExit[1]) * Math.PI); }
+
+        if (rWalk) { const w = this.walk(t, rEnv, 8.4); rlegF = w.legF; rlegB = w.legB; rArmR = w.arm; rArmL = -w.arm; rbob = w.bob; }
+
+        let writePen = null;
+        if (t >= P.rWrite[0] && t <= P.rWrite[1]) {
+          const wp = this.seg(t, P.rWrite[0], P.rWrite[1]);
+          const ff = wp * 8, fi = Math.min(7, Math.floor(ff)), intra = this.clamp((ff - fi) / 0.8);
+          for (let i = 0; i < 8; i++) {
+            const rv = i < fi ? 1 : i === fi ? this.eInOut(intra) : 0;
+            this.ivals[i].style.clipPath = "inset(0 " + ((1 - rv) * 100).toFixed(1) + "% 0 0)";
+          }
+          const penY = 254 + 48 + fi * 20; const penX = 316 + 84 + intra * 40;
+          rArmR = this.aim(rx, 12, penX, penY) + Math.sin(t * 34) * 2;
+          rArmL = 10;
+        }
+        if (t >= P.rCollect[0] && t <= P.rCompare[0]) { rArmR = this.aim(rx, 12, rx + 42, this.FLOOR - 222); rArmL = -10; }
+        if (t >= P.rCompare[0] && t <= P.rCompare[1]) {
+          rArmR = 64; rArmL = -64;
+          rHeadDx = Math.sin((t - P.rCompare[0]) * 4.2) * 6;
+        }
+        if (t > P.rExit[0]) { rArmL = -30; if (!rWalk) rArmR = 12; }
+        this.poseFig("R", rx, rbob, rlegF, rlegB, rArmR, rArmL, rHeadDx);
+        const rWriting = t >= P.rWrite[0] && t <= P.rWrite[1];
+        e.figR_pencil.setAttribute("opacity", rWriting ? "1" : "0");
+        if (rWriting) e.figR_pencil.setAttribute("transform", "rotate(" + rArmR.toFixed(1) + ",12,-112)");
+
+        const inCompare = t >= P.rCompare[0] && t <= P.rCompare[1];
+        if (inCompare) {
+          const cs = 0.62, fH = 290 * cs, iH = 214 * cs, iW = 210 * cs;
+          const hR = this.handWorld(rx, 12, 64), hL = this.handWorld(rx, -12, -64);
+          const ftx = hR.x - 4, fty = hR.y - fH + 6;
+          const itx = hL.x - iW + 4, ity = hL.y - iH + 6;
+          e.intakeDoc.setAttribute("transform", "translate(" + itx.toFixed(1) + "," + ity.toFixed(1) + ") scale(" + cs + ")");
+          this._cmp = { itx, ity, ftx, fty, cs };
+        } else {
+          e.intakeDoc.setAttribute("transform", "translate(316,254)");
+        }
+
+        e.bigLight.setAttribute("fill", t >= P.rPrint[0] ? (t >= P.rPrint[1] ? "#2E9E6B" : "#F7C25B") : "#3a3f48");
+        let frX, frY, frS = 0.14, frOp = 0;
+        if (t >= P.rPrint[0]) {
+          frOp = 1;
+          if (t <= P.rCollect[0]) { const p = this.eOut(this.seg(t, P.rPrint[0], P.rPrint[1])); frS = 0.14; frX = 898; frY = this.lerp(446, 426, p); frOp = p < 0.22 ? p / 0.22 : 1; }
+          else if (t <= P.rCollect[1]) { const p = this.eInOut(this.seg(t, P.rCollect[0], P.rCollect[1])); frS = this.lerp(0.14, 0.6, p); frX = this.lerp(898, rx + 30, p); frY = this.lerp(426, this.FLOOR - 300, p); }
+          else if (t <= P.rCompare[0]) { frS = 0.6; frX = rx + 30; frY = this.FLOOR - 300; }
+          else if (t <= P.rCompare[1]) { const c = this._cmp; frS = c.cs; frX = c.ftx; frY = c.fty; }
+          else { const p = this.segE(t, P.rExit[0], P.rExit[1]); frS = this.lerp(0.62, 0.42, p); frX = rx + 10; frY = this.lerp(this.FLOOR - 312, this.FLOOR - 158, p); }
+        }
+        if (frOp) e.faxRed.setAttribute("transform", "translate(" + frX.toFixed(1) + "," + frY.toFixed(1) + ") scale(" + frS + ")");
+        e.faxRed.setAttribute("opacity", String(frOp));
+
+        if (this.useTrails && (gWalk || rWalk) && t - this._lastTrail > 0.16) {
+          this._lastTrail = t;
+          if (rWalk) this._spawnTrail(rx, "#F76B54", t);
+          else if (gWalk) this._spawnTrail(gx, "#2E9E6B", t);
+        }
+        (this.trails || []).forEach((tr) => {
+          if (tr.birth < 0) return;
+          let o = 0.2 * (1 - (t - tr.birth) / 1.3);
+          if (o <= 0) { o = 0; tr.birth = -1; }
+          tr.el.setAttribute("opacity", String(o));
+        });
+
+        this.updateGaze(t);
+        if (!this._gDone && t >= P.gLock) { this._gDone = true; this.fadeIn(this.els.chipG); }
+        if (!this._rDone && t >= P.rLock) { this._rDone = true; this.fadeIn(this.els.chipR); }
+      }
+
+      _spawnTrail(x, color, t) {
+        const tr = this.trails[this._trailIdx % this.trails.length]; this._trailIdx++;
+        tr.el.style.color = color;
+        tr.el.setAttribute("transform", "translate(" + x.toFixed(1) + "," + this.FLOOR + ")");
+        tr.birth = t;
+      }
+    }
+
+    const scene = new OneTap(root);
+
+    // Intro gate: show the context card first; the benchmark begins only on the Begin
+    // click (no auto-run). Reveal the card when the panel scrolls into view.
+    if (intro) {
+      const begin = intro.querySelector('[data-begin]');
+      if (begin) begin.addEventListener('click', () => { intro.classList.add('gone'); scene.start(); });
+      new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) intro.classList.add('in'); }),
+        { threshold: 0.4 }).observe(root);
+    } else {
+      new IntersectionObserver((es, o) => es.forEach((e) => { if (e.isIntersecting) { scene.start(); o.disconnect(); } }), { threshold: 0.3 }).observe(root);
+    }
+  })();
+</script>

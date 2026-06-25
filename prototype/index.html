@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Patient Flow — FDE Portfolio Centerpiece (prototype)</title>
+<style>
+  /* ---- design tokens lifted from the real Tri-City dashboards ---- */
+  :root{
+    --bg:#0a0e14; --panel:#131820; --panel-2:#1a212c; --border:#232c3a;
+    --text:#e6edf3; --muted:#8a96a8;
+    --here:#4ade80;     /* green  - checked in */
+    --oct:#ffd43b;      /* yellow - ready for OCT */
+    --hvf:#ec8b3c;      /* orange - on HVF */
+    --waiting:#b794f6;  /* purple - waiting for dr */
+    --billed:#4dabf7;   /* blue   - billed/done */
+    --scheduled:#c9a878;/* tan    - scheduled */
+    --good:#51cf66; --bad:#ff6b6b;
+    --radius:14px;
+    --shadow:0 8px 24px rgba(0,0,0,.45);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(900px 600px at 15% -10%, rgba(77,171,247,.07), transparent 60%),
+      radial-gradient(800px 500px at 100% 110%, rgba(183,148,246,.06), transparent 60%),
+      var(--bg);
+    color:var(--text); min-height:100%; display:flex; flex-direction:column;
+    align-items:center; padding:22px 18px 40px;
+  }
+
+  /* ---------- header ---------- */
+  .stage-head{width:100%; max-width:1180px; display:flex; align-items:center;
+    justify-content:space-between; gap:18px; margin-bottom:14px}
+  .brand{display:flex; flex-direction:column; gap:2px}
+  .brand .eyebrow{font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)}
+  .brand h1{margin:0; font-size:19px; font-weight:700}
+  .brand h1 .accent{color:var(--billed)}
+  .timer-wrap{display:flex; align-items:center; gap:12px}
+  .timer-label{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); text-align:right}
+  .timer{font-variant-numeric:tabular-nums; font-weight:800; font-size:42px; line-height:1;
+    padding:6px 14px; border-radius:12px; background:var(--panel); border:1px solid var(--border);
+    transition:color .3s, box-shadow .3s, transform .3s}
+  .timer.frozen{color:var(--billed); box-shadow:0 0 0 2px rgba(77,171,247,.5), 0 0 28px rgba(77,171,247,.35); transform:scale(1.04)}
+
+  /* ---------- main stage grid ---------- */
+  .stage{position:relative; width:100%; max-width:1180px;
+    display:grid; grid-template-columns:1.25fr 1fr; gap:16px;
+    height:560px}
+  .scene{position:relative}
+  .panel{background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
+    position:relative; overflow:hidden}
+  .panel-title{position:absolute; top:12px; left:14px; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); z-index:3}
+
+  /* ---------- clinic floor (the game) ---------- */
+  #floor{height:100%}
+  .floor-canvas{position:absolute; inset:0}
+  .path-svg{position:absolute; inset:0; width:100%; height:100%; pointer-events:none}
+  .room{position:absolute; transform:translate(-50%,-50%);
+    width:118px; height:78px; border-radius:12px;
+    background:var(--panel-2); border:1.5px solid var(--border);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    transition:border-color .35s, box-shadow .35s, background .35s; z-index:2}
+  .room .ricon{font-size:22px; filter:grayscale(.2)}
+  .room .rname{font-size:12px; font-weight:600; color:var(--muted); transition:color .35s}
+  .room.active{box-shadow:0 0 0 2px var(--rc,var(--billed)), 0 0 26px var(--rcg,rgba(77,171,247,.4));
+    border-color:var(--rc,var(--billed)); background:var(--panel)}
+  .room.active .rname{color:var(--rc,var(--text))}
+  .room.done{border-color:rgba(255,255,255,.12)}
+  .room.done .rname::after{content:" ✓"; color:var(--good)}
+
+  /* avatar */
+  .avatar{position:absolute; left:0; top:0; width:34px; transform:translate(-50%,-60%);
+    z-index:4; transition:left 1.05s cubic-bezier(.45,.05,.35,1), top 1.05s cubic-bezier(.45,.05,.35,1)}
+  .avatar .body{width:34px; height:34px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #cfe3ff, #4dabf7 70%);
+    box-shadow:0 6px 16px rgba(0,0,0,.5), 0 0 0 3px rgba(10,14,20,.6);
+    display:flex; align-items:center; justify-content:center; font-size:18px}
+  .avatar .tag{margin-top:5px; font-size:11px; font-weight:600; white-space:nowrap;
+    background:rgba(10,14,20,.8); padding:2px 7px; border-radius:999px; border:1px solid var(--border);
+    text-align:center}
+  .avatar.walking .body{animation:bob .45s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-3px)}}
+
+  /* ---------- right column: live dashboards ---------- */
+  .right-col{display:grid; grid-template-rows:1.15fr 1fr; gap:16px}
+
+  /* lounge pipeline card */
+  #lounge{padding:34px 16px 16px}
+  .doc-card{height:100%; display:flex; flex-direction:column}
+  .doc-head{display:flex; align-items:baseline; justify-content:space-between}
+  .doc-name{font-size:22px; font-weight:700}
+  .doc-sub{font-size:11px; color:var(--muted)}
+  .hero-wait{margin:6px 0 2px; display:flex; align-items:baseline; gap:8px}
+  .hero-wait .n{font-size:46px; font-weight:800; line-height:1; color:var(--waiting)}
+  .hero-wait .l{font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted)}
+  .pipeline{margin-top:auto; display:flex; justify-content:space-between; gap:8px}
+  .pip{flex:1; display:flex; flex-direction:column; align-items:center; gap:7px}
+  .pip .circle{width:100%; aspect-ratio:1/1; max-width:62px; border-radius:50%;
+    border:2px dashed var(--border); display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:22px; color:var(--muted);
+    transition:all .4s; background:transparent}
+  .pip .plabel{font-size:9.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted)}
+  .pip.active .circle{border-style:solid; color:#0a0e14; transform:scale(1.06);
+    background:var(--pc); border-color:var(--pc); box-shadow:0 0 22px var(--pcg)}
+  .pip.active .plabel{color:var(--pc)}
+  .pip.done .circle{border-style:solid; border-color:var(--pc);
+    background:color-mix(in srgb, var(--pc) 22%, transparent); color:var(--pc); font-size:18px}
+  .pip.pulse .circle{animation:pop .5s ease}
+  @keyframes pop{40%{transform:scale(1.22)}}
+
+  /* OCT board mini */
+  #oct{padding:34px 14px 14px}
+  .oct-grid{height:100%; display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .oct-col-title{font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:7px}
+  .queue-item, .room-slot{border-radius:10px; padding:9px 10px; border:1px solid var(--border);
+    background:var(--panel-2); transition:all .4s}
+  .queue-item{border-left:3px solid var(--oct)}
+  .queue-item.gone{opacity:.25; filter:grayscale(.6)}
+  .qi-name{font-size:14px; font-weight:700}
+  .qi-sub{font-size:10px; color:var(--muted)}
+  .qi-timer{font-size:12px; font-weight:700; color:var(--oct); font-variant-numeric:tabular-nums}
+  .room-slot{height:100%; display:flex; flex-direction:column; justify-content:center; gap:4px;
+    border-style:dashed; align-items:flex-start; position:relative; min-height:64px}
+  .room-slot .slot-tag{position:absolute; top:7px; left:9px; font-size:9px; color:var(--muted); letter-spacing:.08em}
+  .room-slot.occupied{border-style:solid; border-left:5px solid #5aa7ff; background:rgba(90,167,255,.12)}
+  .room-slot .occ-name{font-size:14px; font-weight:700}
+  .room-slot .occ-timer{font-size:12px; font-weight:700; color:var(--here); font-variant-numeric:tabular-nums}
+
+  /* ---------- overlays: capture + ml ---------- */
+  .overlay{position:absolute; inset:0; border-radius:var(--radius); z-index:20;
+    background:linear-gradient(180deg, rgba(10,14,20,.92), rgba(10,14,20,.97));
+    border:1px solid var(--border); box-shadow:var(--shadow);
+    display:flex; flex-direction:column; padding:26px 30px; gap:14px;
+    opacity:0; visibility:hidden; transform:scale(.985); transition:opacity .5s, transform .5s, visibility .5s}
+  .overlay.show{opacity:1; visibility:visible; transform:scale(1)}
+  .overlay h2{margin:0; font-size:20px; font-weight:700}
+  .overlay h2 .accent{color:var(--billed)}
+  .overlay .sub{font-size:13px; color:var(--muted); margin-top:-6px}
+
+  /* receipt / data-entry sheet */
+  .sheet{margin-top:6px; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--panel)}
+  .sheet table{width:100%; border-collapse:collapse; font-size:13px}
+  .sheet th{background:var(--panel-2); color:var(--muted); font-weight:600; text-align:left;
+    padding:9px 12px; font-size:11px; text-transform:uppercase; letter-spacing:.06em}
+  .sheet td{padding:9px 12px; border-top:1px solid var(--border); font-variant-numeric:tabular-nums}
+  .sheet tr.live td{background:rgba(77,171,247,.07)}
+  .cell-target{outline:0 solid var(--billed); border-radius:6px; transition:outline .3s, background .3s}
+  .cell-target.lit{outline:2px solid var(--billed); background:rgba(77,171,247,.18)}
+  .typed::after{content:"▌"; color:var(--billed); animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .flyer{position:absolute; font-weight:800; font-size:30px; color:var(--billed);
+    font-variant-numeric:tabular-nums; pointer-events:none; z-index:30;
+    transition:left .9s cubic-bezier(.5,.0,.3,1), top .9s cubic-bezier(.5,.0,.3,1), font-size .9s, opacity .3s}
+  .tagline{margin-top:auto; font-size:13px; color:var(--muted)}
+  .tagline b{color:var(--text)}
+  .strike{text-decoration:line-through; color:var(--bad); opacity:.8}
+
+  /* ml training panel */
+  .ml-body{display:grid; grid-template-columns:1.4fr 1fr; gap:18px; flex:1; min-height:0}
+  .chart-wrap{position:relative; border:1px solid var(--border); border-radius:10px; background:var(--panel); padding:10px}
+  .chart-wrap .yl{position:absolute; left:8px; top:8px; font-size:10px; color:var(--muted)}
+  .chart-wrap .xl{position:absolute; right:10px; bottom:6px; font-size:10px; color:var(--muted)}
+  .loss-path{fill:none; stroke:url(#lossgrad); stroke-width:2.5; stroke-linecap:round;
+    stroke-dasharray:1400; stroke-dashoffset:1400; transition:stroke-dashoffset 2.6s linear}
+  .loss-path.draw{stroke-dashoffset:0}
+  .ml-stats{display:flex; flex-direction:column; gap:12px; justify-content:center}
+  .ml-stat{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 14px}
+  .ml-stat .k{font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted)}
+  .ml-stat .v{font-size:30px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.1}
+  .ml-stat .v.acc{color:var(--good)} .ml-stat .v.loss{color:var(--hvf)} .ml-stat .v.ep{color:var(--billed)}
+  .predict{margin-top:6px; background:rgba(81,207,102,.08); border:1px solid rgba(81,207,102,.35);
+    border-radius:10px; padding:12px 14px; font-size:13px}
+  .predict b{color:var(--good)}
+
+  /* ---------- controls ---------- */
+  .controls{width:100%; max-width:1180px; margin-top:16px; display:flex; align-items:center; gap:14px}
+  .phase-dots{display:flex; gap:8px}
+  .pdot{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted)}
+  .pdot .d{width:9px; height:9px; border-radius:50%; background:var(--border)}
+  .pdot.on{color:var(--text)} .pdot.on .d{background:var(--billed); box-shadow:0 0 10px var(--billed)}
+  .btn{margin-left:auto; background:var(--panel-2); color:var(--text); border:1px solid var(--border);
+    padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:filter .15s}
+  .btn:hover{filter:brightness(1.18)}
+  .hint{font-size:12px; color:var(--muted)}
+</style>
+</head>
+<body>
+
+  <div class="stage-head">
+    <div class="brand">
+      <span class="eyebrow">Tri-City Eye Care · live patient flow</span>
+      <h1>One visit, captured <span class="accent">automatically</span> → fed to the model</h1>
+    </div>
+    <div class="timer-wrap">
+      <div class="timer-label">Visit<br>elapsed</div>
+      <div class="timer" id="timer">00:00</div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <!-- LEFT: clinic floor game -->
+    <div class="panel scene" id="floor">
+      <span class="panel-title">Clinic floor</span>
+      <div class="floor-canvas" id="canvas">
+        <svg class="path-svg" id="pathsvg"></svg>
+        <!-- rooms injected by JS -->
+        <div class="avatar" id="avatar">
+          <div class="body">🧑</div>
+          <div class="tag" id="avatarTag">Mr. Doyle</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: live dashboards -->
+    <div class="right-col scene">
+      <div class="panel" id="lounge">
+        <span class="panel-title">Doctors' lounge board</span>
+        <div class="doc-card">
+          <div class="doc-head">
+            <div class="doc-name">Dr. Tran</div>
+            <div class="doc-sub" id="lastBilled">last billed —</div>
+          </div>
+          <div class="hero-wait"><span class="n" id="heroWait">0</span><span class="l">waiting for doctor</span></div>
+          <div class="pipeline" id="pipeline"><!-- circles injected --></div>
+        </div>
+      </div>
+
+      <div class="panel" id="oct">
+        <span class="panel-title">OCT triage board</span>
+        <div class="oct-grid">
+          <div>
+            <div class="oct-col-title">Ready for OCT</div>
+            <div class="queue-item" id="octQueue">
+              <div class="qi-name">Mr. Doyle</div>
+              <div class="qi-sub">10:40 · OCT both eyes · Dr. Tran</div>
+              <div class="qi-timer" id="octQueueTimer">waiting 00:00</div>
+            </div>
+          </div>
+          <div>
+            <div class="oct-col-title">Rooms</div>
+            <div class="room-slot" id="octRoom">
+              <span class="slot-tag">OCT Room 1</span>
+              <span style="color:var(--muted);font-size:12px" id="octRoomEmpty">— open —</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERLAY 2: receipt capture -->
+    <div class="overlay" id="capture">
+      <h2>The visit time just became <span class="accent">data</span> — with zero typing</h2>
+      <div class="sub">Previously a staff member read the clock and hand-keyed it into the billing sheet.</div>
+      <div class="sheet">
+        <table>
+          <thead><tr><th>Patient</th><th>Service</th><th>Date</th><th>Visit time</th></tr></thead>
+          <tbody id="sheetBody">
+            <tr><td>R. Mensah</td><td>OCT + HVF</td><td>2026-06-09</td><td>41:08</td></tr>
+            <tr><td>A. Koval</td><td>Injection</td><td>2026-06-09</td><td>52:19</td></tr>
+            <tr class="live"><td>Mr. Doyle</td><td>OCT + HVF</td><td>2026-06-10</td><td class="cell-target" id="targetCell">&nbsp;</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tagline">
+        <span class="strike">~3 min of manual entry per visit</span> &nbsp;→&nbsp;
+        <b>captured the instant the patient is billed.</b> Same script that killed receipt re-keying.
+      </div>
+    </div>
+
+    <!-- OVERLAY 3: ml training -->
+    <div class="overlay" id="ml">
+      <h2>Thousands of captured visits → a model that <span class="accent">predicts the day</span></h2>
+      <div class="sub">Visit durations become training data for clinic-flow forecasting.</div>
+      <div class="ml-body">
+        <div class="chart-wrap">
+          <span class="yl">training loss</span><span class="xl">epochs →</span>
+          <svg viewBox="0 0 460 230" width="100%" height="100%" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="lossgrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#ec8b3c"/><stop offset="1" stop-color="#4dabf7"/>
+              </linearGradient>
+            </defs>
+            <path class="loss-path" id="lossPath" d=""/>
+          </svg>
+        </div>
+        <div class="ml-stats">
+          <div class="ml-stat"><div class="k">Epoch</div><div class="v ep" id="mlEpoch">0 / 50</div></div>
+          <div class="ml-stat"><div class="k">Loss</div><div class="v loss" id="mlLoss">0.92</div></div>
+          <div class="ml-stat"><div class="k">Val accuracy</div><div class="v acc" id="mlAcc">61%</div></div>
+        </div>
+      </div>
+      <div class="predict" id="predict">Predicting today: <b>peak congestion 2:40pm</b> · suggest pulling 2 OCT slots earlier. <span style="color:var(--muted)">— fewer bottlenecks, shorter waits.</span></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="phase-dots" id="dots">
+      <div class="pdot on"><span class="d"></span>Patient flow</div>
+      <div class="pdot"><span class="d"></span>Auto-capture</div>
+      <div class="pdot"><span class="d"></span>Model</div>
+    </div>
+    <span class="hint">auto-plays · loops</span>
+    <button class="btn" id="replay">↻ Replay</button>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s);
+
+  // ---- room layout (percentage coords on the floor canvas) ----
+  const ROOMS = [
+    {key:'entrance', name:'Entrance', icon:'🚪', x:9,  y:50},
+    {key:'checkin',  name:'Check-in', icon:'🪪', x:26, y:22, color:'--here'},
+    {key:'oct',      name:'OCT Room', icon:'👁️', x:60, y:20, color:'--oct'},
+    {key:'hvf',      name:'HVF',      icon:'🩺', x:84, y:48, color:'--hvf'},
+    {key:'dr',       name:"Doctor",   icon:'👨‍⚕️', x:58, y:78, color:'--waiting'},
+    {key:'billing',  name:'Billing',  icon:'🧾', x:24, y:78, color:'--billed'},
+  ];
+  const roomByKey = Object.fromEntries(ROOMS.map(r => [r.key, r]));
+
+  // ---- pipeline circles on the lounge board ----
+  const PIPS = [
+    {key:'here',    label:'Here',    color:'--here'},
+    {key:'oct',     label:'OCT',     color:'--oct'},
+    {key:'hvf',     label:'HVF',     color:'--hvf'},
+    {key:'waiting', label:'Wait Dr', color:'--waiting'},
+    {key:'billed',  label:'Billed',  color:'--billed'},
+  ];
+
+  // ---- the journey: each step moves the avatar + reacts the dashboards ----
+  const STEPS = [
+    {room:'checkin', pip:'here',    dwell:1500},
+    {room:'oct',     pip:'oct',     dwell:2000, octRoom:true},
+    {room:'hvf',     pip:'hvf',     dwell:1700},
+    {room:'dr',      pip:'waiting', dwell:1700, hero:1},
+    {room:'billing', pip:'billed',  dwell:1300, stop:true, hero:0},
+  ];
+
+  // ---- build the floor ----
+  const canvas = $('#canvas'), avatar = $('#avatar'), pathsvg = $('#pathsvg');
+  function buildFloor(){
+    ROOMS.filter(r=>r.key!=='entrance').forEach(r=>{
+      const d = document.createElement('div');
+      d.className='room'; d.id='room-'+r.key;
+      d.style.left=r.x+'%'; d.style.top=r.y+'%';
+      d.innerHTML = `<div class="ricon">${r.icon}</div><div class="rname">${r.name}</div>`;
+      canvas.appendChild(d);
+    });
+    // dashed path connecting the journey
+    const seq = ['entrance','checkin','oct','hvf','dr','billing'].map(k=>roomByKey[k]);
+    const pts = seq.map(r=>`${r.x},${r.y}`).join(' ');
+    pathsvg.setAttribute('viewBox','0 0 100 100');
+    pathsvg.setAttribute('preserveAspectRatio','none');
+    pathsvg.innerHTML = `<polyline points="${pts}" fill="none"
+      stroke="rgba(255,255,255,.10)" stroke-width="0.5" stroke-dasharray="2 1.5"
+      vector-effect="non-scaling-stroke"/>`;
+  }
+
+  // ---- build pipeline circles ----
+  const pipeline = $('#pipeline');
+  function buildPipeline(){
+    PIPS.forEach(p=>{
+      const el = document.createElement('div');
+      el.className='pip'; el.id='pip-'+p.key;
+      el.style.setProperty('--pc', `var(${p.color})`);
+      el.style.setProperty('--pcg', `color-mix(in srgb, var(${p.color}) 55%, transparent)`);
+      el.innerHTML = `<div class="circle">0</div><div class="plabel">${p.label}</div>`;
+      pipeline.appendChild(el);
+    });
+  }
+
+  // ---- helpers ----
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  let runId = 0;            // cancels stale runs on replay
+  let timerInt = null;
+
+  function placeAvatar(key){
+    const r = roomByKey[key];
+    avatar.style.left = r.x+'%';
+    avatar.style.top  = r.y+'%';
+  }
+  function setRoomColor(el, varName){
+    el.style.setProperty('--rc', `var(${varName})`);
+    el.style.setProperty('--rcg', `color-mix(in srgb, var(${varName}) 45%, transparent)`);
+  }
+
+  // ---- master timer (accelerated clinic time) ----
+  let visitSecs = 0, frozenStr = '00:00';
+  const fmt = s => String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  function startTimer(){
+    const timer = $('#timer');
+    timer.classList.remove('frozen'); visitSecs = 0; timer.textContent='00:00';
+    timerInt = setInterval(()=>{ visitSecs += 7; timer.textContent = fmt(visitSecs); }, 45);
+  }
+  function stopTimer(){
+    clearInterval(timerInt); timerInt=null;
+    frozenStr = $('#timer').textContent;
+    $('#timer').classList.add('frozen');
+  }
+
+  // ---- OCT room mini-timer ----
+  let octInt=null;
+  function octRoomOccupy(name){
+    const slot=$('#octRoom'); slot.classList.add('occupied');
+    $('#octRoomEmpty').style.display='none';
+    $('#octQueue').classList.add('gone');
+    let s=0;
+    slot.insertAdjacentHTML('beforeend',
+      `<span class="occ-name">${name}</span><span class="occ-timer" id="octRoomT">in room 00:00</span>`);
+    octInt=setInterval(()=>{ s+=3; $('#octRoomT').textContent='in room '+fmt(s); },120);
+  }
+  function octRoomClear(){
+    clearInterval(octInt); octInt=null;
+    const slot=$('#octRoom');
+    slot.classList.remove('occupied');
+    slot.querySelectorAll('.occ-name,.occ-timer').forEach(e=>e.remove());
+    $('#octRoomEmpty').style.display='';
+  }
+
+  // ---- dashboard reactions ----
+  let heroCount=0;
+  function lightPip(key){
+    PIPS.forEach((p,i)=>{
+      const el=$('#pip-'+p.key), idx=PIPS.findIndex(x=>x.key===key);
+      el.classList.remove('active');
+      if(i<idx){ el.classList.add('done'); el.querySelector('.circle').textContent='1'; }
+      else if(i===idx){
+        el.classList.add('active','pulse'); el.querySelector('.circle').textContent='1';
+        setTimeout(()=>el.classList.remove('pulse'),500);
+      }
+    });
+  }
+
+  // ====== PHASE 1: the walk ======
+  async function runClinic(myRun){
+    placeAvatar('entrance');
+    avatar.classList.add('walking');
+    startTimer();
+    await sleep(500); if(myRun!==runId) return;
+
+    for(const step of STEPS){
+      const roomEl = $('#room-'+step.room);
+      const r = roomByKey[step.room];
+      setRoomColor(roomEl, r.color);
+      placeAvatar(step.room);
+      await sleep(1050); if(myRun!==runId) return;     // walk duration
+      roomEl.classList.add('active');
+      lightPip(step.pip);
+      if(typeof step.hero==='number'){ heroCount=step.hero; $('#heroWait').textContent=heroCount; }
+      if(step.octRoom) octRoomOccupy('Mr. Doyle');
+      if(step.stop){ stopTimer(); $('#lastBilled').textContent='last billed just now'; }
+      await sleep(step.dwell); if(myRun!==runId) return;
+      roomEl.classList.remove('active'); roomEl.classList.add('done');
+      if(step.octRoom) octRoomClear();
+    }
+    avatar.classList.remove('walking');
+  }
+
+  // ====== PHASE 2: capture ======
+  function setPhase(i){
+    document.querySelectorAll('#dots .pdot').forEach((d,k)=>d.classList.toggle('on',k===i));
+  }
+  async function runCapture(myRun){
+    setPhase(1);
+    const cap=$('#capture'); cap.classList.add('show');
+    await sleep(700); if(myRun!==runId) return;
+
+    // a flyer with the frozen time launches from the header timer into the target cell
+    const timerEl=$('#timer'), cell=$('#targetCell');
+    const tr=timerEl.getBoundingClientRect(), sr=$('.stage').getBoundingClientRect();
+    const flyer=document.createElement('div');
+    flyer.className='flyer'; flyer.textContent=frozenStr;
+    flyer.style.left=(tr.left-sr.left+8)+'px'; flyer.style.top=(tr.top-sr.top+2)+'px';
+    $('.stage').appendChild(flyer);
+    await sleep(60); if(myRun!==runId){flyer.remove();return;}
+    const cr=cell.getBoundingClientRect();
+    flyer.style.left=(cr.left-sr.left+4)+'px'; flyer.style.top=(cr.top-sr.top+3)+'px';
+    flyer.style.fontSize='13px';
+    cell.classList.add('lit');
+    await sleep(950); if(myRun!==runId){flyer.remove();return;}
+    cell.textContent=frozenStr; flyer.remove();
+    await sleep(1400); if(myRun!==runId) return;
+    cell.classList.remove('lit');
+    await sleep(1100); if(myRun!==runId) return;
+    cap.classList.remove('show');
+  }
+
+  // ====== PHASE 3: ml ======
+  function buildLossPath(){
+    // descending noisy curve, deterministic
+    const W=460,H=230, n=50; let d='';
+    for(let i=0;i<=n;i++){
+      const x=(i/n)*W;
+      const base=0.92*Math.exp(-i/14)+0.06;
+      const noise=Math.sin(i*1.7)*0.02*Math.exp(-i/20);
+      const y=(base+noise)*(H-30)+8;
+      d+=(i===0?'M':'L')+x.toFixed(1)+','+y.toFixed(1)+' ';
+    }
+    return d;
+  }
+  async function runML(myRun){
+    setPhase(2);
+    const ml=$('#ml'); ml.classList.add('show');
+    const path=$('#lossPath'); path.setAttribute('d', buildLossPath());
+    path.classList.remove('draw'); void path.getBoundingClientRect();
+    await sleep(350); if(myRun!==runId) return;
+    path.classList.add('draw');
+
+    // animate counters in sync with the 2.6s draw
+    const dur=2600, t0=performance.now();
+    const ep=$('#mlEpoch'), loss=$('#mlLoss'), acc=$('#mlAcc');
+    await new Promise(res=>{
+      function tick(now){
+        if(myRun!==runId) return res();
+        const p=Math.min(1,(now-t0)/dur);
+        ep.textContent=Math.round(p*50)+' / 50';
+        loss.textContent=(0.92*Math.exp(-p*3.2)+0.06).toFixed(3);
+        acc.textContent=Math.round(61+p*33)+'%';
+        p<1 ? requestAnimationFrame(tick) : res();
+      }
+      requestAnimationFrame(tick);
+    });
+    await sleep(2200); if(myRun!==runId) return;
+    ml.classList.remove('show');
+  }
+
+  // ---- reset everything for a clean loop ----
+  function reset(){
+    clearInterval(timerInt); clearInterval(octInt);
+    $('#timer').textContent='00:00'; $('#timer').classList.remove('frozen');
+    heroCount=0; $('#heroWait').textContent='0'; $('#lastBilled').textContent='last billed —';
+    document.querySelectorAll('.room').forEach(r=>r.classList.remove('active','done'));
+    document.querySelectorAll('.pip').forEach(p=>{p.classList.remove('active','done','pulse'); p.querySelector('.circle').textContent='0';});
+    octRoomClear(); $('#octQueue').classList.remove('gone');
+    $('#octQueueTimer').textContent='waiting 00:00';
+    $('#targetCell').textContent=''; $('#targetCell').classList.remove('lit');
+    document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));
+    $('#lossPath').classList.remove('draw');
+    placeAvatar('entrance');
+    setPhase(0);
+  }
+
+  // ---- main loop ----
+  async function play(){
+    const myRun = ++runId;
+    reset();
+    await sleep(400); if(myRun!==runId) return;
+    await runClinic(myRun); if(myRun!==runId) return;
+    await sleep(700);       if(myRun!==runId) return;
+    await runCapture(myRun);if(myRun!==runId) return;
+    await sleep(500);       if(myRun!==runId) return;
+    await runML(myRun);     if(myRun!==runId) return;
+    await sleep(1400);      if(myRun!==runId) return;
+    play(); // loop
+  }
+
+  // ---- boot ----
+  buildFloor(); buildPipeline();
+  $('#replay').addEventListener('click', play);
+  play();
+})();
+</script>
+</body>
+</html>

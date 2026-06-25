@@ -1,0 +1,157 @@
+---
+// "The path": a zigzag road from aerospace/manufacturing into healthcare, showing
+// the same find-the-real-problem-and-build-the-fix instinct from the start.
+// Content is drawn from the prior-internship portfolio (shahmeershahid.com), kept
+// accurate. The road is an SVG polyline measured through each stop's dot and
+// drawn (stroke-dashoffset) when the section scrolls into view.
+const stops = [
+  {
+    side: 'left', era: '2023', industry: 'Aerospace', org: 'Bombardier',
+    blurb: 'A foreign-object-debris detector built on Raspberry Pi and OpenCV, spotting tools and goggles left inside an aircraft, plus automated weekly reporting on non-conformance trends.',
+    steel: true,
+  },
+  {
+    side: 'right', era: '2024', industry: 'Manufacturing', org: 'Onward Manufacturing',
+    blurb: 'A product-trained assistant for Broil King and a guided, multi-step FAQ that walks customers to the right grill, front to back in React.',
+    steel: true,
+  },
+  {
+    side: 'left', era: '2025', industry: 'Aerospace', org: 'Mitsubishi Heavy Industries',
+    blurb: 'Shipped a company-wide intranet (Next.js, Payload, MongoDB) where staff reach their resources, internal communication, and onboarding in one place. Earlier, time on the production floor riveting ribs led to building a computer-vision model that flags a faulty rib.',
+    steel: true,
+  },
+  {
+    side: 'right', era: 'now', industry: 'Healthcare', org: 'Tri-City Eye Care',
+    blurb: "Bringing what I've learned into a clinic, where the software I ship has a visible impact, turning manual work into tools the staff actually rely on.",
+    steel: false,
+  },
+];
+---
+<section id="path" class="section path">
+  <p class="eyebrow">the path</p>
+  <h2 class="path-head">Solving floor-level problems from the start.</h2>
+
+  <div class="road" data-road>
+    <svg class="road-svg" data-road-svg preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="roadgrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7d93ab" />
+          <stop offset="0.66" stop-color="#7d93ab" />
+          <stop offset="1" stop-color="#5fc88f" />
+        </linearGradient>
+      </defs>
+      <path class="road-path" data-road-path fill="none" stroke="url(#roadgrad)"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+
+    {stops.map((s, i) => (
+      <div class={`stop ${s.side}`} style={`--i:${i}`}>
+        <div class="stop-card">
+          <span class="stop-dot" data-dot style={`--c:${s.steel ? '#7d93ab' : 'var(--green)'}`}></span>
+          <div class="stop-meta">
+            <span class="stop-era">{s.era}</span>
+            <span class={`stop-ind ${s.steel ? 'steel' : 'green'}`}>{s.industry}</span>
+          </div>
+          <h3>{s.org}</h3>
+          <p>{s.blurb}</p>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+<script is:inline>
+  (function () {
+    const road = document.querySelector('[data-road]');
+    if (!road) return;
+    const svg = road.querySelector('[data-road-svg]');
+    const path = road.querySelector('[data-road-path]');
+    const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+    function build() {
+      const rb = road.getBoundingClientRect();
+      svg.setAttribute('viewBox', `0 0 ${rb.width} ${rb.height}`);
+      const dots = [...road.querySelectorAll('[data-dot]')];
+      if (dots.length < 2) return;
+      const pts = dots.map((d) => {
+        const r = d.getBoundingClientRect();
+        return [r.left + r.width / 2 - rb.left, r.top + r.height / 2 - rb.top];
+      });
+      let d = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+      for (let i = 1; i < pts.length; i++) d += ' L' + pts[i][0].toFixed(1) + ',' + pts[i][1].toFixed(1);
+      path.setAttribute('d', d);
+      const len = path.getTotalLength();
+      path.style.strokeDasharray = len;
+      path.style.strokeDashoffset = (road.classList.contains('in') || reduce) ? 0 : len;
+    }
+
+    build();
+    addEventListener('resize', build, { passive: true });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(build); // remeasure after the display font loads
+    if (reduce) { road.classList.add('in'); return; }
+
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => {
+        if (e.isIntersecting) {
+          build();                    // measure final geometry, then draw
+          road.classList.add('in');
+          requestAnimationFrame(() => { path.style.strokeDashoffset = 0; });
+          io.disconnect();
+        }
+      });
+    }, { threshold: 0.25 });
+    io.observe(road);
+  })();
+</script>
+
+<style>
+  .path-head {
+    font-family: var(--display);
+    font-size: clamp(28px, 5vw, 46px);
+    letter-spacing: -.025em; line-height: 1.06; margin: 0; max-width: 18ch;
+  }
+  .road { position: relative; margin-top: 56px; }
+  .road-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .road-path { transition: stroke-dashoffset 2s ease; }
+
+  .stop { position: relative; z-index: 1; display: flex; min-height: 168px; }
+  .stop.left { justify-content: flex-start; }
+  .stop.right { justify-content: flex-end; }
+
+  .stop-dot {
+    position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--c); box-shadow: 0 0 0 5px color-mix(in srgb, var(--c) 22%, transparent);
+    transform: translateY(-50%);
+  }
+  .stop.left  .stop-dot { right: -7px; }
+  .stop.right .stop-dot { left: -7px; }
+
+  .stop-card {
+    position: relative;
+    width: min(46%, 420px);
+    padding: 18px 22px 20px; border-radius: 14px;
+    background: linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 35%, transparent) 100%);
+    border: 1px solid var(--line);
+    opacity: 0;                       /* opacity-only reveal: keeps dot geometry stable
+                                         so the road meets the circles exactly */
+    transition: opacity .6s ease;
+    transition-delay: calc(var(--i) * .12s);
+  }
+  .road.in .stop-card { opacity: 1; }
+
+  .stop-meta { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 11.5px; }
+  .stop-era { color: var(--ink-faint); letter-spacing: .08em; }
+  .stop-ind { padding: 2px 8px; border-radius: 999px; letter-spacing: .04em; border: 1px solid var(--line); }
+  .stop-ind.steel { color: #a9bccd; }
+  .stop-ind.green { color: var(--green); border-color: color-mix(in srgb, var(--green) 40%, var(--line)); }
+  .stop-card h3 { font-family: var(--display); font-size: 21px; font-weight: 600; margin: 10px 0 8px; letter-spacing: -.01em; }
+  .stop-card p { color: var(--ink-dim); font-size: 15px; margin: 0; }
+
+  @media (max-width: 680px) {
+    .stop { min-height: 0; margin-bottom: 18px; }
+    .stop.left, .stop.right { justify-content: flex-start; }
+    .stop-card { width: 100%; }
+    .stop-dot { display: none; }
+    .road-svg { display: none; }
+  }
+</style>

@@ -1,0 +1,220 @@
+/* ── Theme: lifted from the real Tri-City dashboards (dash.css) so the site
+   reads as one of Shahmeer's own internal tools ───────────────────────────── */
+:root {
+  --bg:        #0b0e13;
+  --bg-2:      #0e1117;
+  --surface:   #181d25;
+  --surface-2: #1f2530;
+  --line:      #2a313d;
+  --ink:       #e7ecf3;
+  --ink-dim:   #9aa6b6;
+  --ink-faint: #5d6878;
+
+  --yellow: #f5c542;
+  --green:  #5fc88f;
+  --purple: #b18cf2;
+  --blue:   #5aa7ff;
+
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --display: "Space Grotesk Variable", var(--sans);  /* distinctive face for section headings */
+  --script: "Spectral", Georgia, serif;              /* elegant serif for the name only */
+
+  --maxw: 1100px;   /* single shared container width; every section aligns to this */
+  --pad: 32px;      /* shared horizontal padding (left/right margins line up everywhere) */
+  --bar-h: 44px;
+}
+@media (max-width: 600px) { :root { --pad: 20px; } }
+
+* { box-sizing: border-box; }
+
+/* EMR-race widget keyframes (set via JS on the caret + watcher dashes) */
+@keyframes caretBlink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+@keyframes flow { to { stroke-dashoffset: -14; } }
+
+/* ── Stacked project panels: each sticks to the top and the next slides over it ── */
+.stack { position: relative; }
+.panel {
+  position: sticky; top: 0; min-height: 100vh; background: var(--bg);
+  display: grid; place-items: center;
+}
+.panel-in { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 64px var(--pad); }
+.panel .s-head .s-l { position: static; top: auto; }   /* no nested sticky inside a panel */
+/* tall transparent spacer that gives the pinned clinic room for the full
+   choreography (hold, shrink, sticker flow, re-enlarge, hold) */
+.scroll-room { height: 480vh; pointer-events: none; }
+
+/* Benchmark slider: both before/after races share ONE pinned frame; scrolling through
+   the tall .bench-track slides the rail horizontally between the two panels.
+   lock distance = bench-track height - 100vh (kept modest). */
+.bench-section { position: relative; }
+.bench-track { position: relative; height: 190vh; }
+.bench-track.solo { height: 135vh; }   /* single pinned animation (research): shorter lock */
+.bench-anchor { position: absolute; left: 0; width: 1px; height: 1px; pointer-events: none; }
+.bench-pin { position: sticky; top: 0; height: 100vh; overflow: hidden; background: #0e1116; }
+.bench-rail { display: flex; width: 200vw; height: 100vh; will-change: transform; }
+.bench-panel { flex: 0 0 100vw; width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+.bench-panel--inject { background: #131418; }
+@media (max-width: 760px) {
+  .bench-track { height: auto; }
+  .bench-pin { position: static; height: auto; overflow: visible; }
+  .bench-rail { flex-direction: column; width: 100%; height: auto; transform: none !important; }
+  .bench-panel { flex: none; width: 100%; height: auto; }
+  .bench-anchor { position: static; }
+  .bench-scene { position: relative; inset: auto; }
+}
+
+/* Per-benchmark intro/context card (mirrors the clinic2d intro): sits over the scaled
+   scene, gives first-time viewers the context, and gates the run behind a Begin button.
+   Lives OUTSIDE the scene's fit() transform so the card stays full-size. */
+.bench-scene { position: absolute; inset: 0; }
+.bench-intro {
+  position: absolute; inset: 0; z-index: 12;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: radial-gradient(1200px 760px at 50% 42%, rgba(16,22,34,.96), rgba(7,10,16,.985));
+  transition: opacity .45s ease, visibility .45s ease;
+}
+.bench-intro.gone { opacity: 0; visibility: hidden; pointer-events: none; }
+.bench-intro-card {
+  width: min(620px, 94%);
+  background: linear-gradient(180deg, #141a24, #0e131b);
+  border: 1px solid #28313f; border-radius: 16px;
+  padding: 26px 30px; box-shadow: 0 24px 70px rgba(0,0,0,.6);
+  opacity: 0; transform: translateY(12px) scale(.99);
+  transition: opacity .5s ease, transform .5s ease;
+}
+.bench-intro.in .bench-intro-card { opacity: 1; transform: none; }
+.bench-intro .bi-eyebrow {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-faint); margin: 0 0 13px; display: flex; align-items: center; gap: 9px;
+}
+.bench-intro .bi-eyebrow::before {
+  content: ""; width: 8px; height: 8px; border-radius: 2px;
+  background: var(--accent, var(--green)); box-shadow: 0 0 10px var(--accent, var(--green));
+}
+.bench-intro h3 {
+  font-family: var(--display); font-size: clamp(22px, 2.8vw, 29px); line-height: 1.12;
+  letter-spacing: -.02em; margin: 0 0 12px; color: var(--ink);
+}
+.bench-intro .bi-lede { color: var(--ink-dim); margin: 0 0 20px; font-size: 14.5px; line-height: 1.6; }
+.bench-intro .bi-rows { display: flex; flex-direction: column; gap: 12px; margin: 0 0 22px; }
+.bench-intro .bi-row {
+  display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.5;
+  opacity: 0; transform: translateY(6px); transition: opacity .45s ease, transform .45s ease;
+}
+.bench-intro.in .bi-row { opacity: 1; transform: none; }
+.bench-intro.in .bi-row:nth-child(1) { transition-delay: .14s; }
+.bench-intro.in .bi-row:nth-child(2) { transition-delay: .30s; }
+.bench-intro .bi-dot { flex: none; width: 11px; height: 11px; border-radius: 3px; margin-top: 4px; }
+.bench-intro .bi-row b { color: var(--ink); font-weight: 600; }
+.bench-intro .bi-row span { color: var(--ink-dim); }
+.bench-intro .bi-start {
+  width: 100%; font-family: var(--mono); font-size: 13px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: #07120c;
+  background: var(--green); border: none; padding: 13px; border-radius: 10px; cursor: pointer;
+  transition: filter .2s ease, transform .08s ease;
+}
+.bench-intro .bi-start:hover { filter: brightness(1.08); }
+.bench-intro .bi-start:active { transform: translateY(1px); }
+@media (max-width: 760px) {
+  .panel { position: static; min-height: 0; display: block; }
+  .scroll-room { display: none; }
+}
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  overflow-x: clip;            /* contain decorative pop-outs without breaking sticky */
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* faint dotted grid, like a board surface */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+main { position: relative; z-index: 1; }
+
+/* ── Section scaffolding ─────────────────────────────────────────────────── */
+.section {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 104px var(--pad);
+  scroll-margin-top: var(--bar-h);
+}
+.section + .section { border-top: 1px solid var(--line); }
+
+/* Two-column header: heading rail on the left, lead + body on the right.
+   Fills the horizontal space instead of leaving an empty right gutter.
+   Collapses to a single column on narrow screens. */
+.s-head {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 6fr);
+  gap: 18px 56px;
+  align-items: start;
+}
+.s-head .s-l { position: sticky; top: calc(var(--bar-h) + 28px); }
+.s-head .s-r > :first-child { margin-top: 0; }
+@media (max-width: 860px) {
+  .s-head { grid-template-columns: 1fr; gap: 16px; }
+  .s-head .s-l { position: static; }
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.eyebrow::before {
+  content: "";
+  width: 8px; height: 8px; border-radius: 2px;
+  background: var(--accent, var(--green));
+  box-shadow: 0 0 10px var(--accent, var(--green));
+}
+.section h2 {
+  font-family: var(--display);
+  font-size: clamp(26px, 4vw, 40px);
+  line-height: 1.12;
+  margin: 0;
+  letter-spacing: -.02em;
+}
+.section p.lead { color: var(--ink-dim); margin: 0 0 20px; }
+
+.stub {
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 28px;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 13.5px;
+  background: linear-gradient(180deg, var(--surface) 0%, transparent 100%);
+}
+
+footer {
+  position: relative; z-index: 1;
+  max-width: var(--maxw); margin: 0 auto;
+  padding: 40px var(--pad) 80px;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  border-top: 1px solid var(--line);
+}

@@ -1,0 +1,415 @@
+---
+// Classical ML vs Quantum ML — MedMNIST (PneumoniaMNIST) benchmark.
+// Ported faithfully from the design handoff (design_handoff_quantum_vs_classical):
+// markup is the authored .dc.html template verbatim (the <sc-for> tile loop expanded
+// to 36 real tiles here), and the DCLogic `Component` is reproduced as a plain class
+// (element lookups scoped to #qb-root, {{ runAgain }}/{{ reset }} -> data-attrs, the
+// setInterval tick(p) engine kept as the single source of truth). It carries an intro
+// card + Begin gate and scales-to-fit the pinned viewport like the other benchmarks.
+// Honest-verdict research piece: quantum reaches comparable accuracy with ~1,300x fewer
+// parameters, not higher accuracy. Numbers/tiles are illustrative placeholders.
+const tiles = Array.from({ length: 36 }, (_, i) => i);
+---
+<div class="bench-scene" data-bench-scene>
+<div id="qb-root" style="width:1120px;margin:0 auto;background:#131418;border:1px solid #20242b;border-radius:14px;padding:26px 30px 22px;font-family:'IBM Plex Sans',sans-serif;color:#EEF0F3;position:relative;overflow:hidden;">
+
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;">
+    <div>
+      <h1 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-0.01em;">Classical ML <span style="color:#8a929c;font-weight:500;">vs.</span> Quantum ML</h1>
+      <p style="margin:6px 0 0;font-size:13px;color:#8a929c;">Same MedMNIST chest X-rays. Two models. One honest benchmark.</p>
+    </div>
+    <div style="display:flex;gap:9px;flex:none;">
+      <button data-runagain type="button" style="font-family:'IBM Plex Sans';font-size:13px;font-weight:600;color:#fff;background:#F76B54;border:none;border-radius:8px;padding:9px 17px;cursor:pointer;">Run again</button>
+      <button data-reset type="button" style="font-family:'IBM Plex Sans';font-size:13px;font-weight:600;color:#cfd3da;background:#22262e;border:1px solid #30343d;border-radius:8px;padding:9px 17px;cursor:pointer;">Reset</button>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:20px;margin-top:18px;padding:13px 0;border-top:1px solid #22262e;border-bottom:1px solid #22262e;">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#1b1e25;border:1px solid #2a2f38;border-radius:7px;padding:6px 11px;">
+        <span id="st-dot" style="width:7px;height:7px;border-radius:50%;background:#3a3f48;"></span>
+        <span id="st-text" style="font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#c3c8d0;">Ready</span>
+      </div>
+      <span style="font-size:12px;color:#8a929c;letter-spacing:.02em;">encode <span style="color:#5a616b;">&rarr;</span> train <span style="color:#5a616b;">&rarr;</span> evaluate</span>
+    </div>
+    <div style="display:flex;gap:34px;align-items:flex-end;">
+      <div style="text-align:right;">
+        <div style="font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#8a929c;">Epoch</div>
+        <div id="m-epoch" style="font-family:'IBM Plex Mono';font-size:21px;font-weight:500;color:#EEF0F3;font-variant-numeric:tabular-nums;margin-top:2px;">00 / 20</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#8a929c;">Classical acc</div>
+        <div id="m-cls" style="font-family:'IBM Plex Mono';font-size:21px;font-weight:500;color:#F76B54;font-variant-numeric:tabular-nums;margin-top:2px;">50.0%</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#8a929c;">Quantum acc</div>
+        <div id="m-q" style="font-family:'IBM Plex Mono';font-size:21px;font-weight:500;color:#9B8CFF;font-variant-numeric:tabular-nums;margin-top:2px;">50.0%</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:372px 1fr;gap:24px;margin-top:22px;">
+
+    <div style="background:#181a20;border:1px solid #23262e;border-radius:10px;padding:16px 18px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;">
+        <span style="font-size:10px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:#8a929c;">MedMNIST &middot; PneumoniaMNIST</span>
+        <span id="agree-read" style="font-family:'IBM Plex Mono';font-size:11px;color:#2E9E6B;opacity:0;">0 / 36</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:13px;">
+        {tiles.map((i) => (
+          <div data-ti={i} style="position:relative;width:100%;aspect-ratio:1;border-radius:4px;overflow:hidden;background:#0a0c10;cursor:pointer;outline:1px solid #1f232b;">
+            <canvas id={`tile-${i}`} style="width:100%;height:100%;display:block;"></canvas>
+            <span id={`dot-${i}`} style="position:absolute;right:3px;bottom:3px;width:7px;height:7px;border-radius:50%;background:#2E9E6B;opacity:0;box-shadow:0 0 0 1.5px #181a20;"></span>
+          </div>
+        ))}
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;margin-top:15px;padding-top:14px;border-top:1px solid #23262e;">
+        <canvas id="inspect-cv" width="84" height="84" style="width:62px;height:62px;border-radius:5px;background:#0a0c10;flex:none;outline:1px solid #23262e;"></canvas>
+        <div style="flex:1;min-width:0;">
+          <div id="insp-hint" style="font-size:12px;color:#8a929c;line-height:1.5;">Hover any sample to inspect what each model predicted.</div>
+          <div id="insp-body" style="display:none;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+              <span style="width:70px;font-size:9px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:#8a929c;">Truth</span>
+              <span id="insp-true" style="font-family:'IBM Plex Mono';font-size:13px;color:#EEF0F3;">&middot;</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+              <span style="width:70px;font-size:9px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:#F76B54;">Classical</span>
+              <span id="insp-cls" style="font-family:'IBM Plex Mono';font-size:13px;color:#EEF0F3;">&middot;</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="width:70px;font-size:9px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:#9B8CFF;">Quantum</span>
+              <span id="insp-q" style="font-family:'IBM Plex Mono';font-size:13px;color:#EEF0F3;">&middot;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#181a20;border:1px solid #23262e;border-radius:10px;padding:16px 18px 10px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:10px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:#8a929c;">Test accuracy vs. epoch</span>
+        <div style="display:flex;gap:18px;align-items:center;">
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:#c3c8d0;"><span style="width:9px;height:9px;border-radius:2px;background:#F76B54;"></span>Classical CNN <span style="color:#7c8390;font-family:'IBM Plex Mono';">&middot; 121,410 p</span></span>
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:#c3c8d0;"><span id="leg-q" style="width:9px;height:9px;border-radius:2px;background:#9B8CFF;"></span>Hybrid QNN <span style="color:#7c8390;font-family:'IBM Plex Mono';">&middot; 4 qubits &middot; 96 p</span></span>
+        </div>
+      </div>
+      <svg id="chart" viewBox="0 0 720 320" style="width:100%;height:auto;display:block;margin-top:8px;">
+        <g stroke="#20242c" stroke-width="1">
+          <line x1="54" y1="18" x2="702" y2="18"></line>
+          <line x1="54" y1="70.4" x2="702" y2="70.4"></line>
+          <line x1="54" y1="122.8" x2="702" y2="122.8"></line>
+          <line x1="54" y1="175.2" x2="702" y2="175.2"></line>
+          <line x1="54" y1="227.6" x2="702" y2="227.6"></line>
+          <line x1="54" y1="280" x2="702" y2="280"></line>
+        </g>
+        <g stroke="#191d24" stroke-width="1">
+          <line x1="216" y1="18" x2="216" y2="280"></line>
+          <line x1="378" y1="18" x2="378" y2="280"></line>
+          <line x1="540" y1="18" x2="540" y2="280"></line>
+        </g>
+        <g fill="#6a7280" font-family="IBM Plex Mono" font-size="11" text-anchor="end">
+          <text x="46" y="22">100</text>
+          <text x="46" y="74.4">90</text>
+          <text x="46" y="126.8">80</text>
+          <text x="46" y="179.2">70</text>
+          <text x="46" y="231.6">60</text>
+          <text x="46" y="284">50</text>
+        </g>
+        <g fill="#6a7280" font-family="IBM Plex Mono" font-size="11" text-anchor="middle">
+          <text x="54" y="298">0</text>
+          <text x="216" y="298">5</text>
+          <text x="378" y="298">10</text>
+          <text x="540" y="298">15</text>
+          <text x="702" y="298">20</text>
+        </g>
+        <text x="378" y="316" fill="#5a616b" font-family="IBM Plex Sans" font-size="10" font-weight="600" letter-spacing="0.14em" text-anchor="middle">EPOCH</text>
+        <polyline id="curve-cls" fill="none" stroke="#F76B54" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points=""></polyline>
+        <polyline id="curve-q" fill="none" stroke="#9B8CFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points=""></polyline>
+        <circle id="head-cls" r="3.6" fill="#F76B54" cx="54" cy="280" opacity="0"></circle>
+        <circle id="head-q" r="3.6" fill="#9B8CFF" cx="54" cy="280" opacity="0"></circle>
+        <text id="lab-cls" fill="#F76B54" font-family="IBM Plex Mono" font-size="12" font-weight="600" text-anchor="end" opacity="0"></text>
+        <text id="lab-q" fill="#9B8CFF" font-family="IBM Plex Mono" font-size="12" font-weight="600" text-anchor="end" opacity="0"></text>
+      </svg>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;padding-top:18px;border-top:1px solid #22262e;display:grid;grid-template-columns:330px 1fr;gap:30px;align-items:center;">
+    <div>
+      <div style="font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#8a929c;margin-bottom:12px;">Trainable parameters <span style="color:#5a616b;font-weight:500;">&middot; &radic;-scaled</span></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <span style="width:58px;font-size:11px;color:#c3c8d0;">CNN</span>
+        <div style="flex:1;height:9px;background:#1f232b;border-radius:5px;overflow:hidden;"><div id="bar-cls" style="height:100%;width:0%;background:#F76B54;border-radius:5px;"></div></div>
+        <span id="pc-cls" style="width:62px;text-align:right;font-family:'IBM Plex Mono';font-size:12px;color:#EEF0F3;">0</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="width:58px;font-size:11px;color:#c3c8d0;">QNN</span>
+        <div style="flex:1;height:9px;background:#1f232b;border-radius:5px;overflow:hidden;"><div id="bar-q" style="height:100%;width:0%;background:#9B8CFF;border-radius:5px;"></div></div>
+        <span id="pc-q" style="width:62px;text-align:right;font-family:'IBM Plex Mono';font-size:12px;color:#EEF0F3;">0</span>
+      </div>
+    </div>
+    <div id="vcap" style="opacity:0;">
+      <p style="margin:0;font-size:14.5px;line-height:1.6;color:#dfe2e7;max-width:660px;">
+        <span style="color:#fff;font-weight:600;">No breakthrough yet.</span> The quantum model reached <span style="font-family:'IBM Plex Mono';color:#9B8CFF;">91%</span> against the classical model's <span style="font-family:'IBM Plex Mono';color:#F76B54;">96%</span>, using roughly <span style="color:#fff;font-weight:600;">1,300&times; fewer</span> trainable parameters, yet it trained far slower and stays capped by today's qubit counts. The opening, if there is one, is parameter efficiency on small medical datasets, not raw accuracy.
+      </p>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid #1c2027;">
+    <span style="font-size:11px;color:#7c8390;letter-spacing:.01em;">Research with Dr. Edward Sykes &middot; Quantum Computing Lab, University of Guelph</span>
+    <a id="qc-link" href="https://qclab.uoguelph.ca" target="_blank" rel="noopener" style="font-size:11px;font-family:'IBM Plex Mono';color:#9B8CFF;text-decoration:none;letter-spacing:.02em;">qclab.uoguelph.ca &#8599;</a>
+  </div>
+
+</div>
+
+  <!-- first-view context card; the benchmark waits behind a Begin click (like the clinic intro) -->
+  <div class="bench-intro" data-intro style="--accent:#9B8CFF;">
+    <div class="bench-intro-card">
+      <p class="bi-eyebrow">research &middot; breadth</p>
+      <h3>Quantum vs classical, on real medical images.</h3>
+      <p class="bi-lede">With Dr. Edward Sykes at the Quantum Computing Lab in Guelph: two models train on the same MedMNIST chest X-rays, then face an honest verdict. The interesting result is not who wins on accuracy.</p>
+      <div class="bi-rows">
+        <div class="bi-row"><span class="bi-dot" style="background:#F76B54;"></span><div><b>Classical CNN.</b> <span>A conventional network with about 121,000 trainable parameters, the accuracy to beat.</span></div></div>
+        <div class="bi-row"><span class="bi-dot" style="background:#9B8CFF;"></span><div><b>Hybrid QNN.</b> <span>A four-qubit quantum model with 96 parameters, chasing the same accuracy on a fraction of the budget.</span></div></div>
+      </div>
+      <button class="bi-start" data-begin type="button">&#9654; Run the benchmark</button>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    const root = document.getElementById('qb-root');
+    if (!root) return;
+    const intro = root.closest('[data-bench-scene]')?.querySelector('[data-intro]');
+
+    class QuantumBench {
+      constructor(root) {
+        this.root = root;
+        this.props = { durationSec: 10, accentQuantum: '#9B8CFF', loop: false };
+        this.scale = 1;
+        this.mount();
+      }
+      $(id) { return this.root.querySelector('#' + id); }
+
+      clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+      seg(p, a, b) { return this.clamp((p - a) / (b - a), 0, 1); }
+      eOut(t) { return 1 - Math.pow(1 - t, 3); }
+      segE(p, a, b) { return this.eOut(this.seg(p, a, b)); }
+      pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+      clsAcc(e) { return 0.5 + 0.462 * (1 - Math.exp(-e / 3.0)); }
+      qAcc(e) { return 0.5 + 0.414 * (1 - Math.exp(-e / 4.6)) + 0.010 * Math.sin(e * 1.6) * Math.exp(-e / 12); }
+
+      X(e) { return 54 + (e / 20) * 648; }
+      Y(a) { return 18 + (1 - (this.clamp(a, 0.5, 1) - 0.5) / 0.5) * 262; }
+      ptStr(fn, e1) {
+        if (e1 <= 0) return '';
+        let s = '';
+        for (let e = 0; e <= e1 + 1e-6; e += 0.25) s += this.X(e).toFixed(1) + ',' + this.Y(fn(e)).toFixed(1) + ' ';
+        return s.trim();
+      }
+
+      mulberry32(a) {
+        return function () {
+          a |= 0; a = a + 0x6D2B79F5 | 0;
+          var t = Math.imul(a ^ a >>> 15, 1 | a);
+          t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+      }
+
+      drawTile(cv, d) {
+        if (!cv) return;
+        cv.width = 84; cv.height = 84;
+        const ctx = cv.getContext('2d');
+        const off = document.createElement('canvas'); off.width = 28; off.height = 28;
+        const octx = off.getContext('2d');
+        const img = octx.createImageData(28, 28);
+        const rng = this.mulberry32(d.seed || 1);
+        for (let y = 0; y < 28; y++) {
+          for (let x = 0; x < 28; x++) {
+            const idx = (y * 28 + x) * 4;
+            let v = 16;
+            const tx = (x - 14) / 12.5, ty = (y - 15) / 12.5;
+            if (tx * tx + ty * ty < 1) {
+              v = 72;
+              const lx = (Math.abs(x - 14) - 6) / 5.0, ly = (y - 15) / 8.5;
+              if (lx * lx + ly * ly < 1) v = 42;
+              if (Math.abs(x - 14) < 2) v = 118;
+              if (d.isPneu) {
+                const px = (x - 9) / 4.5, py = (y - 16) / 5.5, rr = px * px + py * py;
+                if (rr < 1) v += 62 * (1 - rr);
+              }
+            }
+            v += (rng() * 2 - 1) * 9;
+            v = this.clamp(v, 0, 255);
+            img.data[idx] = v; img.data[idx + 1] = v; img.data[idx + 2] = v * 0.98; img.data[idx + 3] = 255;
+          }
+        }
+        octx.putImageData(img, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(off, 0, 0, 28, 28, 0, 0, 84, 84);
+      }
+
+      genTiles() {
+        const rng = this.mulberry32(20260624);
+        this.tiles = [];
+        for (let i = 0; i < 36; i++) {
+          const isPneu = rng() < 0.5;
+          const clsCorrect = rng() < 0.97;
+          const qCorrect = rng() < 0.88;
+          const t = isPneu ? 'Pneumonia' : 'Normal';
+          const o = isPneu ? 'Normal' : 'Pneumonia';
+          const d = {
+            isPneu, t,
+            clsPred: clsCorrect ? t : o, clsCorrect,
+            qPred: qCorrect ? t : o, qCorrect,
+            seed: (rng() * 1e9) | 0,
+          };
+          d.agree = d.clsPred === d.qPred;
+          this.tiles.push(d);
+          this.drawTile(this.$('tile-' + i), d);
+        }
+        this.agreeTotal = this.tiles.filter(d => d.agree).length;
+      }
+
+      updateInspector(i) {
+        const d = this.tiles && this.tiles[i];
+        if (!d) return;
+        this.drawTile(this.$('inspect-cv'), d);
+        this.$('insp-hint').style.display = 'none';
+        this.$('insp-body').style.display = 'block';
+        this.$('insp-true').textContent = d.t;
+        const fmt = (p, ok) => p + ' <span style="color:' + (ok ? '#2E9E6B' : '#F76B54') + ';font-weight:600;">' + (ok ? '✓' : '✗') + '</span>';
+        this.$('insp-cls').innerHTML = fmt(d.clsPred, d.clsCorrect);
+        this.$('insp-q').innerHTML = fmt(d.qPred, d.qCorrect);
+      }
+
+      tick(p) {
+        const qcol = this.qcol;
+        const trainP = this.seg(p, 0.06, 0.52);
+        const curEpoch = trainP * 20;
+        const drawE = p < 0.06 ? 0 : (p < 0.52 ? curEpoch : 20);
+
+        this.$('curve-cls').setAttribute('points', this.ptStr(e => this.clsAcc(e), drawE));
+        this.$('curve-q').setAttribute('points', this.ptStr(e => this.qAcc(e), drawE));
+        const showHead = drawE > 0.05 ? 1 : 0;
+        const cx = this.X(drawE), cyC = this.Y(this.clsAcc(drawE)), cyQ = this.Y(this.qAcc(drawE));
+        const hC = this.$('head-cls'), hQ = this.$('head-q');
+        hC.setAttribute('cx', cx); hC.setAttribute('cy', cyC); hC.setAttribute('opacity', showHead);
+        hQ.setAttribute('cx', cx); hQ.setAttribute('cy', cyQ); hQ.setAttribute('opacity', showHead);
+        const lC = this.$('lab-cls'), lQ = this.$('lab-q');
+        lC.setAttribute('x', cx - 8); lC.setAttribute('y', cyC - 8); lC.setAttribute('opacity', showHead);
+        lC.textContent = (this.clsAcc(drawE) * 100).toFixed(1) + '%';
+        lQ.setAttribute('x', cx - 8); lQ.setAttribute('y', cyQ + 16); lQ.setAttribute('opacity', showHead);
+        lQ.textContent = (this.qAcc(drawE) * 100).toFixed(1) + '%';
+
+        const ep = p < 0.06 ? 0 : (p < 0.52 ? Math.floor(curEpoch) : 20);
+        this.$('m-epoch').textContent = this.pad2(ep) + ' / 20';
+        this.$('m-cls').textContent = (this.clsAcc(drawE) * 100).toFixed(1) + '%';
+        this.$('m-q').textContent = (this.qAcc(drawE) * 100).toFixed(1) + '%';
+
+        let stTxt = 'Ready', stDot = '#3a3f48';
+        if (p >= 0.06 && p < 0.52) { stTxt = 'Training'; stDot = '#F7C25B'; }
+        else if (p >= 0.52 && p < 0.66) { stTxt = 'Evaluating'; stDot = qcol; }
+        else if (p >= 0.66) { stTxt = 'Complete'; stDot = '#2E9E6B'; }
+        this.$('st-text').textContent = stTxt;
+        this.$('st-dot').style.background = stDot;
+
+        const evalP = this.seg(p, 0.52, 0.66);
+        const revealed = p < 0.52 ? 0 : (p < 0.66 ? Math.floor(evalP * 36) : 36);
+        let agreeShown = 0;
+        for (let i = 0; i < 36; i++) {
+          const dot = this.$('dot-' + i);
+          if (!dot || !this.tiles) continue;
+          if (i < revealed) {
+            const ag = this.tiles[i].agree;
+            if (ag) agreeShown++;
+            dot.style.background = ag ? '#2E9E6B' : '#F7C25B';
+            dot.style.opacity = '1';
+          } else {
+            dot.style.opacity = '0';
+          }
+        }
+        const ar = this.$('agree-read');
+        ar.style.opacity = this.seg(p, 0.52, 0.56);
+        ar.textContent = agreeShown + ' / 36 agree';
+
+        const vP = this.segE(p, 0.66, 0.86);
+        this.$('bar-cls').style.width = (100 * vP).toFixed(1) + '%';
+        this.$('bar-q').style.width = (2.8 * vP).toFixed(2) + '%';
+        this.$('pc-cls').textContent = Math.round(121410 * vP).toLocaleString('en-US');
+        this.$('pc-q').textContent = Math.round(96 * vP).toString();
+        this.$('vcap').style.opacity = this.seg(p, 0.72, 0.86);
+      }
+
+      startLoop() {
+        clearInterval(this.iv);
+        this.t0 = performance.now();
+        this.iv = setInterval(() => this.frame(), 33);
+      }
+      frame() {
+        const dur = (this.props.durationSec ?? 10) * 1000;
+        let el = performance.now() - this.t0;
+        let p = el / dur;
+        if (p >= 1) {
+          if (this.props.loop ?? false) { p = p % 1; this.t0 = performance.now() - p * dur; }
+          else { p = 1; clearInterval(this.iv); }
+        }
+        this.tick(p);
+      }
+      resetScene() { clearInterval(this.iv); this.tick(0); }
+
+      // scale #qb-root to fit the pinned viewport (all motion is inline SVG/attrs, so a
+      // single CSS transform is safe). reserve a top strip for the OS top-bar.
+      fit() {
+        const root = this.root;
+        root.style.transform = 'none';
+        const w = root.offsetWidth, h = root.offsetHeight;
+        const pinned = window.matchMedia('(min-width:761px)').matches;
+        const RES = pinned ? 56 : 0;
+        const s = Math.min(1, (window.innerWidth - 24) / w, (window.innerHeight - 20 - RES) / h);
+        this.scale = s;
+        const ty = pinned ? RES + Math.max(0, (window.innerHeight - RES - h * s) / 2) : 0;
+        root.style.transformOrigin = 'top center';
+        root.style.transform = `translateY(${ty.toFixed(1)}px) scale(${s.toFixed(4)})`;
+      }
+
+      mount() {
+        this.qcol = this.props.accentQuantum || '#9B8CFF';
+        ['curve-q', 'head-q', 'lab-q'].forEach(id => { const e = this.$(id); if (e) e.setAttribute(id === 'curve-q' ? 'stroke' : 'fill', this.qcol); });
+        const mq = this.$('m-q'); if (mq) mq.style.color = this.qcol;
+        const legq = this.$('leg-q'); if (legq) legq.style.background = this.qcol;
+        const barq = this.$('bar-q'); if (barq) barq.style.background = this.qcol;
+        const link = this.$('qc-link'); if (link) link.style.color = this.qcol;
+
+        this.genTiles();
+        this.root.querySelectorAll('[data-ti]').forEach(el => {
+          const i = parseInt(el.getAttribute('data-ti'), 10);
+          el.addEventListener('mouseenter', () => this.updateInspector(i));
+        });
+
+        const again = this.root.querySelector('[data-runagain]'); if (again) again.addEventListener('click', () => this.startLoop());
+        const rst = this.root.querySelector('[data-reset]'); if (rst) rst.addEventListener('click', () => this.resetScene());
+
+        this.tick(0);   // idle state behind the intro
+        this.fit();
+        addEventListener('resize', () => this.fit(), { passive: true });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.fit());
+      }
+    }
+
+    const qb = new QuantumBench(root);
+
+    // Intro gate: show the context card first; the benchmark begins only on Begin (no
+    // auto-run). Reveal the card when the panel scrolls into view.
+    if (intro) {
+      const begin = intro.querySelector('[data-begin]');
+      if (begin) begin.addEventListener('click', () => { intro.classList.add('gone'); qb.startLoop(); });
+      new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) intro.classList.add('in'); }),
+        { threshold: 0.4 }).observe(root);
+    } else {
+      new IntersectionObserver((es, o) => es.forEach((e) => { if (e.isIntersecting) { qb.startLoop(); o.disconnect(); } }), { threshold: 0.3 }).observe(root);
+    }
+  })();
+</script>

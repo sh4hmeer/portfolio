@@ -1,0 +1,351 @@
+---
+import '@fontsource-variable/space-grotesk';
+import '@fontsource/spectral/600-italic.css';
+// IBM Plex (used by the Omnia EMR-race widget)
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/500.css';
+import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '@fontsource/ibm-plex-mono/600.css';
+import '../styles/global.css';
+import Boot from '../components/Boot.astro';
+
+const { title = 'Shahmeer Shahid · Forward Deployed Engineer' } = Astro.props;
+
+// Drives the top-bar section indicator + scroll spy. Keep in sync with the
+// section ids rendered in index.astro.
+const sections = [
+  { id: 'top',        label: 'intro' },
+  { id: 'projects',   label: 'projects' },
+  { id: 'omnia',      label: 'machine' },
+  { id: 'injections', label: 'injections' },
+  { id: 'research',   label: 'research' },
+  { id: 'builds',     label: 'builds' },
+  { id: 'path',       label: 'path' },
+  { id: 'contact',    label: 'contact' },
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Shahmeer Shahid · Forward Deployed Engineer. Software that removes manual work and turns clinical operations into data." />
+    <title>{title}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%23181d25'/><rect x='4' y='4' width='8' height='8' rx='1.5' fill='%235fc88f'/></svg>" />
+  </head>
+  <body>
+    <canvas class="bg-fx" aria-hidden="true"></canvas>
+    <Boot />
+
+    <!-- ── OS chrome: slim persistent bar framing the whole site as a board ── -->
+    <header class="osbar" aria-label="navigation">
+      <div class="osbar-in">
+        <a class="brand" href="#top">
+          <span class="beacon" aria-hidden="true"></span>
+          <b>SHAHMEER SHAHID</b><span class="brand-sep">//</span><span class="brand-role">FDE</span>
+        </a>
+        <nav class="osnav" aria-label="sections">
+          {sections.slice(1).map((s) => (
+            <a href={`#${s.id}`} data-nav={s.id}>{s.label}</a>
+          ))}
+        </nav>
+        <div class="osmeta">
+          <span class="osmeta-sec" data-current-section>intro</span>
+          <span class="osclock" data-clock aria-hidden="true">--:--:--</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer>
+      <div>SHAHMEER SHAHID · Forward Deployed Engineer</div>
+    </footer>
+
+    <!-- scroll guide: shows in pinned/sticky regions so a stopped screen doesn't read
+         as the bottom of the page. hidden everywhere else (the hero has its own hint). -->
+    <div class="scroll-guide" id="scrollGuide" aria-hidden="true">
+      <span class="sg-txt">keep scrolling</span>
+      <span class="sg-arrow">↓</span>
+    </div>
+
+    <!-- scroll-guide controller: show while a pinned region (clinic stack / benchmark
+         frames) spans the viewport and there's more of it below, hide near its end -->
+    <script is:inline>
+      (function () {
+        const g = document.getElementById('scrollGuide');
+        if (!g) return;
+        const regions = () => Array.from(document.querySelectorAll('[data-pinned]'));
+        let ticking = false;
+        function update() {
+          ticking = false;
+          const vh = window.innerHeight;
+          let show = false;
+          for (const el of regions()) {
+            const r = el.getBoundingClientRect();
+            const total = el.offsetHeight - vh;
+            if (total <= 0) continue;
+            const prog = (-r.top) / total;                 // 0 at entry, 1 at release
+            if (r.top <= 4 && r.bottom >= vh - 4 && prog < 0.8) { show = true; break; }
+          }
+          g.classList.toggle('show', show);
+        }
+        addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+        addEventListener('resize', update, { passive: true });
+        update();
+      })();
+    </script>
+
+    <!-- ambient site backdrop: soft green particles fading in and out to lift the dark -->
+    <script is:inline>
+      (function () {
+        const cv = document.querySelector('.bg-fx');
+        if (!cv) return;
+        const ctx = cv.getContext('2d');
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
+        let w = 0, h = 0, parts = [], raf = null, running = true;
+        const rnd = (a, b) => a + Math.random() * (b - a);
+        const spawn = () => ({ x: rnd(0, w), y: rnd(0, h), r: rnd(1, 2.6), max: rnd(0.08, 0.28), t: rnd(0, Math.PI * 2), spd: rnd(0.004, 0.011) });
+        function init() { const n = Math.round(Math.min(64, (w * h) / 30000)); parts = Array.from({ length: n }, spawn); }
+        function size() { w = innerWidth; h = innerHeight; cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); init(); }
+        function frame() {
+          ctx.clearRect(0, 0, w, h);
+          ctx.fillStyle = '#5fc88f';
+          for (const p of parts) {
+            p.t += p.spd;
+            const s = Math.sin(p.t), a = (s * 0.5 + 0.5) * p.max;
+            if (s < -0.985) { Object.assign(p, spawn()); p.t = 0; }   // respawn elsewhere once faded out
+            ctx.globalAlpha = a * 0.16;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3.4, 0, 7); ctx.fill();
+            ctx.globalAlpha = a;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+          raf = running ? requestAnimationFrame(frame) : null;
+        }
+        size();
+        addEventListener('resize', size, { passive: true });
+        if (reduce) {
+          ctx.fillStyle = '#5fc88f';
+          for (const p of parts) { ctx.globalAlpha = p.max * 0.6; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }
+          return;
+        }
+        document.addEventListener('visibilitychange', () => {
+          running = !document.hidden;
+          if (running && !raf) raf = requestAnimationFrame(frame);
+        });
+        raf = requestAnimationFrame(frame);
+      })();
+    </script>
+
+    <!-- cursor TextLens: a WebGL screen-space lens warp over the big headings,
+         driven by the pointer (lens distortion + chromatic aberration). -->
+    <script is:inline>
+      (function () {
+        if (!matchMedia('(pointer:fine)').matches) return;
+        if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const PAD = 70;                                  // px bleed around the text for the lens
+        const AMP = 0.55, RAD_PX = 150, CHROM = 0.7, EASE = 0.16;
+        const radiusFor = (el) => el.classList.contains('pi-title') ? 320 : RAD_PX; // bigger lens on the huge PROJECTS title
+        document.querySelectorAll('.hero-name, .pi-title').forEach(setup);
+
+        function setup(el) {
+          const cs0 = getComputedStyle(el);
+          const origColor = cs0.color;
+          if (cs0.position === 'static') el.style.position = 'relative';
+
+          const cv = document.createElement('canvas');
+          cv.setAttribute('aria-hidden', 'true');
+          cv.style.cssText = 'position:absolute;pointer-events:none;z-index:1;left:' + (-PAD) + 'px;top:' + (-PAD) + 'px;';
+          el.appendChild(cv);
+          const gl = cv.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: true });
+          if (!gl) { cv.remove(); return; }              // no WebGL -> leave the normal text
+
+          const vs = 'attribute vec2 p;varying vec2 v;void main(){v=p*0.5+0.5;gl_Position=vec4(p,0.,1.);}';
+          const fs = 'precision highp float;varying vec2 v;uniform sampler2D t;uniform vec2 m,a;uniform float amp,rad,chrom;'
+            + 'void main(){vec2 uv=v;vec2 d=(uv-m)*a;float dist=length(d);float k=clamp(1.-dist/rad,0.,1.);float f=k*k*(3.-2.*k);'
+            + 'vec2 dir=d/(dist+1e-4)/a;vec2 off=-dir*f*amp*0.12;float ca=chrom*0.01*f;'
+            + 'vec4 g=texture2D(t,uv+off);float r=texture2D(t,uv+off+dir*ca).r;float b=texture2D(t,uv+off-dir*ca).b;'
+            + 'float al=max(g.a,max(texture2D(t,uv+off+dir*ca).a,texture2D(t,uv+off-dir*ca).a));gl_FragColor=vec4(r,g.g,b,al);}';
+          const mk = (ty, src) => { const s = gl.createShader(ty); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+          const prog = gl.createProgram();
+          gl.attachShader(prog, mk(gl.VERTEX_SHADER, vs));
+          gl.attachShader(prog, mk(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(prog);
+          if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { cv.remove(); return; }
+          gl.useProgram(prog);
+          const buf = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+          const pl = gl.getAttribLocation(prog, 'p');
+          gl.enableVertexAttribArray(pl); gl.vertexAttribPointer(pl, 2, gl.FLOAT, false, 0, 0);
+          const U = {}; ['t', 'm', 'a', 'amp', 'rad', 'chrom'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
+          const tex = gl.createTexture();
+          const off = document.createElement('canvas');
+          const octx = off.getContext('2d');
+
+          el.style.color = 'transparent';                // hide original glyphs, keep layout
+          const radPx = radiusFor(el);
+          let W = 1, H = 1, aspect = [1, 1];
+          const mouse = [0.5, 1.6], target = [0.5, 1.6]; // start off the text (no warp)
+          let lastClient = null, raf = null, visible = false;
+
+          function render() {
+            const r = el.getBoundingClientRect();
+            const cs = getComputedStyle(el);
+            W = Math.max(1, r.width + PAD * 2); H = Math.max(1, r.height + PAD * 2);
+            cv.style.width = W + 'px'; cv.style.height = H + 'px';
+            cv.width = off.width = Math.round(W * dpr); cv.height = off.height = Math.round(H * dpr);
+            gl.viewport(0, 0, cv.width, cv.height);
+            aspect = W >= H ? [W / H, 1] : [1, H / W];
+            octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            octx.clearRect(0, 0, W, H);
+            octx.fillStyle = origColor;
+            octx.textBaseline = 'middle'; octx.textAlign = 'left';
+            octx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+            try { octx.letterSpacing = cs.letterSpacing; } catch (e) {}
+            octx.fillText(el.getAttribute('aria-label') || el.textContent.replace(/ /g, ' '), PAD, PAD + r.height / 2);
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, off);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          }
+          function aim() {
+            if (!lastClient) return;
+            const r = cv.getBoundingClientRect();
+            target[0] = (lastClient[0] - r.left) / r.width;
+            target[1] = 1 - (lastClient[1] - r.top) / r.height;
+          }
+          function loop() {
+            mouse[0] += (target[0] - mouse[0]) * EASE;
+            mouse[1] += (target[1] - mouse[1]) * EASE;
+            gl.useProgram(prog);
+            gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.uniform1i(U.t, 0);
+            gl.uniform2f(U.m, mouse[0], mouse[1]);
+            gl.uniform2f(U.a, aspect[0], aspect[1]);
+            gl.uniform1f(U.amp, AMP);
+            gl.uniform1f(U.rad, radPx / H);
+            gl.uniform1f(U.chrom, CHROM);
+            gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            raf = visible ? requestAnimationFrame(loop) : null;
+          }
+
+          addEventListener('pointermove', (e) => { lastClient = [e.clientX, e.clientY]; aim(); }, { passive: true });
+          addEventListener('scroll', aim, { passive: true });
+          addEventListener('resize', render, { passive: true });
+          if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+          new IntersectionObserver((es) => es.forEach((e) => {
+            visible = e.isIntersecting;
+            if (visible && !raf) raf = requestAnimationFrame(loop);
+          }), { rootMargin: '120px' }).observe(el);
+          render();
+        }
+      })();
+    </script>
+
+    <script is:inline data-astro-rerun>
+      // live clock
+      const clk = document.querySelector('[data-clock]');
+      const pad = (n) => String(n).padStart(2, '0');
+      function tick() {
+        if (!clk) return;
+        const d = new Date();
+        clk.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      }
+      tick(); setInterval(tick, 1000);
+
+      // scroll spy -> top-bar indicator + active nav link
+      const secEl = document.querySelector('[data-current-section]');
+      const navLinks = new Map(
+        [...document.querySelectorAll('[data-nav]')].map((a) => [a.dataset.nav, a])
+      );
+      const labels = {
+        top: 'intro', projects: 'selected projects', clinic: 'clinic flow', omnia: 'machine → emr',
+        injections: 'injection forms', research: 'quantum ml',
+        builds: 'more builds', path: 'the path', contact: 'contact',
+      };
+      const spy = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          const id = e.target.id;
+          if (secEl && labels[id]) secEl.textContent = labels[id];
+          navLinks.forEach((a) => a.classList.remove('on'));
+          navLinks.get(id)?.classList.add('on');
+        });
+      }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+      // observe ONLY the known section anchors (not every [id]; the pinned widgets
+      // contain many internal ids like #clock/#figR that would otherwise blank the nav)
+      Object.keys(labels).forEach((id) => { const el = document.getElementById(id); if (el) spy.observe(el); });
+    </script>
+
+    <style>
+      .bg-fx {
+        position: fixed; inset: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 0;
+      }
+      /* scroll guide: subtle bouncing hint shown in pinned regions (not the bottom) */
+      .scroll-guide {
+        position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+        z-index: 30; pointer-events: none;
+        display: flex; flex-direction: column; align-items: center; gap: 3px;
+        padding: 8px 16px 6px; border-radius: 999px;
+        background: color-mix(in srgb, var(--bg-2) 62%, transparent);
+        border: 1px solid var(--line); backdrop-filter: blur(7px);
+        font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+        color: var(--ink-dim);
+        opacity: 0; visibility: hidden; transition: opacity .4s ease, visibility .4s ease;
+      }
+      .scroll-guide.show { opacity: 1; visibility: visible; }
+      .scroll-guide .sg-arrow { font-size: 14px; line-height: 1; color: var(--ink-faint); animation: sgBob 1.5s ease-in-out infinite; }
+      @keyframes sgBob { 0%,100% { transform: translateY(-1px); opacity: .55; } 50% { transform: translateY(4px); opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .scroll-guide .sg-arrow { animation: none; } }
+
+      .osbar {
+        position: sticky; top: 0; z-index: 40;
+        height: var(--bar-h);
+        background: color-mix(in srgb, var(--bg-2) 86%, transparent);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--line);
+      }
+      .osbar-in {
+        max-width: var(--maxw); margin: 0 auto; height: 100%;
+        padding: 0 var(--pad);
+        display: flex; align-items: center; gap: 20px;
+        font-family: var(--mono); font-size: 12.5px;
+      }
+      .brand { color: var(--ink); display: flex; align-items: center; gap: 8px; letter-spacing: .04em; }
+      .brand:hover { text-decoration: none; }
+      .brand b { font-weight: 700; }
+      .brand-sep { color: var(--ink-faint); }
+      .brand-role { color: var(--green); }
+      .beacon {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--green); box-shadow: 0 0 10px var(--green);
+        animation: pulse 2.4s ease-in-out infinite;
+      }
+      @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+      .osnav { display: flex; gap: 16px; margin-left: 8px; overflow: hidden; }
+      .osnav a { color: var(--ink-faint); white-space: nowrap; }
+      .osnav a:hover { color: var(--ink-dim); text-decoration: none; }
+      .osnav a.on { color: var(--ink); }
+      .osmeta { margin-left: auto; display: flex; align-items: center; gap: 14px; color: var(--ink-dim); }
+      .osmeta-sec { color: var(--ink); }
+      .osclock { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+      @media (max-width: 720px) {
+        .osnav { display: none; }
+      }
+    </style>
+  </body>
+</html>

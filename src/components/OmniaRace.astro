@@ -1,0 +1,876 @@
+---
+// EMR Race — Manual Entry vs. Automated Watcher.
+// Ported faithfully from the design handoff (design_handoff_emr_race): markup is
+// the authored template verbatim; the Component logic is reproduced with the
+// `setInterval` tweens converted to requestAnimationFrame (same durations/easing)
+// and the standalone's window.scroll calls neutralised (it lives in the page now).
+// Values/fields are the real Topcon Omnia TRK-3 -> OSCAR set.
+---
+<div class="bench-scene" data-bench-scene>
+<div class="emr-root" style="background:#0e1116; font-family:'IBM Plex Sans',system-ui,sans-serif; color:#e7ecf3; padding:30px 30px 40px; box-sizing:border-box;">
+
+  <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; max-width:1160px; margin:0 auto 20px;">
+    <div>
+      <div style="font:600 19px/1.2 'IBM Plex Sans'; letter-spacing:-.01em;">Manual Entry vs. Automated Watcher</div>
+      <div style="font:400 12.5px/1.4 'IBM Plex Sans'; color:#8a93a0; margin-top:5px;">One biometer printout &middot; eight EMR fields buried in the noise &middot; two ways to move them.</div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button data-start style="background:#F76B54; color:#fff; border:none; padding:10px 18px; border-radius:7px; font:600 13px 'IBM Plex Sans'; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.08);">Start race</button>
+      <button data-reset style="background:#0c0f14; border:1px solid #2a313d; color:#c8d0db; padding:10px 16px; border-radius:7px; font:600 13px 'IBM Plex Sans'; cursor:pointer;">Reset</button>
+    </div>
+  </div>
+
+  <div class="emr-inner" style="max-width:1160px; margin:0 auto; position:relative; display:flex; flex-direction:column; gap:16px;">
+
+    <!-- ================= MANUAL LANE ================= -->
+    <div data-lanecard data-lane="manual" style="position:relative; background:#161b22; border:1px solid #272e39; border-radius:10px; padding:15px 18px 18px; box-shadow:0 1px 0 rgba(0,0,0,.02);">
+      <div style="display:flex; align-items:center; gap:13px; margin-bottom:14px;">
+        <span style="display:inline-flex; align-items:center; gap:7px; font:600 12px 'IBM Plex Sans'; color:#fff; background:#6B7B92; padding:5px 11px; border-radius:6px;">
+          <span style="width:7px; height:7px; border-radius:50%; background:#d7dde6; opacity:.85;"></span>Manual Entry
+        </span>
+        <span style="font:400 11.5px 'IBM Plex Sans'; color:#7e8a9a;">Staffer reads the paper printout</span>
+        <div style="margin-left:auto; display:flex; align-items:stretch;">
+          <div style="display:flex; flex-direction:column; gap:3px; padding:0 16px; text-align:right;">
+            <span style="font:500 9px 'IBM Plex Sans'; letter-spacing:.13em; text-transform:uppercase; color:#6f7a8a;">Time</span>
+            <span data-clock data-lane="manual" style="font:500 17px/1 'IBM Plex Mono'; color:#dbe2ea;">00:00.00</span>
+          </div>
+          <div style="width:1px; background:#2a313d;"></div>
+          <div style="display:flex; flex-direction:column; gap:3px; padding:0 16px; text-align:right;">
+            <span style="font:500 9px 'IBM Plex Sans'; letter-spacing:.13em; text-transform:uppercase; color:#6f7a8a;">Keystrokes</span>
+            <span data-actions data-lane="manual" style="font:500 17px/1 'IBM Plex Mono'; color:#dbe2ea;">0</span>
+          </div>
+          <div style="width:1px; background:#2a313d;"></div>
+          <div style="display:flex; flex-direction:column; gap:3px; padding:0 0 0 16px; text-align:right;">
+            <span style="font:500 9px 'IBM Plex Sans'; letter-spacing:.13em; text-transform:uppercase; color:#6f7a8a;">Errors</span>
+            <span data-errors data-lane="manual" style="font:500 17px/1 'IBM Plex Mono'; color:#dbe2ea;">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div data-body data-lane="manual" style="position:relative; display:flex; align-items:center; min-height:336px;">
+        <div data-machine data-lane="manual" style="width:118px; flex:none; margin-right:18px; align-self:flex-start; padding-top:6px; display:flex; flex-direction:column; align-items:center; gap:5px;">
+          <svg width="104" height="118" viewBox="0 0 108 122">
+            <rect x="10" y="6" width="88" height="100" rx="9" fill="#c7cdd5" stroke="#9ba2ac" stroke-width="1.5"></rect>
+            <rect x="20" y="16" width="68" height="32" rx="4" fill="#262A30"></rect>
+            <text data-screen data-lane="manual" x="54" y="36" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="#7FC8A8" letter-spacing="1">READY</text>
+            <circle cx="54" cy="71" r="15" fill="#b4bbc4" stroke="#9ba2ac" stroke-width="1.5"></circle>
+            <circle cx="54" cy="71" r="6" fill="#3b424c"></circle>
+            <rect x="22" y="98" width="64" height="6" rx="2" fill="#7c8590"></rect>
+          </svg>
+          <span style="font:500 8.5px 'IBM Plex Sans'; letter-spacing:.12em; text-transform:uppercase; color:#6f7a8a;">Biometer</span>
+        </div>
+
+        <div style="width:236px; flex:none; margin-right:30px;">
+          <div data-bigreceipt data-lane="manual" style="width:236px; background:#f6f5f1; border:1px solid #d7d4cb; box-shadow:0 14px 32px rgba(0,0,0,.45); padding:12px 13px 13px; font-family:'IBM Plex Mono'; font-size:10px; line-height:1.5; color:#16181c; transform-origin:center;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-weight:600; font-size:10.5px;">NAME Carl Shen</span><span style="color:#5d6878;">:)</span></div>
+            <div>MAY 25 2026&nbsp;&nbsp;9:28AM</div>
+            <div>NO:51112 SN:AW7000633</div>
+            <div style="border-top:1px dashed #cbc7bc; margin:5px 0;"></div>
+            <div style="display:flex; justify-content:space-between;"><span style="font-weight:600;">REF.DATA</span><span>CYL:(&minus;)</span></div>
+            <div>VD:<span style="color:#6b7280;">13.75</span>&nbsp;&nbsp;PD:<span data-rcpt data-lane="manual" data-key="pd" style="padding:0 1px;">59</span></div>
+            <div style="display:flex;"><span style="width:26px; flex:none;">&lt;R&gt;</span><span style="width:44px; flex:none; text-align:right;">S</span><span style="width:44px; flex:none; text-align:right;">C</span><span style="width:26px; flex:none; text-align:right;">A</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:26px; flex:none;"></span><span style="width:44px; flex:none; text-align:right;">&minus;1.25</span><span style="width:44px; flex:none; text-align:right;">&minus;0.25</span><span style="width:26px; flex:none; text-align:right;">85</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:26px; flex:none;"></span><span style="width:44px; flex:none; text-align:right;">&minus;1.00</span><span style="width:44px; flex:none; text-align:right;">&minus;0.25</span><span style="width:26px; flex:none; text-align:right;">83</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:26px; flex:none;"></span><span style="width:44px; flex:none; text-align:right;">&minus;1.25</span><span style="width:44px; flex:none; text-align:right;">&minus;0.25</span><span style="width:26px; flex:none; text-align:right;">87</span></div>
+            <div style="display:flex; font-weight:600;"><span style="width:26px; flex:none; color:#bf9220;">&#9656;</span><span style="width:44px; flex:none; text-align:right;"><span data-rcpt data-lane="manual" data-key="sph" style="padding:0 1px;">&minus;1.00</span></span><span style="width:44px; flex:none; text-align:right;"><span data-rcpt data-lane="manual" data-key="cyl" style="padding:0 1px;">&minus;0.25</span></span><span style="width:26px; flex:none; text-align:right;"><span data-rcpt data-lane="manual" data-key="axis" style="padding:0 1px;">85</span></span></div>
+            <div style="padding-left:26px;">S.E.<span style="color:#6b7280;">&minus;1.25</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:26px; flex:none; color:#16181c;">&lt;L&gt;</span><span style="width:44px; flex:none; text-align:right;">&minus;0.50</span><span style="width:44px; flex:none; text-align:right;">&minus;0.50</span><span style="width:26px; flex:none; text-align:right;">82</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:26px; flex:none;"></span><span style="width:44px; flex:none; text-align:right;">&minus;0.50</span><span style="width:44px; flex:none; text-align:right;">&minus;0.50</span><span style="width:26px; flex:none; text-align:right;">84</span></div>
+            <div style="border-top:1px dashed #cbc7bc; margin:5px 0;"></div>
+            <div style="font-weight:600;">KRT.DATA</div>
+            <div style="display:flex;"><span style="width:30px; flex:none;">&lt;R&gt;</span><span style="width:46px; flex:none; text-align:right;">D</span><span style="width:38px; flex:none; text-align:right;">MM</span><span style="width:26px; flex:none; text-align:right;">A</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:30px; flex:none; color:#16181c;">R1</span><span style="width:46px; flex:none; text-align:right;"><span data-rcpt data-lane="manual" data-key="k1" style="padding:0 1px;">44.00</span></span><span style="width:38px; flex:none; text-align:right;">7.67</span><span style="width:26px; flex:none; text-align:right;">101</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:30px; flex:none; color:#16181c;">R2</span><span style="width:46px; flex:none; text-align:right;"><span data-rcpt data-lane="manual" data-key="k2" style="padding:0 1px;">45.50</span></span><span style="width:38px; flex:none; text-align:right;">7.43</span><span style="width:26px; flex:none; text-align:right;">11</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:30px; flex:none; color:#16181c;">AVG</span><span style="width:46px; flex:none; text-align:right;">44.75</span><span style="width:38px; flex:none; text-align:right;">7.55</span><span style="width:26px; flex:none; text-align:right;"></span></div>
+            <div style="padding-left:30px;">R1&minus;R2:<span style="color:#6b7280;">&minus;1.50</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:30px; flex:none; color:#16181c;">&lt;L&gt;</span><span style="width:46px; flex:none; text-align:right;">44.00</span><span style="width:38px; flex:none; text-align:right;">7.68</span><span style="width:26px; flex:none; text-align:right;">71</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:30px; flex:none;"></span><span style="width:46px; flex:none; text-align:right;">45.00</span><span style="width:38px; flex:none; text-align:right;">7.50</span><span style="width:26px; flex:none; text-align:right;">161</span></div>
+            <div style="border-top:1px dashed #cbc7bc; margin:5px 0;"></div>
+            <div style="display:flex; justify-content:space-between;"><span style="font-weight:600;">TONO.DATA</span><span>mmHg AVG</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:24px; flex:none; color:#16181c;">R</span><span style="width:40px; flex:none; text-align:right;">14</span><span style="width:40px; flex:none; text-align:right;">15</span><span style="width:42px; flex:none; text-align:right;"><span data-rcpt data-lane="manual" data-key="iop" style="padding:0 1px;">16</span></span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:24px; flex:none; color:#16181c;">L</span><span style="width:40px; flex:none; text-align:right;">(15)</span><span style="width:40px; flex:none; text-align:right;">16</span><span style="width:42px; flex:none; text-align:right;">16</span></div>
+            <div style="display:flex; justify-content:space-between; margin-top:2px;"><span style="font-weight:600;">PACH.DATA</span><span>&micro;m AVG</span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:24px; flex:none; color:#16181c;">R</span><span style="width:40px; flex:none; text-align:right;">495</span><span style="width:40px; flex:none; text-align:right;">498</span><span style="width:42px; flex:none; text-align:right;"><span data-rcpt data-lane="manual" data-key="cct" style="padding:0 1px;">497</span></span></div>
+            <div style="display:flex; color:#6b7280;"><span style="width:24px; flex:none; color:#16181c;">L</span><span style="width:40px; flex:none; text-align:right;">505</span><span style="width:40px; flex:none; text-align:right;">500</span><span style="width:42px; flex:none; text-align:right;">502</span></div>
+            <div style="border-top:1px dashed #cbc7bc; margin:5px 0;"></div>
+            <div style="text-align:right; font-weight:600; letter-spacing:1px;">TOPCON</div>
+          </div>
+        </div>
+
+        <div data-paper data-lane="manual" style="position:absolute; left:14px; top:24px; width:120px; background:#f6f5f1; border:1px solid #d7d4cb; box-shadow:0 6px 16px rgba(0,0,0,.4); padding:8px 9px 12px; transform-origin:center; opacity:0; z-index:7;">
+          <div style="height:5px; background:#52555c; border-radius:1px; width:70%; margin-bottom:5px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:90%; margin-bottom:4px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:55%; margin-bottom:7px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:60%; margin-bottom:4px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:85%; margin-bottom:4px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:78%; margin-bottom:4px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:88%; margin-bottom:7px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:50%; margin-bottom:4px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:82%; margin-bottom:4px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:90%; margin-bottom:4px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:64%; margin-bottom:7px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:58%; margin-bottom:4px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:86%; margin-bottom:4px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:72%; margin-bottom:4px;"></div>
+          <div style="height:3px; background:#c5c2b8; border-radius:1px; width:80%;"></div>
+        </div>
+
+        <div style="flex:none; width:412px; margin-left:auto; align-self:center;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <span style="font:600 10px 'IBM Plex Sans'; letter-spacing:.09em; text-transform:uppercase; color:#7e8a9a;">EMR &middot; OD Encounter</span>
+            <span data-formstatus data-lane="manual" style="font:500 9px 'IBM Plex Mono'; color:#5d6878;">0 / 8 filled</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px 14px;">
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">Sphere (OD)</span><div data-emr data-lane="manual" data-key="sph" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">D</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">Cylinder (OD)</span><div data-emr data-lane="manual" data-key="cyl" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">D</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">Axis (OD)</span><div data-emr data-lane="manual" data-key="axis" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">&deg;</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">PD</span><div data-emr data-lane="manual" data-key="pd" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">mm</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">K1 (OD)</span><div data-emr data-lane="manual" data-key="k1" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">D</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">K2 (OD)</span><div data-emr data-lane="manual" data-key="k2" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">D</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">IOP (OD)</span><div data-emr data-lane="manual" data-key="iop" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">mmHg</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">CCT (OD)</span><div data-emr data-lane="manual" data-key="cct" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">&micro;m</span></div></div>
+          </div>
+        </div>
+
+        <svg data-overlay data-lane="manual" style="position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; z-index:4;">
+          <defs><marker id="ah-manual" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6B7B92"></path></marker></defs>
+          <g data-arrows></g>
+        </svg>
+        <div data-cursor data-lane="manual" style="position:absolute; left:0; top:0; width:22px; height:22px; z-index:8; pointer-events:none;">
+          <svg width="22" height="22" viewBox="0 0 22 22"><path d="M2,2 L2,17 L6.4,13 L9.6,19.5 L12.4,18.3 L9.2,11.9 L15,11.9 Z" fill="#dbe2ea" stroke="#fff" stroke-width="1.1"></path></svg>
+        </div>
+      </div>
+
+      <div data-lanescrim data-lane="manual" style="position:absolute; inset:0; background:rgba(251,251,249,0.45); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); border-radius:10px; opacity:0; display:none; z-index:20;"></div>
+      <svg data-lanearrows data-lane="manual" style="position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; z-index:22;"><defs><marker id="ah-pop-manual" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6B7B92"></path></marker></defs><g data-poparrows></g></svg>
+      <div data-lanepop data-lane="manual" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:23; opacity:0; display:none;"></div>
+    </div>
+
+    <!-- ================= WATCHER LANE ================= -->
+    <div data-lanecard data-lane="watcher" style="position:relative; background:#161b22; border:1px solid #272e39; border-radius:10px; padding:15px 18px 18px; box-shadow:0 1px 0 rgba(0,0,0,.02);">
+      <div style="display:flex; align-items:center; gap:13px; margin-bottom:14px;">
+        <span style="display:inline-flex; align-items:center; gap:7px; font:600 12px 'IBM Plex Sans'; color:#fff; background:#F76B54; padding:5px 11px; border-radius:6px;">
+          <span style="width:7px; height:7px; border-radius:50%; background:#d7dde6; opacity:.9;"></span>Watcher
+        </span>
+        <span style="font:400 11.5px 'IBM Plex Sans'; color:#7e8a9a;">Script reads the digital export</span>
+        <div style="margin-left:auto; display:flex; align-items:stretch;">
+          <div style="display:flex; flex-direction:column; gap:3px; padding:0 16px; text-align:right;">
+            <span style="font:500 9px 'IBM Plex Sans'; letter-spacing:.13em; text-transform:uppercase; color:#6f7a8a;">Time</span>
+            <span data-clock data-lane="watcher" style="font:500 17px/1 'IBM Plex Mono'; color:#dbe2ea;">00:00.00</span>
+          </div>
+          <div style="width:1px; background:#2a313d;"></div>
+          <div style="display:flex; flex-direction:column; gap:3px; padding:0 16px; text-align:right;">
+            <span style="font:500 9px 'IBM Plex Sans'; letter-spacing:.13em; text-transform:uppercase; color:#6f7a8a;">Actions</span>
+            <span data-actions data-lane="watcher" style="font:500 17px/1 'IBM Plex Mono'; color:#dbe2ea;">0</span>
+          </div>
+          <div style="width:1px; background:#2a313d;"></div>
+          <div style="display:flex; flex-direction:column; gap:3px; padding:0 0 0 16px; text-align:right;">
+            <span style="font:500 9px 'IBM Plex Sans'; letter-spacing:.13em; text-transform:uppercase; color:#6f7a8a;">Errors</span>
+            <span data-errors data-lane="watcher" style="font:500 17px/1 'IBM Plex Mono'; color:#dbe2ea;">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div data-body data-lane="watcher" style="position:relative; display:flex; align-items:center; min-height:336px;">
+        <div data-machine data-lane="watcher" style="width:118px; flex:none; margin-right:18px; align-self:flex-start; padding-top:6px; display:flex; flex-direction:column; align-items:center; gap:5px; position:relative;">
+          <svg width="104" height="118" viewBox="0 0 108 122">
+            <rect x="10" y="6" width="88" height="100" rx="9" fill="#c7cdd5" stroke="#9ba2ac" stroke-width="1.5"></rect>
+            <rect x="20" y="16" width="68" height="32" rx="4" fill="#262A30"></rect>
+            <text data-screen data-lane="watcher" x="54" y="36" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="#7FC8A8" letter-spacing="1">READY</text>
+            <circle cx="54" cy="71" r="15" fill="#b4bbc4" stroke="#9ba2ac" stroke-width="1.5"></circle>
+            <circle cx="54" cy="71" r="6" fill="#3b424c"></circle>
+            <rect x="22" y="98" width="64" height="6" rx="2" fill="#7c8590"></rect>
+          </svg>
+          <span style="font:500 8.5px 'IBM Plex Sans'; letter-spacing:.12em; text-transform:uppercase; color:#6f7a8a;">Biometer</span>
+        </div>
+
+        <div style="width:268px; flex:none; margin-right:30px;">
+          <div data-digital data-lane="watcher" style="width:268px; background:#0c0f14; border:1px solid #2a313d; border-radius:9px; box-shadow:0 12px 30px rgba(31,44,60,.16); overflow:hidden; transform-origin:center; opacity:0;">
+            <div style="display:flex; align-items:center; gap:8px; background:#171c24; border-bottom:1px solid #2a313d; padding:8px 11px;">
+              <span style="width:11px; height:11px; border-radius:50%; background:#FF5F57;"></span>
+              <span style="width:11px; height:11px; border-radius:50%; background:#FEBC2E;"></span>
+              <span style="width:11px; height:11px; border-radius:50%; background:#28C840;"></span>
+              <div style="margin-left:8px; flex:1; background:#0c0f14; border:1px solid #2a313d; border-radius:5px; padding:3px 9px; font:500 9.5px 'IBM Plex Mono'; color:#8a96a6; display:flex; align-items:center; gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#28C840;"></span>emr-sync.health/import</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:7px; background:#12161c; border-bottom:1px solid #222833; padding:6px 12px;">
+              <span style="width:7px; height:7px; border-radius:2px; background:#F76B54;"></span>
+              <span style="font:600 10px 'IBM Plex Mono'; color:#cfd6df;">biometry_51112.xml</span>
+              <span data-digtag style="margin-left:auto; font:600 8px 'IBM Plex Sans'; color:#7d8a98; text-transform:uppercase; letter-spacing:.1em;">queued</span>
+            </div>
+            <div style="padding:11px 14px 14px; font:500 11px/1.78 'IBM Plex Mono'; color:#c4ccd6;">
+              <div><span style="color:#7d8a98;">&lt;patient&gt;</span> Carl Shen</div>
+              <div><span style="color:#7d8a98;">&lt;ref eye=&quot;R&quot;&gt;</span></div>
+              <div style="padding-left:16px;">sph<span style="display:inline-block; width:66px; text-align:right;"><span data-rcpt data-lane="watcher" data-key="sph" style="padding:0 2px; border-radius:3px;">&minus;1.00</span></span></div>
+              <div style="padding-left:16px;">cyl<span style="display:inline-block; width:66px; text-align:right;"><span data-rcpt data-lane="watcher" data-key="cyl" style="padding:0 2px; border-radius:3px;">&minus;0.25</span></span></div>
+              <div style="padding-left:16px;">axis<span style="display:inline-block; width:60px; text-align:right;"><span data-rcpt data-lane="watcher" data-key="axis" style="padding:0 2px; border-radius:3px;">85</span></span></div>
+              <div><span style="color:#7d8a98;">&lt;pd&gt;</span><span style="display:inline-block; width:44px; text-align:right;"><span data-rcpt data-lane="watcher" data-key="pd" style="padding:0 2px; border-radius:3px;">59</span></span></div>
+              <div><span style="color:#7d8a98;">&lt;krt eye=&quot;R&quot;&gt;</span></div>
+              <div style="padding-left:16px;">k1<span style="display:inline-block; width:74px; text-align:right;"><span data-rcpt data-lane="watcher" data-key="k1" style="padding:0 2px; border-radius:3px;">44.00</span></span></div>
+              <div style="padding-left:16px;">k2<span style="display:inline-block; width:74px; text-align:right;"><span data-rcpt data-lane="watcher" data-key="k2" style="padding:0 2px; border-radius:3px;">45.50</span></span></div>
+              <div><span style="color:#7d8a98;">&lt;tono eye=&quot;R&quot;&gt;</span><span style="display:inline-block; width:32px; text-align:right;"><span data-rcpt data-lane="watcher" data-key="iop" style="padding:0 2px; border-radius:3px;">16</span></span></div>
+              <div><span style="color:#7d8a98;">&lt;pach eye=&quot;R&quot;&gt;</span><span style="display:inline-block; width:28px; text-align:right;"><span data-rcpt data-lane="watcher" data-key="cct" style="padding:0 2px; border-radius:3px;">497</span></span></div>
+              <div><span style="color:#7d8a98;">&lt;/export&gt;</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:none; width:412px; margin-left:auto; align-self:center;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <span style="font:600 10px 'IBM Plex Sans'; letter-spacing:.09em; text-transform:uppercase; color:#7e8a9a;">EMR &middot; OD Encounter</span>
+            <span data-formstatus data-lane="watcher" style="font:500 9px 'IBM Plex Mono'; color:#5d6878;">0 / 8 filled</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px 14px;">
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">Sphere (OD)</span><div data-emr data-lane="watcher" data-key="sph" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px; opacity:0;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">D</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">Cylinder (OD)</span><div data-emr data-lane="watcher" data-key="cyl" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px; opacity:0;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">D</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">Axis (OD)</span><div data-emr data-lane="watcher" data-key="axis" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px; opacity:0;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">&deg;</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">PD</span><div data-emr data-lane="watcher" data-key="pd" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px; opacity:0;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">mm</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">K1 (OD)</span><div data-emr data-lane="watcher" data-key="k1" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px; opacity:0;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">D</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">K2 (OD)</span><div data-emr data-lane="watcher" data-key="k2" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px; opacity:0;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">D</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">IOP (OD)</span><div data-emr data-lane="watcher" data-key="iop" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px; opacity:0;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">mmHg</span></div></div>
+            <div style="display:flex; flex-direction:column; gap:4px;"><span style="font:500 9.5px 'IBM Plex Sans'; letter-spacing:.05em; text-transform:uppercase; color:#7e8a9a;">CCT (OD)</span><div data-emr data-lane="watcher" data-key="cct" style="position:relative; height:31px; border:1px solid #4a5260; border-radius:5px; background:#0c0f14; display:flex; align-items:center; padding:0 9px; font:500 13px/1 'IBM Plex Mono'; color:#e7ecf3;"><span data-val></span><span data-caret style="display:inline-block; width:1.5px; height:15px; background:#e7ecf3; margin-left:1px; opacity:0;"></span><span style="margin-left:auto; font:400 10px 'IBM Plex Sans'; color:#5d6878;">&micro;m</span></div></div>
+          </div>
+        </div>
+
+        <svg data-overlay data-lane="watcher" style="position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; z-index:4;">
+          <defs><marker id="ah-watcher" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#F76B54"></path></marker></defs>
+          <g data-arrows></g>
+        </svg>
+      </div>
+
+      <div data-lanescrim data-lane="watcher" style="position:absolute; inset:0; background:rgba(251,251,249,0.45); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); border-radius:10px; opacity:0; display:none; z-index:20;"></div>
+      <svg data-lanearrows data-lane="watcher" style="position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; z-index:22;"><defs><marker id="ah-pop-watcher" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#F76B54"></path></marker></defs><g data-poparrows></g></svg>
+      <div data-lanepop data-lane="watcher" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:23; opacity:0; display:none;"></div>
+    </div>
+
+    <!-- ================= RESULTS (inline, below) ================= -->
+    <div data-results style="background:#1F2125; border-radius:10px; padding:17px 22px; display:flex; align-items:center; gap:24px; color:#fff; opacity:0;">
+      <div style="display:flex; flex-direction:column; gap:3px;">
+        <span style="font:500 9px 'IBM Plex Sans'; letter-spacing:.14em; text-transform:uppercase; color:#8C8E96;">Watcher advantage</span>
+        <span style="font:600 30px/1 'IBM Plex Mono'; color:#5fc88f;"><span data-mult>0</span>&times;<span style="font:600 14px 'IBM Plex Sans'; color:#fff; margin-left:8px;">faster</span></span>
+      </div>
+      <div style="width:1px; align-self:stretch; background:#34363B;"></div>
+      <div data-rescell="time" style="display:flex; flex-direction:column; gap:6px;">
+        <span style="font:500 9px 'IBM Plex Sans'; letter-spacing:.14em; text-transform:uppercase; color:#8C8E96;">Time</span>
+        <span style="font:500 15px 'IBM Plex Mono';"><span data-rtime-m style="color:#C9CACE;">00:00</span> <span style="color:#9A9CA3; font-family:'IBM Plex Sans'; font-size:12px;">vs</span> <span data-rtime-w style="color:#5fc88f;">0.42s</span></span>
+      </div>
+      <div data-rescell="keys" style="display:flex; flex-direction:column; gap:6px;">
+        <span style="font:500 9px 'IBM Plex Sans'; letter-spacing:.14em; text-transform:uppercase; color:#8C8E96;">Keystrokes</span>
+        <span style="font:500 15px 'IBM Plex Mono';"><span data-ract-m style="color:#C9CACE;">0</span> <span style="color:#9A9CA3; font-family:'IBM Plex Sans'; font-size:12px;">vs</span> <span style="color:#5fc88f;">1</span></span>
+      </div>
+      <div data-rescell="err" style="display:flex; flex-direction:column; gap:6px;">
+        <span style="font:500 9px 'IBM Plex Sans'; letter-spacing:.14em; text-transform:uppercase; color:#8C8E96;">Errors</span>
+        <span style="font:500 15px 'IBM Plex Mono';"><span data-rerr-m style="color:#C9CACE;">0</span> <span style="color:#9A9CA3; font-family:'IBM Plex Sans'; font-size:12px;">vs</span> <span style="color:#5fc88f;">0</span></span>
+      </div>
+    </div>
+
+    <svg data-pageoverlay style="position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; z-index:30;">
+      <defs>
+        <marker id="ah-comp-m" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#6B7B92"></path></marker>
+        <marker id="ah-comp-w" markerWidth="8" markerHeight="8" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#F76B54"></path></marker>
+      </defs>
+      <g data-comp-arrows></g>
+    </svg>
+
+  </div>
+</div>
+
+  <!-- first-view context card; the race waits behind a Begin click (like the clinic intro) -->
+  <div class="bench-intro" data-intro style="--accent:#5fc88f;">
+    <div class="bench-intro-card">
+      <p class="bi-eyebrow">workflow benchmark &middot; 01</p>
+      <h3>One biometer scan, two ways into the chart.</h3>
+      <p class="bi-lede">A Topcon Omnia captures a patient's biometry as a dense printout, but those eight values still have to land in the EMR. Here are two ways to move them, racing the same scan.</p>
+      <div class="bi-rows">
+        <div class="bi-row"><span class="bi-dot" style="background:#6B7B92;"></span><div><b>Manual entry.</b> <span>A staffer reads the paper printout and types all eight fields by hand, typos and all.</span></div></div>
+        <div class="bi-row"><span class="bi-dot" style="background:#F76B54;"></span><div><b>omnia-to-oscar watcher.</b> <span>A script reads the machine's digital export and writes the chart in one pass.</span></div></div>
+      </div>
+      <button class="bi-start" data-begin type="button">&#9654; Run the race</button>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    const root = document.querySelector('.emr-root');
+    if (!root) return;
+    const intro = root.closest('[data-bench-scene]')?.querySelector('[data-intro]');
+
+    class EMRRace {
+      constructor(root) {
+        this.root = root;
+        this.runId = 0;
+        this.PROPS = { errorCount: 4, manualPaceMs: 120, timeCompression: 4 };
+        this.FIELDS = [
+          { key:'sph', value:'-1.00' }, { key:'cyl', value:'-0.25' }, { key:'axis', value:'85' },
+          { key:'pd', value:'59' }, { key:'k1', value:'44.00' }, { key:'k2', value:'45.50' },
+          { key:'iop', value:'16' }, { key:'cct', value:'497' },
+        ];
+        this.scale = 1;
+        this.reset();
+        const s = this.q('[data-start]'); if (s) s.addEventListener('click', () => this.start());
+        const r = this.q('[data-reset]'); if (r) r.addEventListener('click', () => this.reset());
+        this.fit();
+        addEventListener('resize', () => this.fit(), { passive: true });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.fit());
+      }
+      // scale the whole widget to fit the viewport (so the pinned section shows it
+      // all at once). relTo()/movePaper divide rect math by this.scale so the SVG
+      // arrows stay aligned under the transform.
+      fit() {
+        this.root.style.transform = 'none';
+        const inner = this.root.querySelector('.emr-inner');
+        const h = this.root.offsetHeight;
+        const cw = inner ? inner.scrollWidth + 60 : this.root.offsetWidth;
+        // reserve a top strip for the bench slider tabs (desktop only) so they don't overlap
+        const RES = window.matchMedia('(min-width:761px)').matches ? 88 : 0;
+        const s = Math.min(1, (window.innerHeight - 18 - RES) / h, (window.innerWidth - 12) / cw);
+        this.scale = s;
+        // origin top so the scaled visual starts at the root's layout top; translateY
+        // centres it in the viewport. (translateY cancels in relTo() differences.)
+        const ty = RES + Math.max(0, (window.innerHeight - RES - h * s) / 2);
+        this.root.style.transformOrigin = 'top center';
+        this.root.style.transform = `translateY(${ty.toFixed(1)}px) scale(${s.toFixed(4)})`;
+      }
+      clearTimers() {}
+      ease(p) { return 1 - Math.pow(1 - p, 3); }
+      tween(dur, fn, done) {
+        const id = this.runId, t0 = performance.now();
+        const step = (now) => {
+          if (this.runId !== id) return;
+          let p = Math.min(1, (now - t0) / dur);
+          fn(p);
+          if (p < 1) requestAnimationFrame(step); else if (done) done();
+        };
+        requestAnimationFrame(step);
+      }
+      q(sel) { return this.root ? this.root.querySelector(sel) : null; }
+      qa(sel) { return this.root ? Array.from(this.root.querySelectorAll(sel)) : []; }
+      sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+      pad(n) { return String(n).padStart(2, '0'); }
+      fmt(sec) { sec = Math.max(0, sec); const m=Math.floor(sec/60), s=Math.floor(sec%60), cs=Math.floor((sec*100)%100); return `${this.pad(m)}:${this.pad(s)}.${this.pad(cs)}`; }
+      fmtMS(sec) { sec = Math.max(0, sec); return `${this.pad(Math.floor(sec/60))}:${this.pad(Math.floor(sec%60))}`; }
+      bodyEl(lane) { return this.q(`[data-body][data-lane="${lane}"]`); }
+      emr(lane, key) { return this.q(`[data-emr][data-lane="${lane}"][data-key="${key}"]`); }
+      rcptVal(lane, key) { return this.q(`[data-rcpt][data-lane="${lane}"][data-key="${key}"]`); }
+      relTo(ref, el) {
+        const z = this.scale || 1;
+        const br = ref.getBoundingClientRect(), r = el.getBoundingClientRect();
+        return { l:(r.left-br.left)/z, t:(r.top-br.top)/z, r:(r.right-br.left)/z, b:(r.bottom-br.top)/z, cx:((r.left+r.right)/2-br.left)/z, cy:((r.top+r.bottom)/2-br.top)/z, w:r.width/z, h:r.height/z };
+      }
+      rel(lane, el) { return this.relTo(this.bodyEl(lane), el); }
+      setClock(lane, sec) { const el = this.q(`[data-clock][data-lane="${lane}"]`); if (el) el.textContent = this.fmt(sec); }
+      setActions(lane, n) { this.actions[lane]=n; const el=this.q(`[data-actions][data-lane="${lane}"]`); if(el) el.textContent=n; }
+      bump(lane) { this.setActions(lane, this.actions[lane]+1); }
+      incErr(lane) { this.errors[lane]++; const el=this.q(`[data-errors][data-lane="${lane}"]`); if(el){ el.textContent=this.errors[lane]; el.style.color='#e8705f'; } }
+      setStatus(lane, n) { const el=this.q(`[data-formstatus][data-lane="${lane}"]`); if(el) el.textContent = lane==='watcher'&&n===8 ? '8 / 8 · parsed' : `${n} / 8 filled`; }
+      flash(box, type) {
+        const color = type === 'ok' ? 'rgba(46,158,107,.95)' : 'rgba(214,69,69,.95)';
+        const rest = (box === this.activeBox) ? '0 0 0 2px rgba(107,123,146,.16)' : 'none';
+        box.style.boxShadow = `0 0 0 2.5px ${color}`;
+        box.style.borderColor = type === 'ok' ? '#5fc88f' : '#e8705f';
+        setTimeout(() => { box.style.boxShadow = rest; box.style.borderColor = (box === this.activeBox) ? '#6B7B92' : '#4a5260'; }, 320);
+      }
+      highlight(span, type) {
+        if (!span) return;
+        if (type === 'ok') { span.style.background = '#163524'; span.style.color = '#5fc88f'; }
+        else { span.style.background = '#ffe26b'; span.style.color = '#3a2e00'; }
+        span.style.borderRadius = '3px';
+      }
+      drawArrowG(g, marker, sx, sy, ex, ey, opts) {
+        const ns = 'http://www.w3.org/2000/svg';
+        const p = document.createElementNS(ns, 'path');
+        const bow = opts.bow || 0;
+        const dx = Math.max(40, Math.abs(ex - sx) * 0.4);
+        let d;
+        if (opts.vertical) d = `M${sx},${sy} C${sx + bow},${sy + (ey-sy)*0.4} ${ex + bow},${ey - (ey-sy)*0.4} ${ex},${ey}`;
+        else d = `M${sx},${sy} C${sx+dx},${sy} ${ex-dx},${ey} ${ex},${ey}`;
+        p.setAttribute('d', d);
+        p.setAttribute('fill', 'none');
+        p.setAttribute('stroke', opts.color);
+        p.setAttribute('stroke-width', opts.w);
+        p.setAttribute('stroke-linecap', 'round');
+        if (marker) p.setAttribute('marker-end', `url(#${marker})`);
+        g.appendChild(p);
+        return p;
+      }
+      drawArrow(lane, sx, sy, ex, ey, opts) {
+        const g = this.q(`[data-overlay][data-lane="${lane}"] [data-arrows]`);
+        return this.drawArrowG(g, `ah-${lane}`, sx, sy, ex, ey, opts);
+      }
+      drawIn(p, dur) {
+        const len = p.getTotalLength();
+        p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+        this.tween(dur || 300, t => { p.style.strokeDashoffset = String(len * (1 - this.ease(t))); }, () => { p.style.strokeDashoffset = '0'; });
+        return len;
+      }
+      fadeRemove(p, delay, dur) {
+        setTimeout(() => { this.tween(dur || 280, t => { p.style.opacity = String(1 - t); }, () => p.remove()); }, delay || 0);
+      }
+
+      reset() {
+        this.runId++;
+        this.active = false;
+        this.activeBox = null;
+        this.cursorPos = { x:-60, y:-60 };
+        this.clearTimers();
+        this.actions = { manual:0, watcher:0 };
+        this.errors  = { manual:0, watcher:0 };
+        this.manualRunning = false; this.watcherRunning = false;
+        this.manualDisplay = 0; this.manualFinalSec = 0; this.watcherFinalSec = 0.42;
+
+        ['manual','watcher'].forEach(lane => {
+          this.setClock(lane, 0);
+          const a = this.q(`[data-actions][data-lane="${lane}"]`); if (a) a.textContent = '0';
+          const e = this.q(`[data-errors][data-lane="${lane}"]`); if (e) { e.textContent = '0'; e.style.color = '#dbe2ea'; }
+          this.setStatus(lane, 0);
+          const sc = this.q(`[data-screen][data-lane="${lane}"]`); if (sc) sc.textContent = 'READY';
+          this.qa(`[data-emr][data-lane="${lane}"]`).forEach(box => {
+            const v = box.querySelector('[data-val]'); if (v) { v.textContent = ''; v.style.color = ''; }
+            const c = box.querySelector('[data-caret]'); if (c) { c.style.opacity='0'; c.style.animation='none'; }
+            box.style.borderColor = '#4a5260'; box.style.boxShadow = 'none';
+          });
+          const g = this.q(`[data-overlay][data-lane="${lane}"] [data-arrows]`); if (g) g.innerHTML = '';
+          const pg = this.q(`[data-lanearrows][data-lane="${lane}"] [data-poparrows]`); if (pg) pg.innerHTML = '';
+          const scrim = this.q(`[data-lanescrim][data-lane="${lane}"]`); if (scrim) { scrim.style.display='none'; scrim.style.opacity='0'; scrim.style.pointerEvents='none'; }
+          const pop = this.q(`[data-lanepop][data-lane="${lane}"]`); if (pop) { pop.style.display='none'; pop.style.opacity='0'; pop.innerHTML=''; }
+          this.dimLane(lane, false);
+        });
+
+        // manual receipt values read as dark-grey numbers (labels stay black); watcher xml keeps its own light ink
+        this.qa('[data-rcpt]').forEach(s => { s.style.background = 'transparent'; s.style.color = s.getAttribute('data-lane') === 'manual' ? '#6b7280' : ''; });
+
+        const big = this.q('[data-bigreceipt][data-lane="manual"]');
+        if (big) { big.style.opacity = '0'; big.style.transform = 'scale(0.96)'; }
+        const paper = this.q('[data-paper][data-lane="manual"]');
+        if (paper) { paper.style.opacity = '0'; paper.style.transform = 'translate(0px,-46px) scale(0.55)'; paper.style.filter = 'blur(3.5px)'; }
+        const dig = this.q('[data-digital][data-lane="watcher"]');
+        if (dig) { dig.style.opacity = '0'; dig.style.transform = 'translateY(14px) scale(0.94)'; }
+        const tag = this.q('[data-digtag]'); if (tag) { tag.textContent = 'queued'; tag.style.color = '#7d8a98'; }
+
+        this.qa('[data-fx]').forEach(n => n.remove());
+        const cur = this.q('[data-cursor][data-lane="manual"]');
+        if (cur) { cur.style.opacity = '0'; cur.style.transform = 'translate(-60px,-60px)'; }
+
+        const res = this.q('[data-results]'); if (res) res.style.opacity = '0';
+        const cg = this.q('[data-comp-arrows]'); if (cg) cg.innerHTML = '';
+        const start = this.q('[data-start]');
+        if (start) { start.disabled = false; start.style.opacity = '1'; start.style.cursor = 'pointer'; start.textContent = 'Start race'; }
+      }
+
+      start() {
+        this.reset();
+        const id = ++this.runId;
+        this.active = true;
+        const start = this.q('[data-start]');
+        if (start) { start.disabled = true; start.style.opacity = '.5'; start.style.cursor = 'default'; start.textContent = 'Running…'; }
+        this.errorCount = Math.max(0, Math.min(this.FIELDS.length, this.PROPS.errorCount));
+        this.paceMs     = this.PROPS.manualPaceMs;
+        this.COMPRESS   = this.PROPS.timeCompression;
+        this.runSequence(id);
+      }
+
+      async runSequence(id) {
+        await this.runManual(id);                    if (this.runId !== id) return;
+        await this.sleep(450);                        if (this.runId !== id) return;
+        await this.showLaneSpotlight(id, 'manual');   if (this.runId !== id) return;
+        await this.runWatcher(id);                    if (this.runId !== id) return;
+        await this.sleep(2000);                       if (this.runId !== id) return;  // beat to digest the filled form before metrics pop
+        await this.showLaneSpotlight(id, 'watcher');  if (this.runId !== id) return;
+        await this.showComparison(id);
+      }
+
+      startLaneClock(lane, id) {
+        const t0 = performance.now();
+        this[lane + 'Running'] = true;
+        const step = (now) => {
+          if (this.runId !== id || !this[lane + 'Running']) return;
+          const e = (now - t0) / 1000;
+          if (lane === 'manual') { this.manualDisplay = e * this.COMPRESS; this.setClock('manual', this.manualDisplay); }
+          else { const w = Math.min(e, 0.42); this.setClock('watcher', w); if (e >= 0.42) { this.watcherRunning = false; this.setClock('watcher', 0.42); return; } }
+          requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
+      freezeLane(lane) { this[lane + 'Running'] = false; if (lane === 'manual') this.manualFinalSec = this.manualDisplay; }
+
+      dimLane(lane, on, level) {
+        const card = this.q(`[data-lanecard][data-lane="${lane}"]`);
+        if (card) { card.style.opacity = on ? (level || '0.4') : '1'; card.style.filter = on ? 'saturate(.6)' : 'none'; }
+      }
+      scrollToLane() {}   // no-op: the widget lives inside the page's own scroll
+
+      extrudePaper(id) {
+        return new Promise(resolve => {
+          const sc = this.q('[data-screen][data-lane="manual"]'); if (sc) sc.textContent = 'PRINT';
+          const paper = this.q('[data-paper][data-lane="manual"]');
+          if (!paper) { resolve(); return; }
+          this.tween(1000, p => {
+            const e = this.ease(p);
+            paper.style.transform = `translate(0px,${(-46 + 46 * e).toFixed(1)}px) scale(0.55)`;
+            paper.style.opacity = String(Math.min(1, e * 1.6));
+            paper.style.filter = 'blur(3.5px)';
+          }, () => { paper.style.transform = 'translate(0px,0px) scale(0.55)'; paper.style.opacity = '1'; resolve(); });
+        });
+      }
+      cutPaper(id) {
+        return new Promise(resolve => {
+          const sc = this.q('[data-screen][data-lane="manual"]'); if (sc) sc.textContent = 'CUT';
+          const body = this.bodyEl('manual');
+          const paper = this.q('[data-paper][data-lane="manual"]');
+          const pr = this.rel('manual', paper);
+          const line = document.createElement('div'); line.setAttribute('data-fx','');
+          line.style.cssText = `position:absolute; left:${(pr.l-7).toFixed(0)}px; top:${(pr.t+5).toFixed(0)}px; width:${(pr.w+14).toFixed(0)}px; height:0; border-top:2px dashed #C06A5C; z-index:9; pointer-events:none;`;
+          body.appendChild(line);
+          const sciss = document.createElement('div'); sciss.setAttribute('data-fx','');
+          sciss.style.cssText = `position:absolute; left:${(pr.l-12).toFixed(0)}px; top:${(pr.t).toFixed(0)}px; width:0; height:0; border-top:6px solid transparent; border-bottom:6px solid transparent; border-left:10px solid #C06A5C; z-index:10; pointer-events:none;`;
+          body.appendChild(sciss);
+          this.tween(440, t => { sciss.style.transform = `translateX(${((pr.w + 16) * t).toFixed(1)}px)`; }, () => {});
+          setTimeout(() => { line.remove(); sciss.remove(); resolve(); }, 500);
+        });
+      }
+      movePaper(id) {
+        return new Promise(resolve => {
+          const sc = this.q('[data-screen][data-lane="manual"]'); if (sc) sc.textContent = 'SCAN';
+          const paper = this.q('[data-paper][data-lane="manual"]');
+          const big = this.q('[data-bigreceipt][data-lane="manual"]');
+          if (!paper || !big) { resolve(); return; }
+          const z = this.scale || 1;
+          const pr = paper.getBoundingClientRect(), br = big.getBoundingClientRect();
+          const dcx = ((br.left + br.right) / 2 - (pr.left + pr.right) / 2) / z;
+          const dcy = ((br.top + br.bottom) / 2 - (pr.top + pr.bottom) / 2) / z;
+          this.tween(1050, p => {
+            const e = this.ease(p);
+            const s = 0.55 + (1.55 - 0.55) * e;
+            paper.style.transform = `translate(${(dcx*e).toFixed(1)}px,${(dcy*e).toFixed(1)}px) scale(${s.toFixed(3)})`;
+            paper.style.filter = `blur(${(3.5 * (1 - e)).toFixed(2)}px)`;
+          }, () => resolve());
+        });
+      }
+      clarifyReceipt(id) {
+        return new Promise(resolve => {
+          const sc = this.q('[data-screen][data-lane="manual"]'); if (sc) sc.textContent = 'READ';
+          const paper = this.q('[data-paper][data-lane="manual"]');
+          const big = this.q('[data-bigreceipt][data-lane="manual"]');
+          if (!big) { resolve(); return; }
+          this.tween(440, p => {
+            const e = this.ease(p);
+            big.style.opacity = String(e); big.style.transform = `scale(${(0.96 + 0.04 * e).toFixed(3)})`;
+            if (paper) paper.style.opacity = String(1 - e);
+          }, () => { big.style.opacity = '1'; big.style.transform = 'scale(1)'; if (paper) paper.style.opacity = '0'; resolve(); });
+        });
+      }
+      animateCursor(x, y, dur) {
+        const c = this.q('[data-cursor][data-lane="manual"]');
+        if (!c) return Promise.resolve();
+        c.style.opacity = '1';
+        const from = this.cursorPos || { x, y };
+        return new Promise(resolve => {
+          this.tween(dur || 280, p => {
+            const e = this.ease(p);
+            const cx = from.x + (x - from.x) * e, cy = from.y + (y - from.y) * e;
+            c.style.transform = `translate(${(cx-2).toFixed(1)}px,${(cy-3).toFixed(1)}px)`;
+            this.cursorPos = { x:cx, y:cy };
+          }, () => { this.cursorPos = { x, y }; resolve(); });
+        });
+      }
+      activate(box) {
+        this.activeBox = box;
+        box.style.borderColor = '#6B7B92'; box.style.boxShadow = '0 0 0 2px rgba(107,123,146,.16)';
+        const c = box.querySelector('[data-caret]'); if (c) { c.style.opacity='1'; c.style.animation='caretBlink 1s steps(1) infinite'; }
+      }
+      deactivate(box) {
+        if (this.activeBox === box) this.activeBox = null;
+        box.style.borderColor = '#4a5260'; box.style.boxShadow = 'none';
+        const c = box.querySelector('[data-caret]'); if (c) { c.style.opacity='0'; c.style.animation='none'; }
+      }
+      wrongChar(ch) {
+        if (/[0-9]/.test(ch)) { let d; do { d = String(Math.floor(Math.random()*10)); } while (d === ch); return d; }
+        if (ch === '.') return '8'; if (ch === '-') return '7'; return '0';
+      }
+
+      async runManual(id) {
+        this.dimLane('watcher', true); this.scrollToLane('manual');
+        this.startLaneClock('manual', id);
+        await this.extrudePaper(id); if (this.runId !== id) return;
+        await this.sleep(180); if (this.runId !== id) return;
+        await this.cutPaper(id); if (this.runId !== id) return;
+        await this.movePaper(id); if (this.runId !== id) return;
+        await this.clarifyReceipt(id); if (this.runId !== id) return;
+        await this.sleep(280); if (this.runId !== id) return;
+
+        const errIdx = new Set();
+        const pool = [0,1,2,3,4,5,6,7];
+        while (errIdx.size < this.errorCount) errIdx.add(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+
+        let filled = 0;
+        for (let i = 0; i < this.FIELDS.length; i++) {
+          if (this.runId !== id) return;
+          const f = this.FIELDS[i];
+          const rval = this.rcptVal('manual', f.key);
+          const box  = this.emr('manual', f.key);
+          const valEl = box.querySelector('[data-val]');
+
+          let rp = this.rel('manual', rval);
+          await this.animateCursor(rp.r + 3, rp.cy, 340); if (this.runId !== id) return;
+          await this.sleep(230); if (this.runId !== id) return;
+          this.highlight(rval, 'read');
+          await this.sleep(230); if (this.runId !== id) return;
+
+          let bp = this.rel('manual', box);
+          // park the cursor at the field's right edge so it never covers the digits,
+          // which type in from the left (otherwise the entry is hidden under the pointer)
+          await this.animateCursor(bp.r - 18, bp.b - 7, 320); if (this.runId !== id) return;
+
+          rp = this.rel('manual', rval); bp = this.rel('manual', box);
+          const p = this.drawArrow('manual', rp.r, rp.cy, bp.l, bp.cy, { color:'#6B7B92', w:1.6 });
+          this.drawIn(p, 320);
+
+          this.activate(box); this.bump('manual');
+          if (errIdx.has(i)) await this.typeWithError(id, box, valEl, f.value);
+          else await this.typeClean(id, box, valEl, f.value);
+          if (this.runId !== id) return;
+          this.deactivate(box);
+          filled++; this.setStatus('manual', filled);
+          await this.sleep(200); if (this.runId !== id) return;
+        }
+        const cur = this.q('[data-cursor][data-lane="manual"]'); if (cur) cur.style.opacity = '0';
+        this.freezeLane('manual');
+      }
+
+      async typeClean(id, box, valEl, value) {
+        for (const ch of value) { if (this.runId !== id) return; valEl.textContent += ch; this.bump('manual'); await this.sleep(this.paceMs + Math.random()*55); }
+      }
+      async typeWithError(id, box, valEl, value) {
+        const errAt = 1 + Math.floor(Math.random() * (value.length - 1));
+        for (let k = 0; k < errAt; k++) { if (this.runId !== id) return; valEl.textContent += value[k]; this.bump('manual'); await this.sleep(this.paceMs + Math.random()*55); }
+        valEl.textContent += this.wrongChar(value[errAt]); this.bump('manual');
+        valEl.style.color = '#e8705f'; this.incErr('manual');   // flag the wrong number red, not the field box
+        await this.sleep(this.paceMs + 60); await this.sleep(620); if (this.runId !== id) return;
+        while (valEl.textContent.length > 0) { if (this.runId !== id) return; valEl.textContent = valEl.textContent.slice(0,-1); this.bump('manual'); await this.sleep(55); }
+        valEl.style.color = '';   // corrected entry types back in normal ink
+        await this.sleep(200); if (this.runId !== id) return;
+        for (const ch of value) { if (this.runId !== id) return; valEl.textContent += ch; this.bump('manual'); await this.sleep(this.paceMs + Math.random()*55); }
+      }
+
+      uploadDigital(id) {
+        return new Promise(resolve => {
+          const sc = this.q('[data-screen][data-lane="watcher"]'); if (sc) sc.textContent = 'UPLOAD';
+          const b = this.bodyEl('watcher');
+          const m = this.rel('watcher', this.q('[data-machine][data-lane="watcher"]'));
+          const x = m.cx, y0 = m.t + 8;
+          for (let i = 0; i < 4; i++) {
+            setTimeout(() => {
+              if (this.runId !== id) return;
+              const ch = document.createElement('div'); ch.setAttribute('data-fx','');
+              ch.style.cssText = `position:absolute; left:${(x-6).toFixed(0)}px; top:${y0.toFixed(0)}px; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:9px solid #F76B54; pointer-events:none; z-index:6;`;
+              b.appendChild(ch);
+              this.tween(560, p => { ch.style.transform = `translateY(${(-52*p).toFixed(1)}px)`; ch.style.opacity = String(Math.max(0, 1-p)); }, () => ch.remove());
+            }, i * 110);
+          }
+          setTimeout(resolve, 740);
+        });
+      }
+      revealBrowser(id) {
+        return new Promise(resolve => {
+          const sc = this.q('[data-screen][data-lane="watcher"]'); if (sc) sc.textContent = 'ONLINE';
+          const tag = this.q('[data-digtag]'); if (tag) { tag.textContent = '200 OK'; tag.style.color = '#5fc88f'; }
+          const d = this.q('[data-digital][data-lane="watcher"]');
+          const g = this.q('[data-overlay][data-lane="watcher"] [data-arrows]');
+          const m = this.rel('watcher', this.q('[data-machine][data-lane="watcher"]'));
+          const dr = this.rel('watcher', d);
+          const a = this.drawArrowG(g, 'ah-watcher', m.r - 6, m.t + 30, dr.l + 6, dr.t + 16, { color:'#F76B54', w:2 });
+          this.drawIn(a, 320); this.fadeRemove(a, 900, 300);
+          if (!d) { resolve(); return; }
+          this.tween(480, p => {
+            const e = this.ease(p);
+            d.style.opacity = String(e);
+            d.style.transform = `translateY(${(14*(1-e)).toFixed(1)}px) scale(${(0.94 + 0.06*e).toFixed(3)})`;
+          }, () => { d.style.opacity = '1'; d.style.transform = 'translateY(0) scale(1)'; resolve(); });
+        });
+      }
+      pulseAt(lane, el) {
+        const b = this.bodyEl(lane); const r = this.rel(lane, el);
+        const ring = document.createElement('div'); ring.setAttribute('data-fx','');
+        ring.style.cssText = `position:absolute; left:${(r.r-16).toFixed(0)}px; top:${(r.t+18).toFixed(0)}px; width:22px; height:22px; border-radius:50%; border:2px solid #F76B54; pointer-events:none; z-index:6;`;
+        b.appendChild(ring);
+        this.tween(820, p => { ring.style.transform = `scale(${(0.35 + 2.5*p).toFixed(2)})`; ring.style.opacity = String(0.7*(1-p)); }, () => ring.remove());
+      }
+
+      async runWatcher(id) {
+        this.dimLane('manual', true); this.dimLane('watcher', false); this.scrollToLane('watcher');
+        this.startLaneClock('watcher', id);
+        await this.uploadDigital(id); if (this.runId !== id) return;
+        await this.revealBrowser(id); if (this.runId !== id) return;
+        this.setActions('watcher', 1);
+        this.pulseAt('watcher', this.q('[data-digital][data-lane="watcher"]'));
+        await this.sleep(240); if (this.runId !== id) return;
+
+        this.FIELDS.forEach(f => {
+          const rval = this.rcptVal('watcher', f.key), box = this.emr('watcher', f.key);
+          const rp = this.rel('watcher', rval), bp = this.rel('watcher', box);
+          const p = this.drawArrow('watcher', rp.r, rp.cy, bp.l, bp.cy, { color:'#F76B54', w:2.4 });
+          const len = p.getTotalLength();
+          p.style.strokeDasharray = len; p.style.strokeDashoffset = len; p.style.animation = 'flow .7s linear infinite';
+          this.tween(380, t => { p.style.strokeDashoffset = String(len*(1-this.ease(t))); }, () => { p.style.strokeDasharray = '7 7'; p.style.strokeDashoffset = '0'; });
+        });
+        let filled = 0;
+        this.FIELDS.forEach((f, i) => {
+          setTimeout(() => {
+            if (this.runId !== id) return;
+            const box = this.emr('watcher', f.key);
+            box.querySelector('[data-val]').textContent = f.value;
+            this.highlight(this.rcptVal('watcher', f.key), 'ok');
+            this.flash(box, 'ok'); filled++; this.setStatus('watcher', filled);
+          }, 130 + i * 60);
+        });
+        await this.sleep(820); if (this.runId !== id) return;
+        const sc2 = this.q('[data-screen][data-lane="watcher"]'); if (sc2) sc2.textContent = 'DONE';
+        this.freezeLane('watcher');
+      }
+
+      buildLanePop(lane) {
+        const pop = this.q(`[data-lanepop][data-lane="${lane}"]`); if (!pop) return;
+        const isM = lane === 'manual';
+        const accent = isM ? '#6B7B92' : '#F76B54';
+        const label = isM ? 'Manual Entry' : 'Watcher';
+        const timeVal = isM ? this.fmtMS(this.manualFinalSec) : '0.42s';
+        const actLabel = isM ? 'Keystrokes' : 'Actions';
+        const actVal = isM ? this.actions.manual : 1;
+        const errVal = isM ? this.errors.manual : 0;
+        const errColor = errVal > 0 ? '#e8705f' : '#5fc88f';
+        const cell = (l, v, c) => `<div style="padding:0 16px;"><div style="font:500 9px 'IBM Plex Sans'; letter-spacing:.13em; text-transform:uppercase; color:#6f7a8a;">${l}</div><div style="font:600 30px/1 'IBM Plex Mono'; color:${c}; margin-top:7px;">${v}</div></div>`;
+        pop.innerHTML = `
+          <div style="background:#0c0f14; border-radius:13px; box-shadow:0 18px 48px rgba(0,0,0,.20); padding:20px 22px 22px; text-align:center;">
+            <div style="display:inline-flex; align-items:center; gap:7px; font:600 12px 'IBM Plex Sans'; color:#fff; background:${accent}; padding:5px 12px; border-radius:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#d7dde6;opacity:.9;"></span>${label}</div>
+            <div style="display:flex; justify-content:center; margin-top:18px;">${cell('Time', timeVal, '#e7ecf3')}<div style="width:1px; background:#2a313d;"></div>${cell(actLabel, actVal, '#e7ecf3')}<div style="width:1px; background:#2a313d;"></div>${cell('Errors', errVal, errColor)}</div>
+          </div>`;
+      }
+      async showLaneSpotlight(id, lane) {
+        const scrim = this.q(`[data-lanescrim][data-lane="${lane}"]`);
+        const pop = this.q(`[data-lanepop][data-lane="${lane}"]`);
+        const card = this.q(`[data-lanecard][data-lane="${lane}"]`);
+        const g = this.q(`[data-lanearrows][data-lane="${lane}"] [data-poparrows]`);
+        if (!scrim || !pop) return;
+        this.dimLane(lane, false);
+        this.buildLanePop(lane);
+        scrim.style.display = 'block'; pop.style.display = 'block';
+        await this.showFade(id, [scrim], [pop]); if (this.runId !== id) return;
+        const marker = `ah-pop-${lane}`;
+        const popR = this.relTo(card, pop);
+        ['[data-clock]','[data-actions]','[data-errors]'].forEach(sel => {
+          const m = this.q(`${sel}[data-lane="${lane}"]`); if (!m) return;
+          const mr = this.relTo(card, m);
+          const p = this.drawArrowG(g, marker, mr.cx, mr.b + 3, popR.cx + (Math.random()*40-20), popR.t - 4, { color: lane==='manual'?'#6B7B92':'#F76B54', w:1.6, vertical:true });
+          this.drawIn(p, 360);
+        });
+        scrim.style.pointerEvents = 'auto';
+        await this.holdClick(id, scrim, 2900); if (this.runId !== id) return;
+        if (g) g.innerHTML = '';
+        await this.hideFade(id, [scrim], [pop]);
+        scrim.style.display = 'none'; pop.style.display = 'none'; scrim.style.pointerEvents = 'none';
+      }
+      showFade(id, fadeEls, popEls) {
+        return new Promise(resolve => {
+          this.tween(300, p => {
+            const e = this.ease(p);
+            fadeEls.forEach(el => el && (el.style.opacity = String(e)));
+            popEls.forEach(el => { if (el) { el.style.opacity = String(e); el.style.transform = `translate(-50%,-50%) scale(${(0.92+0.08*e).toFixed(3)})`; } });
+          }, () => { fadeEls.forEach(el=>el&&(el.style.opacity='1')); popEls.forEach(el=>{ if(el){el.style.opacity='1'; el.style.transform='translate(-50%,-50%) scale(1)';} }); resolve(); });
+        });
+      }
+      hideFade(id, fadeEls, popEls) {
+        return new Promise(resolve => {
+          this.tween(240, p => {
+            const o = 1 - p;
+            fadeEls.forEach(el => el && (el.style.opacity = String(o)));
+            popEls.forEach(el => el && (el.style.opacity = String(o)));
+          }, () => resolve());
+        });
+      }
+      holdClick(id, el, ms) {
+        return new Promise(resolve => {
+          let done = false;
+          const finish = () => { if (done) return; done = true; if (el) el.removeEventListener('click', finish); resolve(); };
+          if (el) el.addEventListener('click', finish);
+          setTimeout(finish, ms);
+        });
+      }
+
+      countUp(el, target, fmt, dur) {
+        if (!el) return;
+        const id = this.runId, t0 = performance.now();
+        const step = (now) => {
+          if (this.runId !== id) return;
+          let p = Math.min(1, (now - t0) / dur);
+          p = 1 - Math.pow(1 - p, 3);
+          el.textContent = fmt ? fmt(target * p) : Math.round(target * p);
+          if (p < 1) requestAnimationFrame(step); else el.textContent = fmt ? fmt(target) : Math.round(target);
+        };
+        requestAnimationFrame(step);
+      }
+      compArrow(id, fromEl, toEl, color, marker, bow) {
+        const ov = this.q('[data-pageoverlay]'); const g = this.q('[data-comp-arrows]');
+        if (!ov || !fromEl || !toEl) return;
+        const fr = this.relTo(ov, fromEl), tr = this.relTo(ov, toEl);
+        const p = this.drawArrowG(g, marker, fr.cx, fr.b + 2, tr.cx, tr.t - 2, { color, w:1.7, vertical:true, bow: bow || 0 });
+        p.style.opacity = '0.92';
+        this.drawIn(p, 460);
+        return p;
+      }
+      async showComparison(id) {
+        // dim less than mid-race so the lanes/flow above stay legible behind the result
+        this.dimLane('manual', true, '0.66'); this.dimLane('watcher', true, '0.66');
+        const res = this.q('[data-results]');
+        await this.sleep(60);
+        this.tween(360, p => { res.style.opacity = String(this.ease(p)); }, () => res.style.opacity = '1');
+        await this.sleep(360); if (this.runId !== id) return;
+
+        const timeCell = this.q('[data-rescell="time"]');
+        const keysCell = this.q('[data-rescell="keys"]');
+        const errCell  = this.q('[data-rescell="err"]');
+        const mc = this.q('[data-clock][data-lane="manual"]'),  wc = this.q('[data-clock][data-lane="watcher"]');
+        const ma = this.q('[data-actions][data-lane="manual"]'), wa = this.q('[data-actions][data-lane="watcher"]');
+        const me = this.q('[data-errors][data-lane="manual"]'),  we = this.q('[data-errors][data-lane="watcher"]');
+
+        const a1 = this.compArrow(id, mc, timeCell, '#6B7B92', 'ah-comp-m', 70);
+        const a2 = this.compArrow(id, wc, timeCell, '#F76B54', 'ah-comp-w', 30);
+        await this.sleep(420); if (this.runId !== id) return;
+        this.countUp(this.q('[data-rtime-m]'), this.manualFinalSec, (v)=>this.fmtMS(v), 650);
+        this.countUp(this.q('[data-mult]'), Math.round(this.manualFinalSec/0.42), null, 750);
+        this.fadeRemove(a1, 500, 320); this.fadeRemove(a2, 500, 320);
+        await this.sleep(520); if (this.runId !== id) return;
+
+        const b1 = this.compArrow(id, ma, keysCell, '#6B7B92', 'ah-comp-m', 70);
+        const b2 = this.compArrow(id, wa, keysCell, '#F76B54', 'ah-comp-w', 30);
+        await this.sleep(420); if (this.runId !== id) return;
+        this.countUp(this.q('[data-ract-m]'), this.actions.manual, null, 650);
+        this.fadeRemove(b1, 500, 320); this.fadeRemove(b2, 500, 320);
+        await this.sleep(520); if (this.runId !== id) return;
+
+        const c1 = this.compArrow(id, me, errCell, '#6B7B92', 'ah-comp-m', 70);
+        const c2 = this.compArrow(id, we, errCell, '#F76B54', 'ah-comp-w', 30);
+        await this.sleep(420); if (this.runId !== id) return;
+        this.countUp(this.q('[data-rerr-m]'), this.errors.manual, null, 600);
+        this.fadeRemove(c1, 500, 320); this.fadeRemove(c2, 500, 320);
+        await this.sleep(500);
+
+        const start = this.q('[data-start]');
+        if (start) { start.disabled = false; start.style.opacity = '1'; start.style.cursor = 'pointer'; start.textContent = 'Run again'; }
+      }
+    }
+
+    const race = new EMRRace(root);
+
+    // Intro gate: show the context card first; the race begins only on the Begin click
+    // (no auto-run). Reveal the card when the panel scrolls into view.
+    if (intro) {
+      const begin = intro.querySelector('[data-begin]');
+      if (begin) begin.addEventListener('click', () => { intro.classList.add('gone'); race.start(); });
+      new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) intro.classList.add('in'); }),
+        { threshold: 0.4 }).observe(root);
+    } else {
+      // fallback: if the intro is ever absent, keep the old auto-run behaviour
+      new IntersectionObserver((es, o) => es.forEach((e) => { if (e.isIntersecting) { race.start(); o.disconnect(); } }), { threshold: 0.25 }).observe(root);
+    }
+  })();
+</script>

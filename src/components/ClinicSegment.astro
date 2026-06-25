@@ -1,0 +1,192 @@
+---
+// Flagship project panel: the pixel clinic + live dashboards (served from
+// /clinic/clinic2d.html), embedded verbatim and lazy-mounted. As a stacked
+// panel it slides up over the PROJECTS title; as the next panel (Omnia) slides
+// up over it, the screen recedes in 3D and the stickers rise from the bottom.
+import { withBase } from '../lib/url.js';
+const clinicSrc = withBase('clinic/clinic2d.html');
+---
+<section id="clinic" class="panel clinic-panel" style="--accent: var(--green);">
+  <div class="clinic-in">
+    <div class="screen-stage">
+      <figure class="screen" data-clinic-mount data-src={clinicSrc}>
+        <div class="screen-bar">
+          <span class="screen-dots"><i></i><i></i><i></i></span>
+          <span class="screen-title">clinic2d · patient flow + live boards</span>
+          <a class="screen-pop" href={clinicSrc} target="_blank" rel="noopener">open fullscreen ↗</a>
+        </div>
+        <div class="screen-body">
+          <button class="screen-launch" data-clinic-launch>
+            <span class="screen-launch-ic">▸</span>
+            <span>Launch the walkthrough</span>
+            <small>loads ~1&nbsp;MB of pixel art · runs entirely in your browser</small>
+          </button>
+        </div>
+      </figure>
+      <div class="stickers" aria-hidden="true">
+        <span class="sticker" data-side="-1" style="--c:var(--green)">● live boards</span>
+        <span class="sticker" data-side="1"  style="--c:var(--yellow)">no typing</span>
+        <span class="sticker" data-side="-1" style="--c:var(--blue)">real floor plan</span>
+        <span class="sticker" data-side="1"  style="--c:var(--purple)">→ auto-logged</span>
+      </div>
+    </div>
+    <p class="clinic-cap">
+      <b>A day at the clinic:</b> real floor plan, live boards, the door-to-door time
+      auto-logged as data. <span>Fictional patients.</span>
+    </p>
+  </div>
+</section>
+
+<script is:inline data-astro-rerun>
+  (function () {
+    const mount = document.querySelector('[data-clinic-mount]');
+    if (!mount) return;
+    const src = mount.dataset.src;
+    const body = mount.querySelector('.screen-body');
+    let frame = null, autoload = false;
+
+    function load() {
+      if (frame) return;
+      frame = document.createElement('iframe');
+      frame.className = 'screen-frame';
+      frame.title = 'Clinic patient-flow walkthrough';
+      frame.loading = 'lazy';
+      frame.src = src;
+      body.innerHTML = '';
+      body.appendChild(frame);
+    }
+    function unload() {
+      if (!frame) return;
+      frame.remove(); frame = null;
+      body.innerHTML =
+        '<button class="screen-launch" data-clinic-launch>' +
+        '<span class="screen-launch-ic">▸</span><span>Relaunch the walkthrough</span>' +
+        '<small>paused to save your CPU · click to resume</small></button>';
+      wireLaunch();
+    }
+    function wireLaunch() {
+      body.querySelector('[data-clinic-launch]')?.addEventListener('click', () => { autoload = true; load(); });
+    }
+    wireLaunch();
+
+    const near = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) load(); }), { rootMargin: '300px 0px' });
+    const far = new IntersectionObserver((es) => es.forEach((e) => { if (!e.isIntersecting && frame && autoload) unload(); }), { rootMargin: '1400px 0px' });
+    if (window.matchMedia('(min-width: 860px)').matches) { autoload = true; near.observe(mount); far.observe(mount); }
+  })();
+</script>
+
+<script is:inline>
+  /* Phased pinned choreography (clarissemichard.com). P = progress through the
+     tall transparent .scroll-room while the clinic panel stays pinned:
+       0.00–0.14  hold full-screen
+       0.14–0.30  shrink + angle down (bottom leans back), angle undoes to flat
+       0.30–0.70  hold small; BIG stickers flow up the sides (zig-zag) and off the top
+       0.70–0.86  re-enlarge + angle, back to full
+       0.86–1.00  hold full-screen
+     then Omnia slides over. All breakpoints are easy to retune. */
+  (function () {
+    const panel = document.querySelector('.clinic-panel');
+    if (!panel) return;
+    if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+    const stage = panel.querySelector('.screen-stage');
+    const screen = panel.querySelector('.screen');
+    const stickers = [...panel.querySelectorAll('.sticker')];
+    let room = null;
+    const getRoom = () => room || (room = document.querySelector('.scroll-room')); // parsed after this script
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const seg = (P, a, b) => clamp((P - a) / (b - a), 0, 1);
+    const ease = (t) => t * t * (3 - 2 * t);
+    const SMALL = 0.66, ANGLE = 34, YSWING = 6;
+    let ticking = false;
+    function update() {
+      ticking = false;
+      const vh = window.innerHeight;
+      const r = getRoom();
+      let P = 0;
+      if (r) { const rt = r.getBoundingClientRect().top, h = r.offsetHeight || 1; P = clamp((vh - rt) / h, 0, 1); }
+
+      const shrinkT = ease(seg(P, 0.14, 0.30));
+      const enlargeT = ease(seg(P, 0.70, 0.86));
+      const scale = 1 - (1 - SMALL) * (shrinkT - enlargeT);          // full -> small -> full
+      const angle = -ANGLE * (Math.sin(Math.PI * seg(P, 0.14, 0.34)) + Math.sin(Math.PI * seg(P, 0.70, 0.90)));
+      // tiny horizontal nudge that peaks just BEFORE the vertical angle's peak
+      const yang = -YSWING * (Math.sin(Math.PI * seg(P, 0.17, 0.27)) + Math.sin(Math.PI * seg(P, 0.72, 0.82)));
+      screen.style.transform = `rotateX(${angle.toFixed(2)}deg) rotateY(${yang.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+
+      const w = stage.offsetWidth || 1200, sh = stage.offsetHeight || 700;
+      stickers.forEach((s, i) => {
+        const side = +s.dataset.side || (i % 2 ? 1 : -1);
+        const start = 0.18 + i * 0.085, local = seg(P, start, start + 0.26); // staggered flow
+        const ty = sh * 0.60 - local * (sh * 1.5);                   // rise from below, off the top
+        const x = side * 0.34 * w;                                   // from the sides => zig-zag
+        let op = (local > 0 && local < 1) ? clamp(Math.min(local * 6, (1 - local) * 6), 0, 1) : 0;
+        s.style.opacity = op.toFixed(2);
+        s.style.transform = `translate(calc(-50% + ${x.toFixed(0)}px), ${ty.toFixed(1)}px)`;
+      });
+    }
+    function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll, { passive: true });
+    update();
+  })();
+</script>
+
+<style>
+  .clinic-panel { display: grid; place-items: center; }
+  .clinic-in { width: min(96vw, 1560px); margin: 0 auto; }
+  .screen-stage { position: relative; perspective: 900px; }
+  .screen {
+    border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+    background: var(--surface); box-shadow: 0 30px 80px rgba(0,0,0,.45);
+    transform-origin: center center; will-change: transform; position: relative; z-index: 1;
+  }
+  .screen-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 14px; border-bottom: 1px solid var(--line);
+    background: var(--bg-2); font-family: var(--mono); font-size: 12px; color: var(--ink-faint);
+  }
+  .screen-dots { display: flex; gap: 6px; }
+  .screen-dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-2); }
+  .screen-dots i:nth-child(1){ background:#e06c61 } .screen-dots i:nth-child(2){ background:var(--yellow) } .screen-dots i:nth-child(3){ background:var(--green) }
+  .screen-title { color: var(--ink-dim); }
+  .screen-pop { margin-left: auto; color: var(--ink-faint); }
+  .screen-pop:hover { color: var(--ink); text-decoration: none; }
+  .screen-body { position: relative; height: min(78vh, 760px); background: var(--bg); }
+  :global(.screen-frame) { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+  :global(.screen-launch) {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    background: radial-gradient(60% 60% at 50% 45%, var(--surface) 0%, var(--bg) 100%);
+    border: 0; cursor: pointer; color: var(--ink); font-family: var(--mono); font-size: 16px;
+  }
+  :global(.screen-launch:hover) { color: #fff; }
+  :global(.screen-launch-ic) {
+    width: 56px; height: 56px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 22px;
+    background: var(--green); color: #06210f;
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--green) 22%, transparent);
+  }
+  :global(.screen-launch small) { color: var(--ink-faint); font-size: 12px; }
+
+  /* stickers rise from the bottom (driven by scroll); sit above the screen */
+  .stickers { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+  .sticker {
+    position: absolute; left: 50%; bottom: 50%;
+    font-family: var(--mono); font-size: 17px; font-weight: 600; color: var(--c);
+    padding: 12px 24px; border-radius: 999px; white-space: nowrap;
+    background: color-mix(in srgb, var(--surface) 82%, var(--c));
+    border: 1px solid color-mix(in srgb, var(--c) 55%, var(--line));
+    box-shadow: 0 18px 40px rgba(0,0,0,.55);
+    opacity: 0; transform: translate(-50%, 300px); will-change: transform, opacity;
+  }
+
+  .clinic-cap { margin: 20px 0 0; text-align: center; font-family: var(--mono); font-size: 13px; color: var(--ink-dim); }
+  .clinic-cap b { color: var(--ink); font-weight: 600; }
+  .clinic-cap span { color: var(--ink-faint); }
+
+  @media (max-width: 920px) { .screen-body { height: 64vh; } }
+  @media (max-width: 760px) {
+    .screen { transform: none !important; }
+    .stickers { display: none; }
+  }
+</style>

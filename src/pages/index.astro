@@ -1,0 +1,206 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import ProjectsIntro from '../components/ProjectsIntro.astro';
+import ClinicSegment from '../components/ClinicSegment.astro';
+import OmniaRace from '../components/OmniaRace.astro';
+import InjectionFax from '../components/InjectionFax.astro';
+import QuantumBench from '../components/QuantumBench.astro';
+import Builds from '../components/Builds.astro';
+import Path from '../components/Path.astro';
+
+// Contact links. Clicking the label opens it; no URLs shown.
+// TODO(shahmeer): confirm the LinkedIn handle (best guess for now).
+const contacts = [
+  { label: 'Email',    href: 'mailto:shahmeer_shahid@outlook.com',          external: false },
+  { label: 'GitHub',   href: 'https://github.com/sh4hmeer',                 external: true },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/shahmeer-shahid-', external: true },
+];
+---
+<Base>
+  <Hero />
+
+  <!-- Stacked project panels: each sticks and the next slides up over it -->
+  <div class="stack" data-pinned>
+    <ProjectsIntro />
+
+    <ClinicSegment />
+
+    <!-- tall transparent scroll-room: the clinic stays pinned + visible through it
+         while the screen recedes and the stickers rise (lots of room for the effect) -->
+    <div class="scroll-room" aria-hidden="true"></div>
+  </div>
+
+  <!-- Workflow benchmarks: both before/after races live in ONE pinned frame. Scrolling
+       slides horizontally from the biometry race (01) to the injection race (02); each
+       plays as it becomes the active panel. The zero-size #omnia / #injections anchors
+       keep both nav entries + the top-bar indicator working (the giant section isn't an
+       id, so the indicator switches between the two markers as you cross the slide). -->
+  <section class="bench-section" aria-label="workflow benchmarks">
+    <div class="bench-track" data-bench data-pinned>
+      <span id="omnia" class="bench-anchor" style="top: 55vh;" aria-hidden="true"></span>
+      <span id="injections" class="bench-anchor" style="top: 112vh;" aria-hidden="true"></span>
+
+      <div class="bench-pin">
+        <div class="bench-tabs" role="tablist" aria-label="benchmark">
+          <button class="bench-tab on" data-slide="0" type="button"><b>01</b> biometry <span class="bt-arr">&rarr;</span> emr</button>
+          <button class="bench-tab" data-slide="1" type="button"><b>02</b> injection <span class="bt-arr">&rarr;</span> fax</button>
+        </div>
+
+        <div class="bench-rail" data-rail>
+          <div class="bench-panel"><OmniaRace /></div>
+          <div class="bench-panel bench-panel--inject"><InjectionFax /></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Research: the quantum vs classical ML benchmark. Pinned + intro-gated like the
+       other project displays, but its own section (a breadth piece, not a workflow race). -->
+  <section id="research" class="bench-section">
+    <div class="bench-track solo" data-pinned>
+      <div class="bench-pin" style="background:#0e0f12;">
+        <QuantumBench />
+      </div>
+    </div>
+  </section>
+
+  <Builds />
+
+  <Path />
+
+  <section id="contact" class="section" style="--accent: var(--green);">
+    <div class="s-head">
+      <div class="s-l">
+        <p class="eyebrow">get in touch</p>
+        <h2>Have something for me to build?</h2>
+      </div>
+      <div class="s-r">
+        <p class="lead">
+          I’m always interested in opportunities where being close to the problem matters,
+          healthcare especially, and teams that ship software people actually lean on. If
+          that’s you, or you just want to talk shop, reach out.
+        </p>
+        <div class="contact-links">
+          {contacts.map((c) => (
+            <a href={c.href} {...(c.external ? { target: '_blank', rel: 'noopener' } : {})}>
+              {c.label}<span class="cl-arrow">{c.external ? '↗' : '✉'}</span>
+            </a>
+          ))}
+          <button type="button" class="cl-secret" id="secretBtn" aria-hidden="true" tabindex="-1">
+            top secret<span class="cl-arrow">🔒</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    /* Benchmark slider tabs (01 biometry / 02 injection) pinned at the top of the frame */
+    .bench-tabs {
+      position: absolute; top: calc(var(--bar-h) + 7px); left: 50%; transform: translateX(-50%);
+      z-index: 8; display: flex; align-items: center; gap: 8px;
+    }
+    .bench-tab {
+      font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--ink-faint); background: rgba(14,17,22,.6); border: 1px solid var(--line);
+      padding: 7px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 7px;
+      transition: color .25s, border-color .25s, background .25s;
+      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    }
+    .bench-tab b { color: var(--ink-faint); font-weight: 600; transition: color .25s; }
+    .bench-tab .bt-arr { opacity: .5; }
+    .bench-tab:hover { color: var(--ink-dim); border-color: var(--ink-faint); }
+    .bench-tab.on { color: var(--ink); border-color: var(--green); background: rgba(14,17,22,.85); }
+    .bench-tab.on b { color: var(--green); }
+    @media (max-width: 760px) { .bench-tabs { display: none; } }
+
+    .contact-links { display: flex; flex-wrap: wrap; gap: 12px; }
+    .contact-links a {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 12px 18px; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--surface);
+      color: var(--ink); font-family: var(--mono); font-size: 14px;
+      transition: border-color .2s, background .2s, color .2s;
+    }
+    .contact-links a:hover { text-decoration: none; border-color: var(--green); color: #fff; background: var(--surface-2); }
+    .cl-arrow { color: var(--ink-faint); font-size: 12px; }
+    .contact-links a:hover .cl-arrow { color: var(--green); }
+
+    /* the un-clickable joke: looks like a normal button so people reach for it,
+       but it dodges the cursor and never lets you press it */
+    .cl-secret {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 12px 18px; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--surface);
+      color: var(--ink); font-family: var(--mono); font-size: 14px;
+      cursor: pointer; position: relative; z-index: 6;
+      transition: transform .15s ease-out;
+      will-change: transform;
+    }
+  </style>
+
+  <script is:inline>
+    (function () {
+      const b = document.getElementById('secretBtn');
+      if (!b) return;
+      if (!matchMedia('(pointer:fine)').matches) { b.remove(); return; } // touch: just drop it
+      const clamp = (v, m) => Math.max(-m, Math.min(m, v));
+      addEventListener('pointermove', (e) => {
+        const r = b.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const dx = cx - e.clientX, dy = cy - e.clientY;
+        const dist = Math.hypot(dx, dy) || 1;
+        const R = 140;
+        if (dist < R) {
+          const push = R - dist;
+          b.style.transform =
+            `translate(${clamp(dx / dist * push, 150).toFixed(0)}px, ${clamp(dy / dist * push, 110).toFixed(0)}px)`;
+        } else {
+          b.style.transform = 'translate(0,0)';
+        }
+      }, { passive: true });
+      b.addEventListener('click', (e) => e.preventDefault());          // never clickable
+    })();
+  </script>
+
+  <script is:inline>
+    /* Benchmark slider: scroll through the pinned .bench-track drives a horizontal slide
+       between the two race panels. Holds on each, slides between. Each animation auto-runs
+       off its own IntersectionObserver as its panel slides into view. */
+    (function () {
+      const track = document.querySelector('[data-bench]');
+      const rail = document.querySelector('[data-rail]');
+      if (!track || !rail) return;
+      const tabs = [...document.querySelectorAll('.bench-tab')];
+      const small = matchMedia('(max-width: 760px)');
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const smooth = (t) => t * t * (3 - 2 * t);
+      const A = 0.42, B = 0.62;   // slide happens between these fractions of the lock
+      let ticking = false;
+
+      function update() {
+        ticking = false;
+        if (small.matches) { rail.style.transform = 'none'; return; }
+        const total = track.offsetHeight - window.innerHeight;
+        const p = clamp(-track.getBoundingClientRect().top / total, 0, 1);
+        const s = p < A ? 0 : p > B ? 1 : smooth((p - A) / (B - A));
+        rail.style.transform = `translateX(${(-s * 100).toFixed(3)}vw)`;
+        const active = s < 0.5 ? 0 : 1;
+        tabs.forEach((t, i) => t.classList.toggle('on', i === active));
+      }
+      addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+      addEventListener('resize', update, { passive: true });
+
+      // click a tab -> scroll to that slide's hold zone
+      tabs.forEach((t) => t.addEventListener('click', () => {
+        const total = track.offsetHeight - window.innerHeight;
+        const top = track.getBoundingClientRect().top + window.scrollY;
+        const target = t.dataset.slide === '1' ? top + total * 0.84 : top + total * 0.12;
+        scrollTo({ top: target, behavior: 'smooth' });
+      }));
+      update();
+    })();
+  </script>
+</Base>

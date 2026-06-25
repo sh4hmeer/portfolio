@@ -1,0 +1,91 @@
+---
+// Short, themed boot overlay. Covers first paint only — the heavy clinic game
+// is lazy-loaded on scroll, so this never becomes a real gate. Skippable.
+const lines = [
+  'tri-city clinic os ......... v1',
+  'mounting boards ............ hvf · vision · oct · lounge',
+  'linking oscar feed ........ ok',
+  'loading patient flow ...... ok',
+  'forward-deployed engineer .. ready',
+];
+---
+<div id="boot" class="boot" role="status" aria-label="loading">
+  <div class="boot-card">
+    <div class="boot-head">
+      <span class="boot-dot"></span> SHAHMEER SHAHID
+      <span class="boot-role">// forward deployed engineer</span>
+    </div>
+    <ul class="boot-log">
+      {lines.map((l, i) => (
+        <li style={`--i:${i}`}><span class="ok">✓</span>{l}</li>
+      ))}
+    </ul>
+    <div class="boot-bar"><span></span></div>
+    <button class="boot-skip" data-boot-skip>skip ▸</button>
+  </div>
+</div>
+
+<script is:inline data-astro-rerun>
+  (function () {
+    const boot = document.getElementById('boot');
+    if (!boot) return;
+    const done = () => {
+      if (boot.classList.contains('hide')) return;
+      boot.classList.add('hide');
+      document.documentElement.classList.remove('booting');
+      setTimeout(() => boot.remove(), 600);
+    };
+    document.documentElement.classList.add('booting');
+    const t = setTimeout(done, 2000);
+    boot.querySelector('[data-boot-skip]')?.addEventListener('click', () => { clearTimeout(t); done(); });
+    // never trap the user: dismiss on first scroll too
+    window.addEventListener('scroll', () => { clearTimeout(t); done(); }, { once: true, passive: true });
+  })();
+</script>
+
+<style>
+  html.booting, html.booting body { overflow: hidden; }
+  .boot {
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--bg);
+    display: grid; place-items: center;
+    transition: opacity .55s ease, visibility .55s;
+  }
+  .boot.hide { opacity: 0; visibility: hidden; }
+  .boot-card {
+    width: min(440px, 90vw);
+    font-family: var(--mono); font-size: 13px; color: var(--ink-dim);
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface);
+    padding: 22px 22px 18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5);
+  }
+  .boot-head { color: var(--ink); letter-spacing: .04em; margin-bottom: 16px; }
+  .boot-role { color: var(--ink-faint); }
+  .boot-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 10px var(--green); margin-right: 7px;
+  }
+  .boot-log { list-style: none; margin: 0 0 16px; padding: 0; }
+  .boot-log li {
+    opacity: 0; transform: translateY(4px);
+    animation: bootline .35s ease forwards;
+    animation-delay: calc(var(--i) * .26s);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .boot-log .ok { color: var(--green); margin-right: 8px; }
+  @keyframes bootline { to { opacity: 1; transform: none; } }
+  .boot-bar { height: 3px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+  .boot-bar span { display: block; height: 100%; width: 0; background: var(--green);
+    animation: bootfill 2s ease forwards; }
+  @keyframes bootfill { to { width: 100%; } }
+  .boot-skip {
+    display: block; margin: 14px 0 0 auto;
+    background: none; border: none; color: var(--ink-faint);
+    font-family: var(--mono); font-size: 12px; cursor: pointer;
+  }
+  .boot-skip:hover { color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) {
+    .boot-log li, .boot-bar span { animation-duration: .01s; }
+  }
+</style>
