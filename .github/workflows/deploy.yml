@@ -3,8 +3,14 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 jobs:
   hello:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
     steps:
-      - run: echo "hello from actions"
+      - run: echo "hello with github-pages environment + pages/id-token perms"
