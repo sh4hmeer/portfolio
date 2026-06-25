@@ -11,8 +11,10 @@ npm run dev        # localhost:4321 (serves source; HOT-RELOAD can go stale — 
 npm run build      # -> dist/  (predev/prebuild run scripts/sync-clinic.mjs)
 npm run preview    # serves dist (must restart after each build)
 ```
-- **Deploy target:** GitHub Pages on the `sh4hmeer` account. `astro.config.mjs` → `site:'https://sh4hmeer.github.io'`, `base:'/'` (user repo). If it becomes a project repo, set `base:'/repo/'` (links use `withBase()` from `src/lib/url.js`).
-- **Node 24 / Astro 5.18.** Not a git repo yet.
+- **DEPLOYED & LIVE at https://shahmeershahid.com** (apex custom domain). Repo: **`github.com/sh4hmeer/portfolio`** (`main`). Every push to `main` triggers **`.github/workflows/deploy.yml`** (GitHub Actions → Pages: `npm ci` + `npm run build` → upload `dist` → deploy). `astro.config.mjs` → `site:'https://shahmeershahid.com'`, `base:'/'`. `public/CNAME` = shahmeershahid.com keeps the custom domain on each deploy. HTTPS enforced; `www` 301s to apex. DNS unchanged (apex A → GitHub Pages IPs, `www` CNAME → sh4hmeer.github.io).
+  - The OLD site is preserved in **`sh4hmeer/term-reports`** (its CNAME was removed to free the domain); not serving the apex anymore.
+  - **Deploy gotcha:** the *two-job* (build+deploy) Pages workflow startup-failed on this repo ("workflow file issue", no jobs, valid YAML) — bisected to the two-job split. The working form is a **single `build-deploy` job** (checkout → setup-node(cache:npm) → configure-pages → npm ci → npm run build → upload-pages-artifact → deploy-pages). Also: pushing `.github/workflows/**` needs the **`workflow` token scope** (sh4hmeer's gh login originally lacked it; granted via `gh auth refresh -s workflow`).
+- **Node 24 local / 22 on CI / Astro 5.18.** git repo at `fde-portfolio/` (remote `origin` = sh4hmeer/portfolio). Commits attributed to `Shahmeer Shahid <156625948+sh4hmeer@users.noreply.github.com>`.
 - **Screenshot/verify harness:** `scripts/_shot*.py` / `_chk*.py` (Playwright + swiftshader). Pattern: kill port 4321 (PowerShell `Get-NetTCPConnection`), `npm run dev`, then a python script that goto's localhost:4321, scrolls, evals state, screenshots. `scripts/_*.png` + `.dev.log`/`.preview.log` are gitignored.
 
 ## Page order (one scroll, top → bottom)
@@ -68,7 +70,7 @@ Nav labels (`Base.astro` `sections`/`labels`): intro · projects · machine · i
 - `prototype/` stays canonical for the clinic game; `sync-clinic.mjs` mirrors only the 8 runtime files into `public/clinic/`.
 
 ## Next / open
-- Build the **Injections** widget (form → fax-ready doc) using the EMR-race pattern.
-- Build the **Research** (MedMNIST) widget.
-- Fonts/audit pass, then scaffold GH-Pages deploy on `sh4hmeer`.
+- All four project displays DONE (clinic, biometry, injection, quantum); Builds/Path/Contact done; **deployed live** to shahmeershahid.com. To ship an edit: commit to `main` and push — Actions rebuilds and deploys (~1-2 min).
+- Quantum widget uses **placeholder** MedMNIST tiles + metrics (per its README) — swap for real samples/numbers before treating as final.
+- Possible polish: fonts/a11y audit, the lone 7th Builds card (eyecase) on its own row, mobile pass on the wide pinned animations.
 - Running memory with the full blow-by-blow: `~/.claude/.../memory/project_fde_portfolio.md`.
