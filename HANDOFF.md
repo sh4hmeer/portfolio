@@ -61,6 +61,12 @@ Nav labels (`Base.astro` `sections`/`labels`): intro · projects · machine · i
 
 **Contact.astro / index `#contact`** — "Have something for me to build?" + pill links Email(`shahmeer_shahid@outlook.com`) · GitHub(`sh4hmeer`) · LinkedIn(`shahmeer-shahid-`) + a **dodging "top secret" button** (flees cursor, unclickable).
 
+## Mobile (≤760px; desktop untouched)
+- **Root cause that was fixed:** the wide scenes (1120/1160/1200px) are transform-scaled, but transform doesn't shrink the *layout* box, so on mobile they overflowed and **blew the layout viewport out to ~743px** (whole page zoomed out). Fixed by clamping.
+- Each `fit()` has a **mobile branch** (`!matchMedia('(min-width:761px)')`): scale the scene to the viewport **width**, `position:absolute; left/top:50%; transform: translate(-50%,-50%) scale(s)` (centred), and `.bench-scene` is `position:relative; overflow:hidden; min-height:86vh` (clips the wide box, holds height for the intro card). OmniaRace also **pins its width** (`root.style.width = cw+'px'`) on mobile since `.emr-root` is otherwise fluid. relTo/arrow math still divides by `this.scale`, so SVG arrows stay aligned.
+- **CSS-ordering gotcha:** the desktop `.bench-scene{position:absolute;inset:0}` rule sits LATER in global.css than the bench mobile media query, so the mobile override **must** come right after it (equal specificity, later wins) — it does now.
+- `html { overflow-x: clip }` added as a backstop. Top bar (≤720px): nav hidden, **section indicator hidden**, brand `nowrap` + clock kept. Scroll-guide hidden ≤760px. ProjectsIntro flanking `.pi-side` labels hidden ≤700px (they collapsed to "SOMESELECTED"). Builds grid → 1 col ≤680px; Path road hidden ≤680px (cards stack).
+
 ## Gotchas
 - **Stale dev server:** edits sometimes don't reflect — RESTART dev (kill 4321, `npm run dev`) before screenshotting; hard-refresh the browser. A clean `rm -rf dist && npm run build` also fixes stale dist.
 - **Bash cwd resets** to `Desktop/Projects` each call — `cd .../fde-portfolio &&` first.

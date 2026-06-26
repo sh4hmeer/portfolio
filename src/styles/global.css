@@ -57,17 +57,22 @@
 .bench-panel--inject { background: #131418; }
 @media (max-width: 760px) {
   .bench-track { height: auto; }
-  .bench-pin { position: static; height: auto; overflow: visible; }
+  .bench-pin { position: static; height: auto; overflow: hidden; }
   .bench-rail { flex-direction: column; width: 100%; height: auto; transform: none !important; }
   .bench-panel { flex: none; width: 100%; height: auto; }
   .bench-anchor { position: static; }
-  .bench-scene { position: relative; inset: auto; }
+  /* .bench-scene mobile override lives next to the desktop rule below (ordering matters) */
 }
 
 /* Per-benchmark intro/context card (mirrors the clinic2d intro): sits over the scaled
    scene, gives first-time viewers the context, and gates the run behind a Begin button.
    Lives OUTSIDE the scene's fit() transform so the card stays full-size. */
 .bench-scene { position: absolute; inset: 0; }
+/* mobile override MUST come after the line above (equal specificity, later wins): the
+   scene flows in-document, clips the scaled scene, and holds height for the intro card. */
+@media (max-width: 760px) {
+  .bench-scene { position: relative; inset: auto; overflow: hidden; min-height: 86vh; }
+}
 .bench-intro {
   position: absolute; inset: 0; z-index: 12;
   display: flex; align-items: center; justify-content: center; padding: 24px;
@@ -120,7 +125,7 @@
   .panel { position: static; min-height: 0; display: block; }
   .scroll-room { display: none; }
 }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: clip; }   /* backstop so nothing widens the mobile layout viewport */
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 body {

@@ -355,6 +355,7 @@
       // measure with the result strip shown so it doesn't overflow when it appears.
       fit() {
         const root = this.root;
+        root.style.position = ''; root.style.left = ''; root.style.top = '';
         root.style.transform = 'none';
         const res = this.els.result, fac = this.els.factor;
         const rd = res.style.display, ro = res.style.opacity, fd = fac.style.display, fo = fac.style.opacity;
@@ -363,10 +364,19 @@
         const w = root.offsetWidth, h = root.offsetHeight;
         res.style.display = rd; res.style.opacity = ro; fac.style.display = fd; fac.style.opacity = fo;
         const pinned = window.matchMedia('(min-width:761px)').matches;
-        const RES = pinned ? 88 : 0;  // leave room for the bench slider tab strip
+        if (!pinned) {
+          // mobile: scale to fit width, absolutely centred + clipped by .bench-scene
+          const s = Math.min(1, (window.innerWidth - 8) / w);
+          this.scale = s;
+          root.style.transformOrigin = '50% 50%';
+          root.style.position = 'absolute'; root.style.left = '50%'; root.style.top = '50%';
+          root.style.transform = `translate(-50%,-50%) scale(${s.toFixed(4)})`;
+          return;
+        }
+        const RES = 88;  // leave room for the bench slider tab strip
         const s = Math.min(1, (window.innerWidth - 24) / w, (window.innerHeight - 20 - RES) / h);
         this.scale = s;
-        const ty = pinned ? RES + Math.max(0, (window.innerHeight - RES - h * s) / 2) : 0;
+        const ty = RES + Math.max(0, (window.innerHeight - RES - h * s) / 2);
         root.style.transformOrigin = 'top center';
         root.style.transform = `translateY(${ty.toFixed(1)}px) scale(${s.toFixed(4)})`;
       }

@@ -364,13 +364,24 @@ const tiles = Array.from({ length: 36 }, (_, i) => i);
       // single CSS transform is safe). reserve a top strip for the OS top-bar.
       fit() {
         const root = this.root;
+        root.style.position = ''; root.style.left = ''; root.style.top = '';
         root.style.transform = 'none';
         const w = root.offsetWidth, h = root.offsetHeight;
         const pinned = window.matchMedia('(min-width:761px)').matches;
-        const RES = pinned ? 56 : 0;
+        if (!pinned) {
+          // mobile: scale to fit the viewport width, absolutely centred in .bench-scene
+          // (clipped there) so the wide scene never overflows / blows out the layout viewport
+          const s = Math.min(1, (window.innerWidth - 8) / w);
+          this.scale = s;
+          root.style.transformOrigin = '50% 50%';
+          root.style.position = 'absolute'; root.style.left = '50%'; root.style.top = '50%';
+          root.style.transform = `translate(-50%,-50%) scale(${s.toFixed(4)})`;
+          return;
+        }
+        const RES = 56;
         const s = Math.min(1, (window.innerWidth - 24) / w, (window.innerHeight - 20 - RES) / h);
         this.scale = s;
-        const ty = pinned ? RES + Math.max(0, (window.innerHeight - RES - h * s) / 2) : 0;
+        const ty = RES + Math.max(0, (window.innerHeight - RES - h * s) / 2);
         root.style.transformOrigin = 'top center';
         root.style.transform = `translateY(${ty.toFixed(1)}px) scale(${s.toFixed(4)})`;
       }

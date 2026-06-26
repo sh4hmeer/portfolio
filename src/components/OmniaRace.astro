@@ -317,12 +317,27 @@
       // all at once). relTo()/movePaper divide rect math by this.scale so the SVG
       // arrows stay aligned under the transform.
       fit() {
+        this.root.style.position = ''; this.root.style.left = ''; this.root.style.top = ''; this.root.style.width = '';
         this.root.style.transform = 'none';
         const inner = this.root.querySelector('.emr-inner');
         const h = this.root.offsetHeight;
         const cw = inner ? inner.scrollWidth + 60 : this.root.offsetWidth;
-        // reserve a top strip for the bench slider tabs (desktop only) so they don't overlap
-        const RES = window.matchMedia('(min-width:761px)').matches ? 88 : 0;
+        const pinned = window.matchMedia('(min-width:761px)').matches;
+        if (!pinned) {
+          // mobile: pin the width to the content (the root is otherwise fluid, unlike the
+          // other two scenes), then scale to fit width + absolutely centre + clip via
+          // .bench-scene. relTo()/movePaper divide rect math by this.scale, so the SVG
+          // arrows stay aligned (the translate offset cancels in relTo() differences).
+          const s = Math.min(1, (window.innerWidth - 8) / cw);
+          this.scale = s;
+          this.root.style.width = cw + 'px';
+          this.root.style.transformOrigin = '50% 50%';
+          this.root.style.position = 'absolute'; this.root.style.left = '50%'; this.root.style.top = '50%';
+          this.root.style.transform = `translate(-50%,-50%) scale(${s.toFixed(4)})`;
+          return;
+        }
+        // reserve a top strip for the bench slider tabs (desktop) so they don't overlap
+        const RES = 88;
         const s = Math.min(1, (window.innerHeight - 18 - RES) / h, (window.innerWidth - 12) / cw);
         this.scale = s;
         // origin top so the scaled visual starts at the root's layout top; translateY
