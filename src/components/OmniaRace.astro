@@ -287,6 +287,8 @@
       <button class="bi-start" data-begin type="button">&#9654; Run the race</button>
     </div>
   </div>
+
+  <div class="scene-prog" data-prog style="--prog:#6B7B92;" aria-hidden="true"><span class="sp-fill"></span></div>
 </div>
 
 <script is:inline>
@@ -294,12 +296,15 @@
     const root = document.querySelector('.emr-root');
     if (!root) return;
     const intro = root.closest('[data-bench-scene]')?.querySelector('[data-intro]');
+    const progWrap = root.closest('[data-bench-scene]')?.querySelector('[data-prog]');
+    const progFill = progWrap?.querySelector('.sp-fill');
+    const setProg = (p) => { if (progFill) progFill.style.width = (Math.max(0, Math.min(1, p)) * 100).toFixed(2) + '%'; };
 
     class EMRRace {
       constructor(root) {
         this.root = root;
         this.runId = 0;
-        this.PROPS = { errorCount: 4, manualPaceMs: 120, timeCompression: 4 };
+        this.PROPS = { errorCount: 4, manualPaceMs: 88, timeCompression: 4 };
         this.FIELDS = [
           { key:'sph', value:'-1.00' }, { key:'cyl', value:'-0.25' }, { key:'axis', value:'85' },
           { key:'pd', value:'59' }, { key:'k1', value:'44.00' }, { key:'k2', value:'45.50' },
@@ -425,6 +430,7 @@
       reset() {
         this.runId++;
         this.active = false;
+        setProg(0); if (progWrap) progWrap.classList.remove('on');
         this.activeBox = null;
         this.cursorPos = { x:-60, y:-60 };
         this.clearTimers();
@@ -481,6 +487,17 @@
         this.errorCount = Math.max(0, Math.min(this.FIELDS.length, this.PROPS.errorCount));
         this.paceMs     = this.PROPS.manualPaceMs;
         this.COMPRESS   = this.PROPS.timeCompression;
+        // time-based progress bar (the race is an async sequence; estimate the total and
+        // snap to 100% at the comparison). gives a rough "how long is left" read.
+        if (progWrap) progWrap.classList.add('on');
+        this._progDone = false;
+        const EST = 30000, pT0 = performance.now();
+        const progStep = () => {
+          if (this.runId !== id || this._progDone) return;
+          setProg(Math.min(0.96, (performance.now() - pT0) / EST));
+          requestAnimationFrame(progStep);
+        };
+        requestAnimationFrame(progStep);
         this.runSequence(id);
       }
 
@@ -626,19 +643,19 @@
           const valEl = box.querySelector('[data-val]');
 
           let rp = this.rel('manual', rval);
-          await this.animateCursor(rp.r + 3, rp.cy, 340); if (this.runId !== id) return;
-          await this.sleep(230); if (this.runId !== id) return;
+          await this.animateCursor(rp.r + 3, rp.cy, 270); if (this.runId !== id) return;
+          await this.sleep(150); if (this.runId !== id) return;
           this.highlight(rval, 'read');
-          await this.sleep(230); if (this.runId !== id) return;
+          await this.sleep(150); if (this.runId !== id) return;
 
           let bp = this.rel('manual', box);
           // park the cursor at the field's right edge so it never covers the digits,
           // which type in from the left (otherwise the entry is hidden under the pointer)
-          await this.animateCursor(bp.r - 18, bp.b - 7, 320); if (this.runId !== id) return;
+          await this.animateCursor(bp.r - 18, bp.b - 7, 250); if (this.runId !== id) return;
 
           rp = this.rel('manual', rval); bp = this.rel('manual', box);
           const p = this.drawArrow('manual', rp.r, rp.cy, bp.l, bp.cy, { color:'#6B7B92', w:1.6 });
-          this.drawIn(p, 320);
+          this.drawIn(p, 250);
 
           this.activate(box); this.bump('manual');
           if (errIdx.has(i)) await this.typeWithError(id, box, valEl, f.value);
@@ -646,7 +663,7 @@
           if (this.runId !== id) return;
           this.deactivate(box);
           filled++; this.setStatus('manual', filled);
-          await this.sleep(200); if (this.runId !== id) return;
+          await this.sleep(140); if (this.runId !== id) return;
         }
         const cur = this.q('[data-cursor][data-lane="manual"]'); if (cur) cur.style.opacity = '0';
         this.freezeLane('manual');
@@ -660,10 +677,10 @@
         for (let k = 0; k < errAt; k++) { if (this.runId !== id) return; valEl.textContent += value[k]; this.bump('manual'); await this.sleep(this.paceMs + Math.random()*55); }
         valEl.textContent += this.wrongChar(value[errAt]); this.bump('manual');
         valEl.style.color = '#e8705f'; this.incErr('manual');   // flag the wrong number red, not the field box
-        await this.sleep(this.paceMs + 60); await this.sleep(620); if (this.runId !== id) return;
-        while (valEl.textContent.length > 0) { if (this.runId !== id) return; valEl.textContent = valEl.textContent.slice(0,-1); this.bump('manual'); await this.sleep(55); }
+        await this.sleep(this.paceMs + 50); await this.sleep(440); if (this.runId !== id) return;
+        while (valEl.textContent.length > 0) { if (this.runId !== id) return; valEl.textContent = valEl.textContent.slice(0,-1); this.bump('manual'); await this.sleep(45); }
         valEl.style.color = '';   // corrected entry types back in normal ink
-        await this.sleep(200); if (this.runId !== id) return;
+        await this.sleep(150); if (this.runId !== id) return;
         for (const ch of value) { if (this.runId !== id) return; valEl.textContent += ch; this.bump('manual'); await this.sleep(this.paceMs + Math.random()*55); }
       }
 
@@ -869,6 +886,7 @@
         this.fadeRemove(c1, 500, 320); this.fadeRemove(c2, 500, 320);
         await this.sleep(500);
 
+        this._progDone = true; setProg(1);
         const start = this.q('[data-start]');
         if (start) { start.disabled = false; start.style.opacity = '1'; start.style.cursor = 'pointer'; start.textContent = 'Run again'; }
       }

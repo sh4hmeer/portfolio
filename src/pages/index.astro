@@ -4,7 +4,7 @@ import Hero from '../components/Hero.astro';
 import ProjectsIntro from '../components/ProjectsIntro.astro';
 import ClinicSegment from '../components/ClinicSegment.astro';
 import OmniaRace from '../components/OmniaRace.astro';
-import InjectionFax from '../components/InjectionFax.astro';
+// import InjectionFax from '../components/InjectionFax.astro';   // injection race paused (may return)
 import QuantumBench from '../components/QuantumBench.astro';
 import Builds from '../components/Builds.astro';
 import Path from '../components/Path.astro';
@@ -31,25 +31,27 @@ const contacts = [
     <div class="scroll-room" aria-hidden="true"></div>
   </div>
 
-  <!-- Workflow benchmarks: both before/after races live in ONE pinned frame. Scrolling
-       slides horizontally from the biometry race (01) to the injection race (02); each
-       plays as it becomes the active panel. The zero-size #omnia / #injections anchors
-       keep both nav entries + the top-bar indicator working (the giant section isn't an
-       id, so the indicator switches between the two markers as you cross the slide). -->
+  <!-- Workflow benchmarks: the before/after races live in ONE pinned frame. With two
+       panels the rail slides horizontally between them (tabs 01/02); the slide driver
+       gracefully degrades to a single pinned animation when there's only one panel.
+       NOTE: the injection (02) race is COMMENTED OUT for now (may return). To restore:
+       uncomment the InjectionFax import, the #injections anchor, the 02 tab, the second
+       bench-panel, the injections nav entry in Base.astro, and switch the track class
+       back to "bench-track" (190vh) from "bench-track solo". -->
   <section class="bench-section" aria-label="workflow benchmarks">
-    <div class="bench-track" data-bench data-pinned>
+    <div class="bench-track solo" data-bench data-pinned>
       <span id="omnia" class="bench-anchor" style="top: 55vh;" aria-hidden="true"></span>
-      <span id="injections" class="bench-anchor" style="top: 112vh;" aria-hidden="true"></span>
+      {/* <span id="injections" class="bench-anchor" style="top: 112vh;" aria-hidden="true"></span> */}
 
       <div class="bench-pin">
         <div class="bench-tabs" role="tablist" aria-label="benchmark">
           <button class="bench-tab on" data-slide="0" type="button"><b>01</b> biometry <span class="bt-arr">&rarr;</span> emr</button>
-          <button class="bench-tab" data-slide="1" type="button"><b>02</b> injection <span class="bt-arr">&rarr;</span> fax</button>
+          {/* <button class="bench-tab" data-slide="1" type="button"><b>02</b> injection <span class="bt-arr">&rarr;</span> fax</button> */}
         </div>
 
         <div class="bench-rail" data-rail>
           <div class="bench-panel"><OmniaRace /></div>
-          <div class="bench-panel bench-panel--inject"><InjectionFax /></div>
+          {/* <div class="bench-panel bench-panel--inject"><InjectionFax /></div> */}
         </div>
       </div>
     </div>
@@ -174,11 +176,16 @@ const contacts = [
       const rail = document.querySelector('[data-rail]');
       if (!track || !rail) return;
       const tabs = [...document.querySelectorAll('.bench-tab')];
+      const panels = rail.querySelectorAll('.bench-panel').length;
+      const tabsEl = document.querySelector('.bench-tabs');
       const small = matchMedia('(max-width: 760px)');
       const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
       const smooth = (t) => t * t * (3 - 2 * t);
       const A = 0.42, B = 0.62;   // slide happens between these fractions of the lock
       let ticking = false;
+
+      // single panel: nothing to slide to; just a pinned animation (hide the lone tab)
+      if (panels < 2) { rail.style.transform = 'none'; if (tabsEl) tabsEl.style.display = 'none'; return; }
 
       function update() {
         ticking = false;

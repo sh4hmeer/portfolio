@@ -61,6 +61,12 @@ Nav labels (`Base.astro` `sections`/`labels`): intro · projects · machine · i
 
 **Contact.astro / index `#contact`** — "Have something for me to build?" + pill links Email(`shahmeer_shahid@outlook.com`) · GitHub(`sh4hmeer`) · LinkedIn(`shahmeer-shahid-`) + a **dodging "top secret" button** (flees cursor, unclickable).
 
+## Recent (2026-06-30)
+- **Injection race PAUSED** (commented out, reversible): not in the slider or nav. The slider auto-degrades to a single pinned animation (biometry) when it has one `.bench-panel` — tabs hidden, no slide; track uses `bench-track solo` (135vh). Restore steps are in the index.astro comment.
+- **Per-animation progress bars** (`.scene-prog`, bottom:62px): quantum from `tick(p)`, biometry time-based (EST 30s, snap at comparison), clinic2d `#visitProg` from flow legs. Shown only while playing.
+- **Page scroll-progress**: right-edge vertical fill (`#ppFill`), driven by the scroll-guide controller.
+- Pacing: biometry manual sped up (`manualPaceMs 88`); clinic2d waits/escort/intro all quicker. Hero "Who I am" → `#contact` (was dead `#about`).
+
 ## Mobile (≤760px; desktop untouched)
 - **Root cause that was fixed:** the wide scenes (1120/1160/1200px) are transform-scaled, but transform doesn't shrink the *layout* box, so on mobile they overflowed and **blew the layout viewport out to ~743px** (whole page zoomed out). Fixed by clamping.
 - Each `fit()` has a **mobile branch** (`!matchMedia('(min-width:761px)')`): scale the scene to the viewport **width**, `position:absolute; left/top:50%; transform: translate(-50%,-50%) scale(s)` (centred), and `.bench-scene` is `position:relative; overflow:hidden; min-height:86vh` (clips the wide box, holds height for the intro card). OmniaRace also **pins its width** (`root.style.width = cw+'px'`) on mobile since `.emr-root` is otherwise fluid. relTo/arrow math still divides by `this.scale`, so SVG arrows stay aligned.

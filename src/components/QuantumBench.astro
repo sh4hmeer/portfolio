@@ -174,12 +174,17 @@ const tiles = Array.from({ length: 36 }, (_, i) => i);
       <button class="bi-start" data-begin type="button">&#9654; Run the benchmark</button>
     </div>
   </div>
+
+  <div class="scene-prog" data-prog style="--prog:#9B8CFF;" aria-hidden="true"><span class="sp-fill"></span></div>
 </div>
 
 <script is:inline>
   (function () {
     const root = document.getElementById('qb-root');
     if (!root) return;
+    const progWrap = root.closest('[data-bench-scene]')?.querySelector('[data-prog]');
+    const progFill = progWrap?.querySelector('.sp-fill');
+    const setProg = (p) => { if (progFill) progFill.style.width = (Math.max(0, Math.min(1, p)) * 100).toFixed(2) + '%'; };
     const intro = root.closest('[data-bench-scene]')?.querySelector('[data-intro]');
 
     class QuantumBench {
@@ -341,10 +346,12 @@ const tiles = Array.from({ length: 36 }, (_, i) => i);
         this.$('pc-cls').textContent = Math.round(121410 * vP).toLocaleString('en-US');
         this.$('pc-q').textContent = Math.round(96 * vP).toString();
         this.$('vcap').style.opacity = this.seg(p, 0.72, 0.86);
+        setProg(p);
       }
 
       startLoop() {
         clearInterval(this.iv);
+        if (progWrap) progWrap.classList.add('on');
         this.t0 = performance.now();
         this.iv = setInterval(() => this.frame(), 33);
       }
@@ -358,7 +365,7 @@ const tiles = Array.from({ length: 36 }, (_, i) => i);
         }
         this.tick(p);
       }
-      resetScene() { clearInterval(this.iv); this.tick(0); }
+      resetScene() { clearInterval(this.iv); this.tick(0); if (progWrap) progWrap.classList.remove('on'); }
 
       // scale #qb-root to fit the pinned viewport (all motion is inline SVG/attrs, so a
       // single CSS transform is safe). reserve a top strip for the OS top-bar.

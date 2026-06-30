@@ -184,6 +184,14 @@
     <button class="btn" id="replay">↻ Restart</button>
   </div>
 
+  <!-- visit progress: thin bar showing how far through the walkthrough the patient is -->
+  <div id="visitProg" aria-hidden="true"><span></span></div>
+  <style>
+    #visitProg{position:fixed;left:0;bottom:0;width:100%;height:3px;background:rgba(255,255,255,.06);z-index:60;opacity:0;transition:opacity .4s ease;pointer-events:none;}
+    #visitProg.on{opacity:1;}
+    #visitProg span{display:block;height:100%;width:0%;background:linear-gradient(90deg,#5fc88f,#5aa7ff);transition:width .18s linear;}
+  </style>
+
 <script src="assets_data.js"></script>
 <script src="map2d.js"></script>
 <script src="flow2d.js"></script>
@@ -548,9 +556,9 @@ function walkAuto(dt){
   if(seg>=pts.length){ // arrived
     const L=LEGS[leg]; applyStep(leg);
     if(leg===LEGS.length-1){finished=true;setTimeout(runFinale,1400);return;} // finale on the final stop
-    // showcase pacing: short waits (don't over-linger seated), longer in-room so the board reads
-    const DWELL={here:2.5, hvf:6, vision:6, oct:6, octwait:2.5, drwait:2.5, doctor:6, billed:2};
-    pendingDwell = (leg===0?2.5 : (DWELL[L.status]!=null?DWELL[L.status]:3));
+    // showcase pacing: brief seated waits (keep it moving), a bit of in-room so the board reads
+    const DWELL={here:1.3, hvf:4.2, vision:4.2, oct:4.2, octwait:1.3, drwait:1.3, doctor:4.2, billed:1.4};
+    pendingDwell = (leg===0?1.3 : (DWELL[L.status]!=null?DWELL[L.status]:2));
     leg++; seg=0; legStarted=false;
     const ns=LEGS[leg];                                  // a room tech will come out to call the patient in
     escortSheet = (ns&&ns.status==='hvf') ? 1 : (ns&&ns.status==='vision') ? 3 : null;  // Amelia / Alex
@@ -669,16 +677,16 @@ function updateEscorts(dt){
   if(escortReleaseT>0){ escortReleaseT-=dt; if(escortReleaseT<=0) escortHold=false; }  // head-start before patient follows
   for(let i=ESCORTS.length-1;i>=0;i--){ const e=ESCORTS[i];
     if(e.mode==='pause'){ e.frame=0; e.pauseT-=dt;                       // stand in front of the patient
-      if(e.pauseT<=0){ e.mode='lead'; e.path=e.fwd; e.seg=1; escortReleaseT=0.85; } continue; }
+      if(e.pauseT<=0){ e.mode='lead'; e.path=e.fwd; e.seg=1; escortReleaseT=0.5; } continue; }
     if(e.mode==='out' && Math.hypot(player.x-e.x,player.y-e.y)<26){      // arrived just in front of the seated patient
-      e.mode='pause'; e.pauseT=1.9;
+      e.mode='pause'; e.pauseT=1.1;
       e.dir = Math.abs(player.x-e.x)>Math.abs(player.y-e.y) ? (player.x<e.x?2:3) : (player.y<e.y?1:0);  // face him
       if(BUBBLES[leg]) setBubble(BUBBLES[leg]);                          // "Yes, I'm ready…" — said to the escort
       continue;
     }
     const tgt=e.path[e.seg];
     if(!tgt){ ESCORTS.splice(i,1); continue; }                          // lead reached the room → done
-    const dx=tgt.x-e.x, dy=tgt.y-e.y, d=Math.hypot(dx,dy), sp=(e.mode==='out'?225:150)*dt;
+    const dx=tgt.x-e.x, dy=tgt.y-e.y, d=Math.hypot(dx,dy), sp=(e.mode==='out'?265:155)*dt;
     if(d<=sp){ e.x=tgt.x; e.y=tgt.y; e.seg++; }
     else{ e.x+=dx/d*sp; e.y+=dy/d*sp; e.dir=Math.abs(dx)>Math.abs(dy)?(dx<0?2:3):(dy<0?1:0); }
     e.anim+=dt*8; e.frame=Math.floor(e.anim)%6;
@@ -745,6 +753,16 @@ function loop(now){
     }
     if(window.Dash) Dash.clock(timer.secs);   // keep the dashboard room timer in sync with the rapid clock
   }
+  // visit progress bar (how far through the walkthrough)
+  if(started && !paused && LEGS.length){
+    const pts = LEGS[leg] && LEGS[leg].path;
+    let frac = (leg + (pts && pts.length ? Math.min(1, seg/pts.length) : 0)) / LEGS.length;
+    if(finished) frac = 1;
+    const vf = document.getElementById('visitProg');
+    vf.classList.add('on'); vf.firstElementChild.style.width = (Math.min(1,frac)*100).toFixed(1)+'%';
+  } else if(paused){
+    const vf = document.getElementById('visitProg'); if(vf) vf.classList.remove('on');
+  }
   render();
   requestAnimationFrame(loop);
 }
@@ -804,8 +822,8 @@ function runIntro(){
     if(i>0){const pc=document.getElementById('chip'+(i-1));if(pc){pc.classList.remove('on');pc.classList.add('done');}}
     const c=document.getElementById('chip'+i); if(c)c.classList.add('on');
     leg2.innerHTML='<span class="lg-term" style="color:'+CHIPCOL[o.cls]+'">'+o.term+'</span> · '+o.desc+' · <span style="color:var(--muted)">'+o.where+'</span>';
-  }, 800+i*1500)));
-  const total=800+ORDERS.length*1500;
+  }, 500+i*600)));
+  const total=500+ORDERS.length*600;
   introTimers.push(setTimeout(()=>{ const lc=document.getElementById('chip'+(ORDERS.length-1)); if(lc){lc.classList.remove('on');lc.classList.add('done');}
     leg2.innerHTML='<span style="color:var(--muted)">Follow him through the clinic. The boards on the right update as he goes.</span>';
     document.getElementById('introStart').classList.add('ready');

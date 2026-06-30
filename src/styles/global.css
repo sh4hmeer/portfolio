@@ -121,6 +121,21 @@
 }
 .bench-intro .bi-start:hover { filter: brightness(1.08); }
 .bench-intro .bi-start:active { transform: translateY(1px); }
+
+/* per-animation progress: subtle bar at the bottom of the frame showing how far the
+   animation has run (so you know how long is left). Shown only while it plays. */
+.scene-prog {
+  position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%);   /* sits above the "keep scrolling" guide */
+  width: min(440px, 64%); height: 3px; border-radius: 2px; z-index: 11;
+  background: rgba(255,255,255,.07); overflow: hidden;
+  opacity: 0; transition: opacity .45s ease; pointer-events: none;
+}
+@media (max-width: 760px) { .scene-prog { bottom: 20px; } }   /* no guide on mobile, drop it lower */
+.scene-prog.on { opacity: 1; }
+.scene-prog .sp-fill {
+  display: block; height: 100%; width: 0%; border-radius: 2px;
+  background: var(--prog, var(--green)); transition: width .12s linear;
+}
 @media (max-width: 760px) {
   .panel { position: static; min-height: 0; display: block; }
   .scroll-room { display: none; }

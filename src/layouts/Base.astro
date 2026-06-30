@@ -19,7 +19,7 @@ const sections = [
   { id: 'top',        label: 'intro' },
   { id: 'projects',   label: 'projects' },
   { id: 'omnia',      label: 'machine' },
-  { id: 'injections', label: 'injections' },
+  // { id: 'injections', label: 'injections' },   // injection race paused (may return)
   { id: 'research',   label: 'research' },
   { id: 'builds',     label: 'builds' },
   { id: 'path',       label: 'path' },
@@ -66,6 +66,10 @@ const sections = [
       <div>SHAHMEER SHAHID · Forward Deployed Engineer</div>
     </footer>
 
+    <!-- page scroll progress: thin vertical fill on the right edge so the long sticky
+         sections never read as the end of the page. -->
+    <div class="page-progress" aria-hidden="true"><span class="pp-fill" id="ppFill"></span></div>
+
     <!-- scroll guide: shows in pinned/sticky regions so a stopped screen doesn't read
          as the bottom of the page. hidden everywhere else (the hero has its own hint). -->
     <div class="scroll-guide" id="scrollGuide" aria-hidden="true">
@@ -78,12 +82,19 @@ const sections = [
     <script is:inline>
       (function () {
         const g = document.getElementById('scrollGuide');
-        if (!g) return;
+        const fill = document.getElementById('ppFill');
+        if (!g && !fill) return;
         const regions = () => Array.from(document.querySelectorAll('[data-pinned]'));
         let ticking = false;
         function update() {
           ticking = false;
           const vh = window.innerHeight;
+          // page scroll progress (vertical fill on the right edge)
+          if (fill) {
+            const max = document.documentElement.scrollHeight - vh;
+            const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+            fill.style.height = (p * 100).toFixed(2) + '%';
+          }
           let show = false;
           for (const el of regions()) {
             const r = el.getBoundingClientRect();
@@ -92,7 +103,7 @@ const sections = [
             const prog = (-r.top) / total;                 // 0 at entry, 1 at release
             if (r.top <= 4 && r.bottom >= vh - 4 && prog < 0.8) { show = true; break; }
           }
-          g.classList.toggle('show', show);
+          if (g) g.classList.toggle('show', show);
         }
         addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
         addEventListener('resize', update, { passive: true });
@@ -273,7 +284,7 @@ const sections = [
       );
       const labels = {
         top: 'intro', projects: 'selected projects', clinic: 'clinic flow', omnia: 'machine → emr',
-        injections: 'injection forms', research: 'quantum ml',
+        research: 'quantum ml',
         builds: 'more builds', path: 'the path', contact: 'contact',
       };
       const spy = new IntersectionObserver((entries) => {
@@ -295,6 +306,18 @@ const sections = [
         position: fixed; inset: 0; width: 100%; height: 100%;
         pointer-events: none; z-index: 0;
       }
+      /* page scroll progress: thin vertical fill pinned to the right edge */
+      .page-progress {
+        position: fixed; top: var(--bar-h); right: 0; width: 3px;
+        height: calc(100vh - var(--bar-h)); z-index: 35; pointer-events: none;
+        background: rgba(255,255,255,.045);
+      }
+      .page-progress .pp-fill {
+        display: block; width: 100%; height: 0%;
+        background: linear-gradient(180deg, var(--green), var(--blue));
+        box-shadow: 0 0 8px rgba(95,200,143,.4);
+      }
+      @media (max-width: 600px) { .page-progress { width: 2px; } }
       /* scroll guide: subtle bouncing hint shown in pinned regions (not the bottom) */
       .scroll-guide {
         position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
