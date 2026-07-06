@@ -20,7 +20,7 @@
     </div>
   </div>
 
-  <div class="emr-inner" style="max-width:1160px; margin:0 auto; position:relative; display:flex; flex-direction:column; gap:16px;">
+  <div class="emr-inner" style="margin:0 auto; position:relative;">
 
     <!-- ================= MANUAL LANE ================= -->
     <div data-lanecard data-lane="manual" style="position:relative; background:#161b22; border:1px solid #272e39; border-radius:10px; padding:15px 18px 18px; box-shadow:0 1px 0 rgba(0,0,0,.02);">
@@ -321,35 +321,34 @@
       // scale the whole widget to fit the viewport (so the pinned section shows it
       // all at once). relTo()/movePaper divide rect math by this.scale so the SVG
       // arrows stay aligned under the transform.
+      // Scale the whole widget to fit the viewport. width:max-content lets the two-lane
+      // grid lay out at full natural size (side-by-side on desktop, stacked on mobile via
+      // CSS) BEFORE we scale it down; otherwise the root is capped to the viewport width
+      // and the lanes overflow/clip. Then absolutely-centre + scale. relTo()/movePaper
+      // divide rect math by this.scale, so the SVG arrows stay aligned (the translate
+      // offset cancels in relTo() differences).
       fit() {
-        this.root.style.position = ''; this.root.style.left = ''; this.root.style.top = ''; this.root.style.width = '';
-        this.root.style.transform = 'none';
-        const inner = this.root.querySelector('.emr-inner');
-        const h = this.root.offsetHeight;
-        const cw = inner ? inner.scrollWidth + 60 : this.root.offsetWidth;
+        const root = this.root;
+        root.style.position = ''; root.style.left = ''; root.style.top = '';
+        root.style.transform = 'none';
+        root.style.width = 'max-content';
+        const inner = root.querySelector('.emr-inner');
+        const h = root.offsetHeight;
+        const cw = (inner ? inner.scrollWidth : root.offsetWidth) + 60;
         const pinned = window.matchMedia('(min-width:761px)').matches;
-        if (!pinned) {
-          // mobile: pin the width to the content (the root is otherwise fluid, unlike the
-          // other two scenes), then scale to fit width + absolutely centre + clip via
-          // .bench-scene. relTo()/movePaper divide rect math by this.scale, so the SVG
-          // arrows stay aligned (the translate offset cancels in relTo() differences).
-          const s = Math.min(1, (window.innerWidth - 8) / cw);
-          this.scale = s;
-          this.root.style.width = cw + 'px';
-          this.root.style.transformOrigin = '50% 50%';
-          this.root.style.position = 'absolute'; this.root.style.left = '50%'; this.root.style.top = '50%';
-          this.root.style.transform = `translate(-50%,-50%) scale(${s.toFixed(4)})`;
-          return;
-        }
-        // reserve a top strip for the bench slider tabs (desktop) so they don't overlap
-        const RES = 88;
-        const s = Math.min(1, (window.innerHeight - 18 - RES) / h, (window.innerWidth - 12) / cw);
+        // Desktop: fill the viewport (RES = OS-bar clearance; the slider tabs are gone with
+        // the injection race paused). Modest upscaling allowed (cap 1.5). Standardised with
+        // QuantumBench.fit(). Mobile: fit to width. The scene is clipped by .bench-scene.
+        const RES = pinned ? 48 : 0;
+        const s = pinned
+          ? Math.min(1.5, (window.innerHeight - RES - 6) / h, (window.innerWidth - 16) / cw)
+          : Math.min(1, (window.innerWidth - 8) / cw);
         this.scale = s;
-        // origin top so the scaled visual starts at the root's layout top; translateY
-        // centres it in the viewport. (translateY cancels in relTo() differences.)
-        const ty = RES + Math.max(0, (window.innerHeight - RES - h * s) / 2);
-        this.root.style.transformOrigin = 'top center';
-        this.root.style.transform = `translateY(${ty.toFixed(1)}px) scale(${s.toFixed(4)})`;
+        root.style.transformOrigin = '50% 50%';
+        root.style.position = 'absolute';
+        root.style.left = '50%';
+        root.style.top = pinned ? `calc(50% + ${(RES / 2).toFixed(0)}px)` : '50%';
+        root.style.transform = `translate(-50%,-50%) scale(${s.toFixed(4)})`;
       }
       clearTimers() {}
       ease(p) { return 1 - Math.pow(1 - p, 3); }

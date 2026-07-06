@@ -61,6 +61,9 @@ Nav labels (`Base.astro` `sections`/`labels`): intro · projects · machine · i
 
 **Contact.astro / index `#contact`** — "Have something for me to build?" + pill links Email(`shahmeer_shahid@outlook.com`) · GitHub(`sh4hmeer`) · LinkedIn(`shahmeer-shahid-`) + a **dodging "top secret" button** (flees cursor, unclickable).
 
+## Recent (2026-06-30, later)
+- **Biometry race fills the screen**: the two lanes now sit **side-by-side** (`.emr-inner` is a 2-col grid on desktop, single-col ≤760px; comparison bar spans both). Its wide aspect fills wide/short laptops instead of stacking tall with big side gaps. `OmniaRace.fit()` sets `root.width:max-content` so the grid lays out full-size, then absolutely-centres + scales (RES=48 bar clearance, cap 1.5x). `relTo`/arrows still divide by `this.scale`. `QuantumBench.fit()` standardised to the same RES/cap/margins (it's a fixed-width card, so it keeps the translateY approach). Both verified: fill the width, no clip/overflow, arrows aligned, mobile stacked.
+
 ## Recent (2026-06-30)
 - **Injection race PAUSED** (commented out, reversible): not in the slider or nav. The slider auto-degrades to a single pinned animation (biometry) when it has one `.bench-panel` — tabs hidden, no slide; track uses `bench-track solo` (135vh). Restore steps are in the index.astro comment.
 - **Per-animation progress bars** (`.scene-prog`, bottom:62px): quantum from `tick(p)`, biometry time-based (EST 30s, snap at comparison), clinic2d `#visitProg` from flow legs. Shown only while playing.

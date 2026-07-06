@@ -32,6 +32,13 @@
 @keyframes caretBlink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
 @keyframes flow { to { stroke-dashoffset: -14; } }
 
+/* OmniaRace layout: the two lanes sit SIDE BY SIDE on desktop (wide aspect fills wide/
+   short laptops instead of stacking tall with big side gaps); the comparison bar spans
+   both. Stacked single-column on mobile (bigger when the whole scene is scaled to width). */
+.emr-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.emr-inner > [data-results] { grid-column: 1 / -1; }
+@media (max-width: 760px) { .emr-inner { grid-template-columns: 1fr; } }
+
 /* ── Stacked project panels: each sticks to the top and the next slides over it ── */
 .stack { position: relative; }
 .panel {

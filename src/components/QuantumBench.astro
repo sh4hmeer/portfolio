@@ -385,8 +385,11 @@ const tiles = Array.from({ length: 36 }, (_, i) => i);
           root.style.transform = `translate(-50%,-50%) scale(${s.toFixed(4)})`;
           return;
         }
-        const RES = 56;
-        const s = Math.min(1, (window.innerWidth - 24) / w, (window.innerHeight - 20 - RES) / h);
+        // Desktop: fill the viewport as much as possible (same formula as OmniaRace.fit).
+        // RES = OS-bar clearance; allow modest upscaling (cap 1.5) so it isn't small on
+        // wide/short laptops.
+        const RES = 48;
+        const s = Math.min(1.5, (window.innerHeight - RES - 6) / h, (window.innerWidth - 16) / w);
         this.scale = s;
         const ty = RES + Math.max(0, (window.innerHeight - RES - h * s) / 2);
         root.style.transformOrigin = 'top center';
