@@ -80,7 +80,7 @@ const rooms = [
         const cur = p[i], prev = p[i - 1];
         if (prev) {
           const hy = rnd(168, 200);
-          const sameRow = (prev.at[1] < 146) === (cur.at[1] < 146) && Math.abs(prev.at[0] - cur.at[0]) < 60;
+          const sameRow = (prev.at[1] < 146) === (cur.at[1] < 146) && prev.at[1] > 0 && prev.at[0] > 10;
           if (!sameRow) {
             out.push({ at: [prev.at[0], hy], stay: 0, stage: prev.stage, via: true });
             out.push({ at: [cur.at[0], hy], stay: 0, stage: prev.stage, via: true });
