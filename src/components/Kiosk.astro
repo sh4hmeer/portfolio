@@ -1,12 +1,12 @@
 ---
-// The self check-in kiosk, screen by screen, as the patient sees it. Copy is the
-// real kiosk's wording. Steps advance on their own and can be stepped manually;
-// a Replay button restarts. Static (step 3) under reduced motion.
+// The self check-in kiosk, screen by screen, the way the patient sees it. The
+// wording is the real kiosk's. It loops slowly on its own; no buttons to press.
+// Under reduced motion it rests on the "still correct?" screen.
 ---
 <div class="screen ks-wrap" data-kiosk aria-label="Self check-in kiosk screens">
   <div class="screen-bar">
     <span class="sdots" aria-hidden="true"><i></i><i></i><i></i></span>
-    <span class="stitle">Front desk kiosk · touch screen + card reader</span>
+    <span class="stitle">Front desk kiosk</span>
     <span class="live">reader online</span>
   </div>
   <div class="ks">
@@ -20,7 +20,7 @@
     <div class="ks-pane" data-step="2">
       <div class="ks-clinic">Tri-City Eye Care</div>
       <h4>Reading your card</h4>
-      <p>Looking up today's appointment</p>
+      <p>Finding today's appointment</p>
       <div class="ks-prog" aria-hidden="true"><i></i></div>
     </div>
     <div class="ks-pane" data-step="3">
@@ -37,17 +37,10 @@
       <div class="ks-done" aria-hidden="true">✓</div>
       <h4>You're checked in.</h4>
       <p class="ks-sub">Take your card and have a seat. We'll call you shortly.</p>
-      <span class="ks-note">Front desk board updated · chart marked "Here"</span>
+      <span class="ks-note">The front desk already knows you are here</span>
     </div>
   </div>
-  <div class="ks-ctl">
-    <span class="lbl">Step</span>
-    <button class="ks-step on" type="button" data-go="1">1 Card</button>
-    <button class="ks-step" type="button" data-go="2">2 Read</button>
-    <button class="ks-step" type="button" data-go="3">3 Confirm</button>
-    <button class="ks-step" type="button" data-go="4">4 Seated</button>
-    <button class="ks-replay" type="button" data-replay>↻ Replay</button>
-  </div>
+  <div class="ks-dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
 </div>
 
 <script is:inline>
@@ -56,22 +49,20 @@
     if (!root) return;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const panes = [...root.querySelectorAll('.ks-pane')];
-    const steps = [...root.querySelectorAll('.ks-step')];
-    const HOLD = { 1: 3600, 2: 1400, 3: 4200, 4: 4200 };
-    let cur = 1, timer = null, visible = false, manual = false;
+    const dots = [...root.querySelectorAll('.ks-dots i')];
+    const HOLD = { 1: 4200, 2: 1500, 3: 4800, 4: 4200 };
+    let cur = 1, timer = null, visible = false;
     function show(n) {
       cur = n;
       panes.forEach((p) => p.classList.toggle('on', +p.dataset.step === n));
-      steps.forEach((s) => s.classList.toggle('on', +s.dataset.go === n));
+      dots.forEach((d, i) => d.classList.toggle('on', i + 1 === n));
     }
     function schedule() {
       clearTimeout(timer);
-      if (reduce || manual || !visible) return;
+      if (reduce || !visible) return;
       timer = setTimeout(() => { show(cur % 4 + 1); schedule(); }, HOLD[cur]);
     }
-    steps.forEach((s) => s.addEventListener('click', () => { manual = true; clearTimeout(timer); show(+s.dataset.go); }));
-    root.querySelector('[data-replay]').addEventListener('click', () => { manual = false; show(1); schedule(); });
     if (reduce) { show(3); return; }
-    new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; if (visible) schedule(); else clearTimeout(timer); }), { threshold: 0.3 }).observe(root);
+    new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; if (visible) schedule(); else clearTimeout(timer); }), { threshold: 0.25 }).observe(root);
   })();
 </script>

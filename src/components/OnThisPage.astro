@@ -1,20 +1,20 @@
 ---
-// A visible, numbered index right under the hero. Older and less technical
-// visitors should never have to discover that the page continues.
+// A visible, numbered index under the hero, so nobody has to discover that the
+// page continues.
 const parts = [
-  { id: 'checkin', label: 'Check-in from the health card' },
-  { id: 'boards',  label: 'Live boards for every role' },
-  { id: 'devices', label: 'Device results into the chart' },
-  { id: 'doctor',  label: 'One click for the doctor' },
-  { id: 'staff',   label: 'Staff schedule and time clock' },
-  { id: 'map',     label: 'The clinic map (playable)' },
-  { id: 'nightly', label: 'The nightly report' },
+  { id: 'checkin', label: 'Checking in' },
+  { id: 'boards',  label: 'A screen for every role' },
+  { id: 'devices', label: 'Test results into the chart' },
+  { id: 'doctor',  label: "The doctor's room" },
+  { id: 'staff',   label: 'Schedules and the time clock' },
+  { id: 'map',     label: 'A live map of the clinic' },
+  { id: 'nightly', label: 'Looking back on the day' },
 ];
 const more = [
-  { id: 'changed',   label: 'What changed, with numbers' },
+  { id: 'changed',   label: 'What changed' },
   { id: 'how',       label: 'How I work' },
-  { id: 'questions', label: 'Questions' },
-  { id: 'contact',   label: 'Contact' },
+  { id: 'questions', label: 'Good to know' },
+  { id: 'contact',   label: 'Get in touch' },
 ];
 ---
 <nav class="toc" aria-label="on this page">
@@ -22,7 +22,7 @@ const more = [
     <div class="toc-in rv">
       <div class="toc-head">
         <b>On this page</b>
-        <span>One clinic day, in seven parts. Then the numbers and how to start.</span>
+        <span>A clinic day in seven parts, then a little about how I work and how to reach me.</span>
       </div>
       <ol class="toc-list">
         {parts.map((p) => <li><a href={`#${p.id}`}>{p.label}</a></li>)}

@@ -1,22 +1,21 @@
 ---
-// Contact. Two plain calls to action and a short fit-check form. The site is
-// static (GitHub Pages), so the form composes an email in the visitor's own
-// mail app: no backend, no third party holding the message.
+// Get in touch. Two plain buttons and a short form. The site is static, so the
+// form composes an email in the visitor's own mail app: nothing is stored here.
 const email = 'shahmeer_shahid@outlook.com';
-const seeIt = `mailto:${email}?subject=${encodeURIComponent('See it running (20 minutes)')}&body=${encodeURIComponent('Hi Shahmeer,\n\nI would like to see the boards running. A few times that work for me:\n\n\nClinic:\nEMR:\n')}`;
-const ask2027 = `mailto:${email}?subject=${encodeURIComponent('Ask about 2027')}`;
+const seeIt = `mailto:${email}?subject=${encodeURIComponent('A short call to see it running')}&body=${encodeURIComponent('Hi Shahmeer,\n\nI would like to see how it runs. A few times that work for me:\n\n\nClinic:\nEMR:\n')}`;
+const ask2027 = `mailto:${email}?subject=${encodeURIComponent('About 2027')}`;
 ---
 <section id="contact" class="section">
   <div class="wrap cf">
     <div class="rv">
-      <p class="eyebrow"><span class="dot"></span> Contact</p>
-      <h2>See it running.</h2>
-      <p class="lead">A 20-minute video call. I share my screen on the live boards while the clinic is open, and you ask whatever you like. No slides.</p>
+      <p class="eyebrow"><span class="dot"></span> Get in touch</p>
+      <h2>Happy to show you how it runs.</h2>
+      <p class="lead">The easiest way to understand it is to see it. A short video call while the clinic is open, my screen shared on the live boards, and whatever questions you have.</p>
       <div class="cf-ctas">
-        <a class="btn primary" href={seeIt}>Book the 20 minutes</a>
+        <a class="btn primary" href={seeIt}>Set up a short call</a>
         <a class="btn ghost" href={ask2027}>Ask about 2027</a>
       </div>
-      <p class="cf-note">I read and answer every message myself.</p>
+      <p class="cf-note">I read and reply to every message myself.</p>
       <div class="cf-links">
         <a href={`mailto:${email}`}>{email}</a>
         <a href="https://www.linkedin.com/in/shahmeer-shahid-" target="_blank" rel="noopener">LinkedIn</a>
@@ -26,8 +25,8 @@ const ask2027 = `mailto:${email}?subject=${encodeURIComponent('Ask about 2027')}
 
     <form class="cf-form rv" data-fit action={`mailto:${email}`} method="get">
       <div>
-        <h3>Or tell me about your clinic</h3>
-        <p class="hint">Five short answers. Pressing Send opens the message in your own mail app for you to review.</p>
+        <h3>Or tell me a little about your clinic</h3>
+        <p class="hint">A few quick answers. Pressing Send opens the message in your own mail app so you can look it over first.</p>
       </div>
       <div class="cf-row">
         <div class="cf-field"><label for="cf-name">Your name</label><input id="cf-name" name="name" type="text" autocomplete="name" /></div>
@@ -49,7 +48,7 @@ const ask2027 = `mailto:${email}?subject=${encodeURIComponent('Ask about 2027')}
       </div>
       <div class="cf-field">
         <label for="cf-pain">What slows your day down most?</label>
-        <textarea id="cf-pain" name="pain" placeholder="One or two sentences is plenty."></textarea>
+        <textarea id="cf-pain" name="pain" placeholder="A sentence or two is plenty."></textarea>
       </div>
       <div class="cf-send">
         <button class="btn primary" type="submit">Send</button>

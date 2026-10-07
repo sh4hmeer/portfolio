@@ -8,7 +8,7 @@ import TriageBoard from '../components/TriageBoard.astro';
 import DeviceRace from '../components/DeviceRace.astro';
 import DoctorFlow from '../components/DoctorFlow.astro';
 import FloorClock from '../components/FloorClock.astro';
-import ClinicMap from '../components/ClinicMap.astro';
+import FloorMap from '../components/FloorMap.astro';
 import NightlyReport from '../components/NightlyReport.astro';
 import Changed from '../components/Changed.astro';
 import HowIWork from '../components/HowIWork.astro';
@@ -20,140 +20,143 @@ import Contact from '../components/Contact.astro';
   <Hero />
   <OnThisPage />
 
-  <!-- The spine: one clinic day, seven parts, each with a recreation of the real tool. -->
+  <!-- The spine: one clinic day in seven parts, each with a recreation of the real screen. -->
   <div id="day" style="scroll-margin-top: var(--bar-h)">
 
-    <DayStop id="checkin" n={1} time="7:55 am · front desk" title="Patients check themselves in. The chart updates itself." next={{ id: 'boards', label: 'Live boards for every role' }}>
+    <DayStop id="checkin" n={1} time="Early morning · front desk" title="Patients check themselves in, and their chart stays up to date on its own." next={{ id: 'boards', label: 'A screen for every role' }}>
       <Fragment slot="text">
         <p class="body">
-          The patient drops their health card or driver's licence into a reader. In about a second the kiosk
-          finds today's appointment, greets them by name, and asks one question: is your address and phone
-          still correct? One tap, and they are marked <b>Here</b> in the EMR. If the card is newer than the chart,
-          the chart is corrected on the spot.
+          Patients place their health card or licence in a reader at the desk. The kiosk greets them by
+          name, asks whether their details are still right, and marks them as arrived. If something on
+          the card has changed, the chart is brought up to date for them.
         </p>
-        <p class="body">No line at the desk. No one re-typing an address. Elderly patients manage it unaided because there is nothing to type.</p>
-        <div class="fact"><b>One tap for the patient. Zero for the front desk.</b><span>Live at the front desk since 23 September 2026. A touch-only path is always there for patients without a card.</span></div>
+        <p class="body">
+          The front desk is free to actually greet people instead of typing, and older patients manage
+          it on their own, because there is nothing to type or search.
+        </p>
+        <div class="fact"><b>Checking in takes one tap, and the front desk does nothing.</b><span>In use at the clinic's front desk since September 2026, with a touch option for anyone without a card.</span></div>
       </Fragment>
       <Fragment slot="visual">
         <Kiosk />
-        <p class="screen-cap">The real kiosk's wording, step by step. It steps through on its own, or use the buttons.</p>
+        <p class="screen-cap">The kiosk's own wording, screen by screen. It keeps cycling on its own.</p>
       </Fragment>
     </DayStop>
 
-    <DayStop id="boards" n={2} time="8:10 am · every TV in the clinic" title="Every screen shows who is next. Nobody walks the hall to ask." flip next={{ id: 'devices', label: 'Device results into the chart' }}>
+    <DayStop id="boards" n={2} time="Mid-morning · every screen in the clinic" title="Every screen in the clinic shows who is next, so nobody has to go looking." flip next={{ id: 'devices', label: 'Test results into the chart' }}>
       <Fragment slot="text">
         <p class="body">
-          Each role gets its own board, read straight from the EMR's daysheet about every ten seconds. The
-          doctors' lounge sees who is waiting for each doctor and for how long. The imaging tech sees who is
-          ready for a scan and which room is free. The front desk sees who has arrived and who is late.
+          Each role has its own screen, built around what that person needs to know. Doctors see who is
+          ready for them and for how long. The imaging tech sees who is next for a scan and which room is
+          open. The front desk sees who has arrived and who is running late.
         </p>
         <p class="body">
-          When a tech drags a patient into a room or taps <b>Done</b>, the board writes the new status back to
-          the EMR. One action, every screen updates, and the day's timeline writes itself.
+          When someone moves a patient along on their screen, every other screen follows, and the
+          patient's status in the EMR is kept in step. Nobody writes the same thing down twice.
         </p>
-        <div class="fact"><b>One board per role, all reading the same daysheet.</b><span>Doctors' lounge, imaging, visual fields, vision rooms and the front desk. Doctors can open theirs on a phone.</span></div>
+        <div class="fact"><b>One screen for each role, all showing the same picture.</b><span>Doctors can open theirs on a phone between rooms.</span></div>
       </Fragment>
       <Fragment slot="visual">
         <TriageBoard />
         <ul class="tb-roles" aria-label="who sees what">
-          <li><i style="background:var(--s-purple)"></i><span><b>Doctors' lounge:</b> who is waiting for each doctor, longest first.</span></li>
-          <li><i style="background:var(--s-yellow)"></i><span><b>Imaging:</b> who is ready for a scan, which room is free.</span></li>
-          <li><i style="background:var(--s-orange)"></i><span><b>Visual fields and vision rooms:</b> the same, for those stations.</span></li>
-          <li><i style="background:var(--s-green)"></i><span><b>Front desk:</b> who checked in at the kiosk, who needs a hand.</span></li>
+          <li><i style="background:var(--s-purple)"></i><span><b>Doctors:</b> who is ready for them, longest wait first.</span></li>
+          <li><i style="background:var(--s-yellow)"></i><span><b>Imaging:</b> who is next for a scan, and which room is open.</span></li>
+          <li><i style="background:var(--s-orange)"></i><span><b>Testing rooms:</b> the same, for those stations.</span></li>
+          <li><i style="background:var(--s-green)"></i><span><b>Front desk:</b> who has arrived, and who needs a hand.</span></li>
         </ul>
       </Fragment>
     </DayStop>
 
-    <DayStop id="devices" n={3} time="9:30 am · imaging room" title="Results reach the chart before the patient reaches the next room." next={{ id: 'doctor', label: 'One click for the doctor' }}>
+    <DayStop id="devices" n={3} time="Late morning · imaging room" title="Test results make their way into the chart without anyone typing them." next={{ id: 'doctor', label: "The doctor's room" }}>
       <Fragment slot="text">
         <p class="body">
-          Diagnostic machines print a slip or save a file, and then someone types the numbers into the chart.
-          Eight fields, every patient, every day, with the occasional slipped digit.
+          Most clinic machines print a slip or save a file, and then someone copies the numbers into the
+          chart by hand. It is slow, it happens all day long, and now and then a digit slips.
         </p>
         <p class="body">
-          Instead, every device in the clinic exports to one shared folder, and a small script watches it.
-          A new file appears, the script reads the values, finds the patient's appointment, and writes the
-          measurements into their chart. The tech never touches a keyboard.
+          Here, the machine's results reach the patient's chart on their own, moments after the test,
+          exactly as measured. The tech carries on to the next patient.
         </p>
-        <div class="fact"><b>About 200 times faster than typing, with no typos.</b><span>Running since May 2026 on the clinic's biometers. Roughly a dozen devices export to the same shared folder.</span></div>
+        <div class="fact"><b>Results land in the chart in about half a second, instead of a couple of minutes of typing.</b><span>Running at the clinic since May 2026, with nothing to catch or correct.</span></div>
       </Fragment>
       <Fragment slot="visual">
         <DeviceRace />
       </Fragment>
     </DayStop>
 
-    <DayStop id="doctor" n={4} time="10:40 am · exam lane" title="One click, and the doctor's whole workspace is open." flip next={{ id: 'staff', label: 'Staff schedule and time clock' }}>
+    <DayStop id="doctor" n={4} time="Late morning · exam room" title="When the doctor walks in, everything about the patient is already open." flip next={{ id: 'staff', label: 'Schedules and the time clock' }}>
       <Fragment slot="text">
         <p class="body">
-          Before the exam can start, the doctor needs the chart, the OCT scans, and the retinal photos. Three
-          systems, three name searches, two monitors, every patient.
+          A doctor usually needs the chart, the scans and the photos before an exam can start, and they
+          live in different programs. Finding the right patient in each one takes a little time, every
+          single visit.
         </p>
         <p class="body">
-          Now the doctor clicks the patient's name on the lounge board. The chart opens on the first monitor.
-          The imaging system and the photo viewer open side by side on the second, already on the right patient
-          and the right scan for that visit. Name and date of birth are matched in all three before anything is shown.
+          Now the doctor taps the patient's name once on the lounge screen. The chart opens on one
+          monitor, and the scans and photos open side by side on the other, already on the right patient
+          and the right view for that visit.
         </p>
-        <div class="fact"><b>Three systems open in 2 to 13 seconds, down from about 33.</b><span>Timed on the clinic's exam-room PCs, August 2026. A wrong-patient match stops and warns instead of opening.</span></div>
+        <div class="fact"><b>Everything open in a few seconds, from one tap.</b><span>Down from about half a minute of searching for each patient.</span></div>
       </Fragment>
       <Fragment slot="visual">
         <DoctorFlow />
       </Fragment>
     </DayStop>
 
-    <DayStop id="staff" n={5} time="12:00 pm · staff room" title="The manager's week runs from one screen." next={{ id: 'map', label: 'The clinic map' }}>
+    <DayStop id="staff" n={5} time="Midday · staff room" title="The manager's week, the schedule and the time clock, all from one screen." next={{ id: 'map', label: 'A live map of the clinic' }}>
       <Fragment slot="text">
         <p class="body">
-          The paper station sheet became a board on the staff-room TV: who is at which station this morning
-          and this afternoon, who went home early, and the day's announcement. The manager changes it from
-          the office and every screen follows.
+          The paper sheet showing who is at which station became a screen in the staff room. The manager
+          changes it from the office, and everyone sees the change at once.
         </p>
         <p class="body">
-          The punch clock went too. Staff check in and out with a PIN on the same board. The manager gets a
-          short email at 9:00 and 5:00. Every second Sunday the pay-period timesheet is emailed as a PDF, totals done.
+          Staff clock in and out on the same screen with a personal code. The manager gets a short
+          summary in the morning and at the end of the day, and the pay-period timesheet arrives ready
+          to go, with the totals already done.
         </p>
-        <div class="fact"><b>Punch clock and paper sheet retired. Timesheets send themselves.</b><span>Live since 29 September 2026. Imported the old clock's history so nothing was lost in the switch.</span></div>
+        <div class="fact"><b>No more paper sheet, punch clock, or adding up hours by hand.</b><span>In use since the end of September 2026.</span></div>
       </Fragment>
       <Fragment slot="visual">
         <FloorClock />
-        <p class="screen-cap">The floor board with the time clock built in. Staff names are fictional.</p>
+        <p class="screen-cap">The staff-room screen, with the time clock built in. The names are made up.</p>
       </Fragment>
     </DayStop>
 
-    <DayStop id="map" n={6} time="3:15 pm · anywhere in the clinic" title="Staff can watch the day move across the floor." flip next={{ id: 'nightly', label: 'The nightly report' }}>
+    <DayStop id="map" n={6} time="Afternoon · anywhere in the clinic" title="A live map of the day, so staff can see the whole clinic at a glance." flip next={{ id: 'nightly', label: 'Looking back on the day' }}>
       <Fragment slot="text">
         <p class="body">
-          The same status changes that drive the boards also drive a pixel-art map of the clinic. Patients
-          appear at the desk, walk to the field machine, to imaging, into an exam lane, and out.
+          The same information that drives the screens also draws a simple map of the clinic. Each
+          patient is a dot that moves from the front desk, through testing and imaging, into an exam
+          room and out, changing colour as they go.
         </p>
         <p class="body">
-          It is the one screen in the clinic that is just for fun, and it is also the clearest picture of a
-          day anyone there has had. Play it below: walk one visit and watch the boards update as you go.
+          It is a small thing, and the staff like it. It is also the quickest way to notice a room
+          sitting empty while people are waiting.
         </p>
-        <div class="fact"><b>Every step you walk is also a row of data.</b><span>Door-to-door time, with no typing, is what the nightly report is built from.</span></div>
+        <div class="fact"><b>The whole clinic, in one glance.</b><span>The colours match the screens, so everyone reads it the same way.</span></div>
       </Fragment>
       <Fragment slot="visual">
-        <ClinicMap />
-        <p class="screen-cap">Built with the clinic's real floor plan. Fictional patients. Best on a laptop or desktop.</p>
+        <FloorMap />
+        <p class="screen-cap">Made-up patients, moving the way a real day does.</p>
       </Fragment>
     </DayStop>
 
-    <DayStop id="nightly" n={7} time="11:00 pm · after close" title="At night, the clinic reviews its own day." next={{ id: 'changed', label: 'What changed, with numbers' }}>
+    <DayStop id="nightly" n={7} time="After close" title="Overnight, the day is looked over so tomorrow runs a little smoother." next={{ id: 'changed', label: 'What changed' }}>
       <Fragment slot="text">
         <p class="body">
-          Every status change on every board is logged with a time, automatically. After close, a model reads
-          the day: how long each patient waited at each step, which rooms sat empty while people waited, and
-          which choices moved the day along.
+          Everything that happens on the screens is remembered with a time, without anyone writing it
+          down. After close, the day is reviewed: where people waited longest, which rooms sat quiet while
+          others were waiting, and what helped.
         </p>
         <p class="body">
-          The result is a short written report, in plain language, before the first patient arrives. Over
-          weeks it learns the clinic's own patterns, and on the boards it can quietly suggest who to take
-          next and why. The staff always decide.
+          The clinic gets a short note in plain language before the first patient arrives. Over time the
+          suggestions get better at reflecting how your clinic actually runs. The staff always make the
+          final call.
         </p>
-        <div class="fact"><b>The first model learned from 5,941 real staffing decisions.</b><span>It picks the same next patient as experienced staff 51% of the time on the first try; the best simple rule manages 24%. Age is never used to order patients.</span></div>
+        <div class="fact"><b>A short note each morning on where yesterday slowed down, and what to try.</b><span>Built from the day's own record, not from anyone's memory.</span></div>
       </Fragment>
       <Fragment slot="visual">
         <NightlyReport />
-        <p class="screen-cap">An illustrative night's report, in the shape of the real one. The numbers change every day.</p>
+        <p class="screen-cap">An example note, in the shape of the real one. The numbers change every day.</p>
       </Fragment>
     </DayStop>
   </div>

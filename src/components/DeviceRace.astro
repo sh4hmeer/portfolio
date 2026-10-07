@@ -1,36 +1,30 @@
 ---
-// Device results into the chart: the same biometer printout entered two ways.
-// Left lane: a staff member reads the paper and types eight fields (shown at
-// 10x speed, one typo caught and fixed). Right lane: the script reads the
-// device's export file and fills all eight at once. Values are a realistic
-// Topcon biometer set; the fields are the ones OSCAR's eye form expects.
+// Test results into the chart: the same measurement entered two ways. Left:
+// someone reads the printout and types the eight numbers (shown sped up, with
+// one slip caught and fixed). Right: the result arrives on its own moments after
+// the test. Runs slowly and keeps repeating; nothing to press.
 const fields = [
-  { k: 'Sphere', v: '-1.00' }, { k: 'Cylinder', v: '-0.25' }, { k: 'Axis', v: '85' }, { k: 'K1', v: '44.00' },
-  { k: 'K2', v: '45.50' }, { k: 'K axis', v: '172' }, { k: 'Pressure', v: '16' }, { k: 'Cornea (CCT)', v: '497' },
+  { k: 'Sphere', v: '-1.00' }, { k: 'Cylinder', v: '-0.25' }, { k: 'Axis', v: '85' }, { k: 'Curve 1', v: '44.00' },
+  { k: 'Curve 2', v: '45.50' }, { k: 'Curve axis', v: '172' }, { k: 'Pressure', v: '16' }, { k: 'Thickness', v: '497' },
 ];
 ---
 <div class="rc" data-race>
   <div class="rc-head">
-    <div>
-      <div class="ttl">One biometer printout. Two ways into the patient's chart.</div>
-      <div class="sub">Right eye, 8 fields. Typing shown at 10x speed.</div>
-    </div>
-    <div class="ctl">
-      <button class="btn ghost small" type="button" data-run>▶ Run again</button>
-    </div>
+    <div class="ttl">The same test result, entered two ways.</div>
+    <div class="sub">Right eye, eight numbers. The typing is shown sped up.</div>
   </div>
   <div class="rc-lanes">
     <div class="rc-lane" data-lane="manual">
       <div class="rc-lanehead"><span class="rc-tag manual">Typed from the printout</span><span class="rc-clock" data-clock>00:00.0</span></div>
-      <div class="rc-src" data-src>Reading the paper printout…</div>
+      <div class="rc-src" data-src>Reading the printout…</div>
       <div class="rc-form">
         {fields.map((f) => <div class="rc-field" data-f={f.k}><div class="k">{f.k}</div><div class="v" data-v={f.v}></div></div>)}
       </div>
       <div class="rc-foot" data-foot></div>
     </div>
     <div class="rc-lane" data-lane="script">
-      <div class="rc-lanehead"><span class="rc-tag script">Script, from the device file</span><span class="rc-clock" data-clock>00:00.0</span></div>
-      <div class="rc-src" data-src>Watching the device's export folder…</div>
+      <div class="rc-lanehead"><span class="rc-tag script">Straight from the machine</span><span class="rc-clock" data-clock>00:00.0</span></div>
+      <div class="rc-src" data-src>Waiting for the test to finish…</div>
       <div class="rc-form">
         {fields.map((f) => <div class="rc-field" data-f={f.k}><div class="k">{f.k}</div><div class="v" data-v={f.v}></div></div>)}
       </div>
@@ -38,8 +32,8 @@ const fields = [
     </div>
   </div>
   <div class="rc-result" data-result>
-    <div class="rc-res manual"><b data-res-manual>1:50</b> by hand · 55 keystrokes · 1 typo caught</div>
-    <div class="rc-res script"><b>0.5 s</b> by script · 0 keystrokes · 0 typos · about 200x faster</div>
+    <div class="rc-res manual"><b data-res-manual>1:50</b> typed · 55 keystrokes · one slip caught</div>
+    <div class="rc-res script"><b>0.5 s</b> on its own · nothing to type · nothing to fix</div>
   </div>
 </div>
 
@@ -51,9 +45,9 @@ const fields = [
     const lane = (n) => root.querySelector(`[data-lane="${n}"]`);
     const M = lane('manual'), S = lane('script');
     const result = root.querySelector('[data-result]');
-    const SPEED = 10;                 // manual lane clock runs 10x real time
-    const CHAR_MS = 105, FIELD_PAUSE = 520;
-    let run = 0;
+    const SPEED = 10;                      // the typed lane's clock runs 10x real time
+    const CHAR_MS = 125, FIELD_PAUSE = 650, HOLD_MS = 6000;
+    let run = 0, visible = false, running = false;
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const fmt = (s) => { const m = Math.floor(s / 60), ss = s - m * 60; return String(m).padStart(2, '0') + ':' + ss.toFixed(1).padStart(4, '0'); };
 
@@ -64,54 +58,52 @@ const fields = [
         L.querySelector('[data-clock]').textContent = '00:00.0';
         L.querySelector('[data-foot]').textContent = '';
       });
-      M.querySelector('[data-src]').textContent = 'Reading the paper printout…';
-      S.querySelector('[data-src]').textContent = 'Watching the device’s export folder…';
+      M.querySelector('[data-src]').textContent = 'Reading the printout…';
+      S.querySelector('[data-src]').textContent = 'Waiting for the test to finish…';
       result.classList.remove('on');
     }
     function finished() {
       [M, S].forEach((L) => L.querySelectorAll('.rc-field').forEach((f) => { f.classList.add('filled'); f.querySelector('.v').textContent = f.querySelector('.v').dataset.v; }));
       M.querySelector('[data-clock]').textContent = '01:50.0';
       S.querySelector('[data-clock]').textContent = '00:00.5';
-      M.querySelector('[data-src]').innerHTML = 'Printout read, 8 values typed, 1 corrected.';
-      S.querySelector('[data-src]').innerHTML = 'New file found <span class="key">OMNIA1\\\\2026-10-06_1042.xml</span>';
-      M.querySelector('[data-foot]').innerHTML = '<b>55 keystrokes</b>, one typo caught';
-      S.querySelector('[data-foot]').innerHTML = '<b>0 keystrokes</b>, written to the chart';
+      M.querySelector('[data-src]').textContent = 'Eight numbers typed, one corrected.';
+      S.querySelector('[data-src]').textContent = 'Test finished. Result saved to the chart.';
+      M.querySelector('[data-foot]').innerHTML = '<b>55 keystrokes</b>, one slip caught';
+      S.querySelector('[data-foot]').innerHTML = '<b>Nothing to type</b>, already in the chart';
       result.classList.add('on');
     }
     async function start() {
+      if (running) return; running = true;
       reset();
       const id = run;
       const t0 = performance.now();
       let keys = 0;
-      // script lane: half a second later, every field lands at once
       const sclock = S.querySelector('[data-clock]');
       const scriptDone = (async () => {
         const t = setInterval(() => { if (id !== run) { clearInterval(t); return; } sclock.textContent = fmt(Math.min(0.5, (performance.now() - t0) / 1000)); }, 50);
         await sleep(500); clearInterval(t); if (id !== run) return;
         sclock.textContent = '00:00.5';
-        S.querySelector('[data-src]').innerHTML = 'New file found <span class="key">OMNIA1\\\\2026-10-06_1042.xml</span>';
+        S.querySelector('[data-src]').textContent = 'Test finished. Result saved to the chart.';
         S.querySelectorAll('.rc-field').forEach((f) => { f.classList.add('filled', 'flash'); f.querySelector('.v').textContent = f.querySelector('.v').dataset.v; });
-        S.querySelector('[data-foot]').innerHTML = '<b>0 keystrokes</b>, written to the chart';
+        S.querySelector('[data-foot]').innerHTML = '<b>Nothing to type</b>, already in the chart';
       })();
-      // manual lane: type each field, one typo in the fifth
       const mclock = M.querySelector('[data-clock]');
       const mt = setInterval(() => { if (id !== run) { clearInterval(mt); return; } mclock.textContent = fmt((performance.now() - t0) / 1000 * SPEED); }, 50);
       const fieldsM = [...M.querySelectorAll('.rc-field')];
       for (let i = 0; i < fieldsM.length; i++) {
-        if (id !== run) return;
+        if (id !== run) { running = false; return; }
         const f = fieldsM[i], v = f.querySelector('.v'), target = v.dataset.v;
         fieldsM.forEach((x) => x.classList.remove('active')); f.classList.add('active');
         M.querySelector('[data-src]').textContent = 'Reading line ' + (i + 1) + ' of the printout…';
-        await sleep(FIELD_PAUSE); if (id !== run) return;
-        if (i === 4) {                                   // typo: 45.50 typed as 45.05, then fixed
-          const wrong = '45.05';
-          for (const ch of wrong) { v.textContent += ch; keys++; await sleep(CHAR_MS); if (id !== run) return; }
-          v.classList.add('bad'); await sleep(700); if (id !== run) return;
-          for (let b = 0; b < 2; b++) { v.textContent = v.textContent.slice(0, -1); keys++; await sleep(CHAR_MS + 40); if (id !== run) return; }
+        await sleep(FIELD_PAUSE); if (id !== run) { running = false; return; }
+        if (i === 4) {                                   // a slip: 45.50 typed as 45.05, then fixed
+          for (const ch of '45.05') { v.textContent += ch; keys++; await sleep(CHAR_MS); if (id !== run) { running = false; return; } }
+          v.classList.add('bad'); await sleep(900); if (id !== run) { running = false; return; }
+          for (let b = 0; b < 2; b++) { v.textContent = v.textContent.slice(0, -1); keys++; await sleep(CHAR_MS + 60); if (id !== run) { running = false; return; } }
           v.classList.remove('bad');
-          for (const ch of '50') { v.textContent += ch; keys++; await sleep(CHAR_MS); if (id !== run) return; }
+          for (const ch of '50') { v.textContent += ch; keys++; await sleep(CHAR_MS); if (id !== run) { running = false; return; } }
         } else {
-          for (const ch of target) { v.textContent += ch; keys++; await sleep(CHAR_MS); if (id !== run) return; }
+          for (const ch of target) { v.textContent += ch; keys++; await sleep(CHAR_MS); if (id !== run) { running = false; return; } }
         }
         f.classList.remove('active'); f.classList.add('filled');
       }
@@ -119,14 +111,17 @@ const fields = [
       const elapsed = (performance.now() - t0) / 1000 * SPEED;
       mclock.textContent = fmt(elapsed);
       root.querySelector('[data-res-manual]').textContent = Math.floor(elapsed / 60) + ':' + String(Math.round(elapsed % 60)).padStart(2, '0');
-      M.querySelector('[data-src]').textContent = 'Printout read, 8 values typed, 1 corrected.';
-      M.querySelector('[data-foot]').innerHTML = '<b>' + keys + ' keystrokes</b>, one typo caught';
+      M.querySelector('[data-src]').textContent = 'Eight numbers typed, one corrected.';
+      M.querySelector('[data-foot]').innerHTML = '<b>' + keys + ' keystrokes</b>, one slip caught';
       await scriptDone;
       result.classList.add('on');
+      running = false;
+      // rest on the result for a while, then go again (only while on screen)
+      await sleep(HOLD_MS);
+      if (visible && !document.hidden) start();
     }
-    root.querySelector('[data-run]').addEventListener('click', start);
     if (reduce) { finished(); return; }
-    let ran = false;
-    new IntersectionObserver((es, io) => es.forEach((e) => { if (e.isIntersecting && !ran) { ran = true; start(); io.disconnect(); } }), { threshold: 0.45 }).observe(root);
+    new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; if (visible && !document.hidden) start(); }), { threshold: 0.3 }).observe(root);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && visible) start(); });
   })();
 </script>

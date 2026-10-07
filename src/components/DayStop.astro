@@ -1,13 +1,17 @@
 ---
-// One stop on the "day at the clinic" spine. Text on one side, a product
-// recreation on the other; every stop ends with a visible "Next" link so a
-// reader never has to guess that there is more below.
-const { id, n, total = 7, time, title, next, flip = false } = Astro.props;
+// One part of the clinic day. A big numeral and a time of day mark the part,
+// the visual sits beside the text, a "Next" link closes it, and a hand-drawn
+// squiggle arrow leads the eye down to the next part (it leans toward the side
+// where the next part's text begins).
+const { id, n, time, title, next, flip = false } = Astro.props;
 ---
 <section id={id} class:list={['stop', { flip }]}>
   <div class="wrap stop-grid">
     <div class="stop-text rv">
-      <p class="eyebrow"><span class="dot"></span> Part {n} of {total} <span class="sep">·</span> {time}</p>
+      <div class="stop-mark">
+        <span class="stop-num" aria-hidden="true">{n}</span>
+        <span class="stop-when"><span class="sr-only">Part {n}. </span>{time}</span>
+      </div>
       <h2>{title}</h2>
       <slot name="text" />
     </div>
@@ -17,6 +21,14 @@ const { id, n, total = 7, time, title, next, flip = false } = Astro.props;
     {next && (
       <div class="stop-next rv">
         <a class="next" href={`#${next.id}`}><span class="arr" aria-hidden="true">↓</span> Next: {next.label}</a>
+      </div>
+    )}
+    {next && (
+      <div class:list={['squig', 'rv', flip ? 'to-left' : 'to-right']} aria-hidden="true">
+        <svg viewBox="0 0 160 130" fill="none">
+          <path class="line" d="M 28 6 C 2 34, 96 40, 72 68 C 52 92, 118 86, 122 112" />
+          <path class="head" d="M 108 104 L 123 116 L 128 98" />
+        </svg>
       </div>
     )}
   </div>

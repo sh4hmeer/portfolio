@@ -1,30 +1,30 @@
 ---
-// Opening screen. One outcome sentence, who and where, two buttons, and the
-// doctors' lounge board sitting under the text so the fold cuts through it
-// (the strongest "there is more below" signal there is).
+// Opening screen: a plain description of what the work does for a clinic, two
+// buttons, and the doctors' lounge screen sitting under the text so the first
+// screen always shows that the page continues.
 import LoungeBoard from './LoungeBoard.astro';
 ---
 <section id="top" class="hero">
   <div class="wrap">
     <div class="hero-text">
-      <p class="eyebrow"><span class="dot"></span> Running today at Tri-City Eye Care <span class="sep">·</span> Kitchener, Ontario</p>
-      <h1>The clinic that always knows where every patient is.</h1>
+      <p class="eyebrow"><span class="dot"></span> Running at Tri-City Eye Care <span class="sep">·</span> Kitchener, Ontario</p>
+      <h1>Helping your clinic always know where its patients are, and keep the day moving.</h1>
       <p class="lead">
-        I build software inside an Ontario eye clinic: self check-in from the health card,
-        live boards that show staff who is next, and device results that land in the chart
-        without typing. All of it runs today, on the EMR the clinic already had.
+        I work inside an eye clinic in Ontario, building the small pieces of software it was missing:
+        patients who check themselves in, screens that show staff who is next, and test results that
+        find their own way into the chart. It all runs quietly alongside the EMR the clinic already uses.
       </p>
       <div class="hero-cta">
-        <a class="btn primary" href="#day">See a day at the clinic <span class="arr" aria-hidden="true">↓</span></a>
-        <a class="btn ghost" href="#contact">Ask about 2027</a>
+        <a class="btn primary" href="#day">Walk through a clinic day <span class="arr" aria-hidden="true">↓</span></a>
+        <a class="btn ghost" href="#contact">Get in touch</a>
       </div>
     </div>
 
     <div class="hero-screen rv">
       <LoungeBoard />
       <p class="screen-cap">
-        The doctors' lounge board as it runs on the clinic's TV, recreated here with fictional
-        patients. It moves on its own as patients check in, finish imaging, and see the doctor.
+        This is the screen in the doctors' lounge, with made-up patients. It changes on its own as
+        people check in, finish their tests and see the doctor.
       </p>
     </div>
   </div>

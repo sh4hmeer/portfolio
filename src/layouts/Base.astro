@@ -11,16 +11,16 @@ import '../styles/visuals.css';
 
 const {
   title = 'Shahmeer Shahid · Software built inside the clinic',
-  description = 'Self check-in that writes to the EMR, live patient-flow boards for every staff role, device results into the chart without typing, and a nightly report on where the day slowed down. Built inside an Ontario eye clinic by Shahmeer Shahid.',
+  description = 'Helping an Ontario eye clinic always know where its patients are: self check-in, a live screen for every role, test results that reach the chart on their own, and a short note each morning on where the day slowed. Built inside the clinic by Shahmeer Shahid.',
 } = Astro.props;
 
 // Top-bar links. Short, plain words. Kept in sync with the section ids in index.astro.
 const nav = [
-  { id: 'day',      label: 'A day at the clinic' },
+  { id: 'day',      label: 'A clinic day' },
   { id: 'changed',  label: 'What changed' },
   { id: 'how',      label: 'How I work' },
-  { id: 'questions',label: 'Questions' },
-  { id: 'contact',  label: 'Contact' },
+  { id: 'questions',label: 'Good to know' },
+  { id: 'contact',  label: 'Get in touch' },
 ];
 ---
 <!doctype html>
@@ -49,7 +49,7 @@ const nav = [
         <nav class="topnav" aria-label="sections">
           {nav.map((n) => <a href={`#${n.id}`} data-nav={n.id}>{n.label}</a>)}
         </nav>
-        <a class="btn primary small topcta" href="#contact">Ask about 2027</a>
+        <a class="btn primary small topcta" href="#contact">Get in touch</a>
       </div>
       <span class="topbar-progress" aria-hidden="true"><i id="pageProgress"></i></span>
     </header>
@@ -64,7 +64,7 @@ const nav = [
         <a href="mailto:shahmeer_shahid@outlook.com">shahmeer_shahid@outlook.com</a>
         <a href="https://www.linkedin.com/in/shahmeer-shahid-" target="_blank" rel="noopener">LinkedIn</a>
         <a href="https://github.com/sh4hmeer" target="_blank" rel="noopener">GitHub</a>
-        <span class="foot-note">Every patient and staff member shown on this page is fictional. The tools are real.</span>
+        <span class="foot-note">Everyone shown on this page is made up. The tools are real.</span>
       </div>
     </footer>
 

@@ -3,11 +3,9 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
-  "description": "Shahmeer Shahid — Forward Deployed Engineer portfolio",
+  "description": "Shahmeer Shahid, software built inside the clinic",
   "scripts": {
     "sync-clinic": "node scripts/sync-clinic.mjs",
-    "predev": "node scripts/sync-clinic.mjs",
-    "prebuild": "node scripts/sync-clinic.mjs",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview"

@@ -1,11 +1,11 @@
 ---
-// Recreation of the doctors' lounge board (the TV in the lounge): one card per
-// doctor with the five status circles the real board uses, and the "waiting for
-// the doctor" list underneath. Fictional names. It ticks on its own: timers
-// count, and every few seconds one patient moves a step through the visit.
-// Pauses when off-screen or when the tab is hidden; static under reduced motion.
+// The screen in the doctors' lounge: one card per doctor with the five stages a
+// visit goes through, and the list of who is ready for the doctor underneath.
+// Made-up names. It moves slowly on its own: timers count, and every few
+// seconds one patient takes a step through the visit. Pauses off-screen; static
+// under reduced motion.
 ---
-<div class="screen lb" data-lounge aria-label="Doctors' lounge board, recreated with fictional patients">
+<div class="screen lb" data-lounge aria-label="Doctors' lounge screen, with made-up patients">
   <div class="screen-bar">
     <span class="sdots" aria-hidden="true"><i></i><i></i><i></i></span>
     <span class="stitle">Tri-City Eye Care · Doctors' lounge</span>
@@ -14,7 +14,7 @@
   <div class="lb-body">
     <div class="lb-docs" data-lb-docs></div>
     <div class="lb-wait">
-      <div class="lb-waithead"><i></i> Waiting for the doctor <span style="margin-left:auto;font-weight:500;text-transform:none;letter-spacing:0">longest wait first</span></div>
+      <div class="lb-waithead"><i></i> Ready for the doctor <span class="lb-waitnote">longest wait first</span></div>
       <div class="lb-rows" data-lb-rows></div>
     </div>
   </div>
@@ -30,17 +30,17 @@
     const clockEl = root.querySelector('[data-lb-clock]');
 
     const NAMES = ['J. Mensah', 'A. Koval', 'R. Castellano', 'S. Lindqvist', 'P. Varga', 'D. Achebe', 'T. Nakamura', 'L. Fournier', 'K. Brennan', 'H. Saleh', 'E. Moreau', 'N. Petrov', 'G. Oduya', 'B. Haddad'];
-    const REASONS = ['Injection OD', 'Glaucoma follow-up', 'Cataract consult', 'Post-op week 1', 'Diabetic eye exam', 'Macular OCT review', 'Visual fields', 'New referral', 'Pressure check'];
+    const REASONS = ['Injection', 'Glaucoma check', 'Cataract consult', 'Post-op check', 'Diabetic eye exam', 'Scan review', 'Field test', 'New referral', 'Pressure check'];
     const docs = [
       { name: 'Dr. Rao',     sched: 38, here: 3, hvf: 1, oct: 2, wait: 2, billed: 9 },
       { name: 'Dr. Chen',    sched: 42, here: 2, hvf: 2, oct: 1, wait: 1, billed: 11 },
       { name: 'Dr. Alvarez', sched: 31, here: 1, hvf: 0, oct: 2, wait: 1, billed: 7 },
     ];
     let waiting = [
-      { name: 'J. Mensah', reason: 'Macular OCT review', doc: 0, since: 14 * 60 + 12 },
-      { name: 'A. Koval', reason: 'Glaucoma follow-up', doc: 1, since: 9 * 60 + 40 },
-      { name: 'R. Castellano', reason: 'Injection OD', doc: 0, since: 6 * 60 + 5 },
-      { name: 'S. Lindqvist', reason: 'Post-op week 1', doc: 2, since: 2 * 60 + 30 },
+      { name: 'J. Mensah', reason: 'Scan review', doc: 0, since: 14 * 60 + 12 },
+      { name: 'A. Koval', reason: 'Glaucoma check', doc: 1, since: 9 * 60 + 40 },
+      { name: 'R. Castellano', reason: 'Injection', doc: 0, since: 6 * 60 + 5 },
+      { name: 'S. Lindqvist', reason: 'Post-op check', doc: 2, since: 2 * 60 + 30 },
     ];
     let nameIx = 4;
     const nextName = () => NAMES[(nameIx++) % NAMES.length];
@@ -48,7 +48,7 @@
     const pad = (n) => String(n).padStart(2, '0');
     const fmt = (s) => pad(Math.floor(s / 60)) + ':' + pad(s % 60);
 
-    const STATS = [['here', 'Here'], ['hvf', 'HVF'], ['oct', 'OCT'], ['wait', 'Waiting'], ['billed', 'Billed']];
+    const STATS = [['here', 'Here'], ['hvf', 'Testing'], ['oct', 'Imaging'], ['wait', 'Ready'], ['billed', 'Done']];
     function renderDocs() {
       docsEl.innerHTML = docs.map((d, i) => `
         <div class="lb-doc" data-doc="${i}">
@@ -70,9 +70,8 @@
       if (!el) return;
       el.querySelector('.v').textContent = d[k];
       el.classList.toggle('on', d[k] > 0);
-      el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 300);
+      el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 400);
     }
-    // one patient takes one step through the visit
     function event() {
       const i = Math.floor(Math.random() * docs.length), d = docs[i];
       const moves = [];
@@ -89,13 +88,13 @@
         const mine = waiting.filter((w) => w.doc === i).sort((a, b) => b.since - a.since)[0];
         const el = rowsEl.querySelector(`[data-id="${mine.name}"]`);
         if (el) el.classList.add('out');
-        setTimeout(() => { waiting = waiting.filter((w) => w !== mine); bump(i, 'wait', -1); bump(i, 'billed', +1); renderRows(); }, 420);
+        setTimeout(() => { waiting = waiting.filter((w) => w !== mine); bump(i, 'wait', -1); bump(i, 'billed', +1); renderRows(); }, 500);
       });
       pick(moves)();
     }
 
     renderDocs(); renderRows();
-    if (reduce) return;                       // static picture under reduced motion
+    if (reduce) return;
 
     let visible = false, tick = null, ev = null;
     function start() {
@@ -108,7 +107,7 @@
         });
         const d = new Date(); clockEl.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
       }, 1000);
-      ev = setInterval(event, 4500);
+      ev = setInterval(event, 5500);
     }
     function stop() { clearInterval(tick); clearInterval(ev); tick = ev = null; }
     new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; if (visible && !document.hidden) start(); else stop(); }), { threshold: 0.1 }).observe(root);

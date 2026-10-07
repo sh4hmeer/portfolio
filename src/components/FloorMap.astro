@@ -1,0 +1,155 @@
+---
+// A live map of the clinic: each patient is a dot that moves from the front
+// desk through the waiting room, testing and imaging, into an exam room and
+// out, changing colour at each stage (the same colours as the screens). Runs
+// slowly on its own; made-up patients. Static (dots parked in rooms) under
+// reduced motion.
+const rooms = [
+  { id: 'desk',    x: 18,  y: 236, w: 128, h: 104, label: 'Front desk' },
+  { id: 'waiting', x: 162, y: 236, w: 214, h: 104, label: 'Waiting room' },
+  { id: 'testing', x: 18,  y: 20,  w: 150, h: 112, label: 'Testing' },
+  { id: 'imaging', x: 186, y: 20,  w: 170, h: 112, label: 'Imaging' },
+  { id: 'exam1',   x: 392, y: 20,  w: 110, h: 112, label: 'Exam 1' },
+  { id: 'exam2',   x: 518, y: 20,  w: 104, h: 112, label: 'Exam 2' },
+  { id: 'exam3',   x: 438, y: 236, w: 184, h: 104, label: 'Exam 3' },
+];
+---
+<div class="screen fm" data-fmap aria-label="A live map of the clinic with made-up patients moving between rooms">
+  <div class="screen-bar">
+    <span class="sdots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="stitle">Tri-City Eye Care · Clinic map</span>
+    <span class="live">live</span>
+  </div>
+  <div class="fm-stage">
+    <svg viewBox="0 0 640 360" role="img" aria-label="Clinic floor plan with patients as moving coloured dots">
+      <rect x="0" y="0" width="640" height="360" fill="#121722" />
+      <rect x="0" y="146" width="640" height="76" fill="#1b2130" />
+      <text x="320" y="190" text-anchor="middle" class="fm-hall">hallway</text>
+      {rooms.map((r) => (
+        <g>
+          <rect x={r.x} y={r.y} width={r.w} height={r.h} rx="4" class="fm-room" />
+          <text x={r.x + 10} y={r.y + 20} class="fm-label">{r.label}</text>
+        </g>
+      ))}
+      <path d="M 622 160 L 640 160 M 622 208 L 640 208" stroke="#2a3140" stroke-width="2" />
+      <text x="606" y="214" class="fm-label" style="font-size:9px;fill:#6b7585">out</text>
+      <g data-dots></g>
+    </svg>
+  </div>
+  <div class="fm-legend" aria-hidden="true">
+    <span><i style="background:var(--s-green)"></i> Arrived <b data-cnt="here">0</b></span>
+    <span><i style="background:var(--s-orange)"></i> Testing <b data-cnt="testing">0</b></span>
+    <span><i style="background:var(--s-yellow)"></i> Imaging <b data-cnt="imaging">0</b></span>
+    <span><i style="background:var(--s-purple)"></i> Ready for the doctor <b data-cnt="ready">0</b></span>
+    <span><i style="background:var(--s-blue)"></i> With the doctor <b data-cnt="exam">0</b></span>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    const root = document.querySelector('[data-fmap]');
+    if (!root) return;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const layer = root.querySelector('[data-dots]');
+    const NS = 'http://www.w3.org/2000/svg';
+    const R = {
+      desk: [18, 236, 128, 104], waiting: [162, 236, 214, 104], testing: [18, 20, 150, 112], imaging: [186, 20, 170, 112],
+      exam1: [392, 20, 110, 112], exam2: [518, 20, 104, 112], exam3: [438, 236, 184, 104],
+    };
+    const COL = { here: '#5fc88f', testing: '#ec8b3c', imaging: '#f5c542', ready: '#b18cf2', exam: '#5aa7ff', done: '#5aa7ff' };
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const inRoom = (id) => { const [x, y, w, h] = R[id]; return [rnd(x + 18, x + w - 18), rnd(y + 34, y + h - 14)]; };
+    const hall = (x) => [x, rnd(160, 206)];
+    // one visit = a list of stops: where to stand, how long (seconds), which colour stage
+    function plan() {
+      const exam = ['exam1', 'exam2', 'exam3'][Math.floor(Math.random() * 3)];
+      const p = [
+        { at: [2, 184], stay: 0, stage: 'here' },
+        { at: inRoom('desk'), stay: rnd(3, 5), stage: 'here' },
+        { at: inRoom('waiting'), stay: rnd(5, 9), stage: 'here' },
+        { at: inRoom('testing'), stay: rnd(6, 10), stage: 'testing' },
+        { at: inRoom('imaging'), stay: rnd(6, 10), stage: 'imaging' },
+        { at: hall(rnd(380, 420)), stay: rnd(4, 8), stage: 'ready' },
+        { at: inRoom(exam), stay: rnd(9, 14), stage: 'exam' },
+        { at: [660, 184], stay: 0, stage: 'done' },
+      ];
+      if (Math.random() < 0.35) p.splice(3, 1);      // some visits skip testing
+      // walk along the hallway between rooms instead of straight through walls
+      const out = [];
+      for (let i = 0; i < p.length; i++) {
+        const cur = p[i], prev = p[i - 1];
+        if (prev) {
+          const hy = rnd(168, 200);
+          const sameRow = (prev.at[1] < 146) === (cur.at[1] < 146) && Math.abs(prev.at[0] - cur.at[0]) < 60;
+          if (!sameRow) {
+            out.push({ at: [prev.at[0], hy], stay: 0, stage: prev.stage, via: true });
+            out.push({ at: [cur.at[0], hy], stay: 0, stage: prev.stage, via: true });
+          }
+        }
+        out.push(cur);
+      }
+      return out;
+    }
+    const dots = [];
+    function spawn(delay) {
+      const el = document.createElementNS(NS, 'circle');
+      el.setAttribute('r', '7'); el.setAttribute('class', 'fm-dot');
+      layer.appendChild(el);
+      const d = { el, path: plan(), i: 0, x: 2, y: 184, wait: delay, stage: 'here' };
+      el.setAttribute('cx', d.x); el.setAttribute('cy', d.y); el.setAttribute('fill', COL.here); el.style.opacity = 0;
+      dots.push(d);
+    }
+    for (let k = 0; k < 7; k++) spawn(k * 6 + rnd(0, 3));
+    // start the day already under way: most dots begin part-way through a visit
+    dots.forEach((d, k) => {
+      if (k === 0) return;                           // one still arrives from the door
+      const stops = d.path.map((s, ix) => (!s.via && ix > 0 && ix < d.path.length - 1) ? ix : -1).filter((ix) => ix >= 0);
+      const i = stops[Math.floor(Math.random() * stops.length)];
+      const stop = d.path[i];
+      d.i = i + 1; d.x = stop.at[0]; d.y = stop.at[1]; d.stage = stop.stage; d.wait = rnd(1, stop.stay || 4);
+      d.el.setAttribute('cx', d.x); d.el.setAttribute('cy', d.y); d.el.setAttribute('fill', COL[stop.stage]); d.el.style.opacity = 1;
+    });
+    const counts = { here: 0, testing: 0, imaging: 0, ready: 0, exam: 0 };
+    function updateCounts() {
+      Object.keys(counts).forEach((k) => counts[k] = 0);
+      dots.forEach((d) => { if (d.el.style.opacity !== '0' && counts[d.stage] !== undefined) counts[d.stage]++; });
+      root.querySelectorAll('[data-cnt]').forEach((b) => b.textContent = counts[b.dataset.cnt]);
+    }
+    if (reduce) {
+      // park one dot in each stage and leave it
+      const park = [['desk', 'here'], ['waiting', 'here'], ['testing', 'testing'], ['imaging', 'imaging'], ['exam1', 'exam'], ['exam3', 'exam']];
+      dots.slice(0, park.length).forEach((d, k) => { const [room, st] = park[k]; const [x, y] = inRoom(room); d.stage = st; d.el.setAttribute('cx', x); d.el.setAttribute('cy', y); d.el.setAttribute('fill', COL[st]); d.el.style.opacity = 1; });
+      dots.slice(park.length).forEach((d) => d.el.remove());
+      updateCounts(); return;
+    }
+    const SPEED = 34;                                  // px per second, a walking pace
+    let last = null, raf = null, visible = false, acc = 0;
+    function step(now) {
+      if (!visible || document.hidden) { raf = null; last = null; return; }
+      const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
+      for (const d of dots) {
+        if (d.wait > 0) { d.wait -= dt; continue; }
+        d.el.style.opacity = 1;
+        const tgt = d.path[d.i];
+        const dx = tgt.at[0] - d.x, dy = tgt.at[1] - d.y, dist = Math.hypot(dx, dy);
+        if (dist < 1.5) {
+          if (d.stage !== tgt.stage) { d.stage = tgt.stage; d.el.setAttribute('fill', COL[tgt.stage]); d.el.classList.add('pop'); setTimeout(() => d.el.classList.remove('pop'), 500); }
+          if (d.i === d.path.length - 1) {              // out the door: start a new visit after a pause
+            d.el.style.opacity = 0; d.path = plan(); d.i = 0; d.x = 2; d.y = 184; d.stage = 'here'; d.el.setAttribute('fill', COL.here);
+            d.el.setAttribute('cx', d.x); d.el.setAttribute('cy', d.y); d.wait = rnd(6, 14); continue;
+          }
+          d.wait = tgt.stay; d.i++; continue;
+        }
+        const mv = Math.min(dist, SPEED * dt);
+        d.x += dx / dist * mv; d.y += dy / dist * mv;
+        d.el.setAttribute('cx', d.x.toFixed(1)); d.el.setAttribute('cy', d.y.toFixed(1));
+      }
+      acc += dt; if (acc > 0.5) { acc = 0; updateCounts(); }
+      raf = requestAnimationFrame(step);
+    }
+    function start() { if (!raf) { last = null; raf = requestAnimationFrame(step); } }
+    new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; if (visible && !document.hidden) start(); }), { threshold: 0.15 }).observe(root);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && visible) start(); });
+    updateCounts();
+  })();
+</script>
