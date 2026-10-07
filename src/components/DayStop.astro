@@ -1,0 +1,23 @@
+---
+// One stop on the "day at the clinic" spine. Text on one side, a product
+// recreation on the other; every stop ends with a visible "Next" link so a
+// reader never has to guess that there is more below.
+const { id, n, total = 7, time, title, next, flip = false } = Astro.props;
+---
+<section id={id} class:list={['stop', { flip }]}>
+  <div class="wrap stop-grid">
+    <div class="stop-text rv">
+      <p class="eyebrow"><span class="dot"></span> Part {n} of {total} <span class="sep">·</span> {time}</p>
+      <h2>{title}</h2>
+      <slot name="text" />
+    </div>
+    <div class="stop-visual rv">
+      <slot name="visual" />
+    </div>
+    {next && (
+      <div class="stop-next rv">
+        <a class="next" href={`#${next.id}`}><span class="arr" aria-hidden="true">↓</span> Next: {next.label}</a>
+      </div>
+    )}
+  </div>
+</section>

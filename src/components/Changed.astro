@@ -1,0 +1,46 @@
+---
+// What changed: before and after in the staff's own words, then the few numbers
+// that are real, each with how it was measured. No stat wall.
+const rows = [
+  { before: 'The front desk re-types a new address from the card while a line forms.', after: 'The kiosk checks the patient in and updates the chart itself when the card is newer.' },
+  { before: 'Someone walks the hallway to find out who is next for the doctor.', after: 'Every TV in the clinic shows who is next, for every doctor, right now.' },
+  { before: 'A tech reads the biometer printout and types eight numbers into the chart.', after: 'The numbers are in the chart before the printout is torn off the machine.' },
+  { before: 'The doctor searches three systems by name before the exam can start.', after: 'One click on the board opens the chart, the scans and the photos on two monitors.' },
+  { before: 'A paper station sheet, a punch clock, and a manager totalling hours by hand.', after: 'A digital floor board, a PIN time clock, and timesheets that email themselves.' },
+  { before: 'At the end of the day nobody can say where it slowed down, or why.', after: 'A written report every night says where, when, and what to try tomorrow.' },
+];
+const numbers = [
+  { big: '200x', small: 'faster', text: 'Device results reach the chart in about half a second instead of about two minutes of typing.', how: 'Measured on the clinic’s biometer exports: 8 fields, 55 keystrokes by hand, 0 by script. Running since May 2026.' },
+  { big: '1', small: 'tap to check in', text: 'The patient drops a card and confirms their details once. The front desk does nothing.', how: 'Live at the front desk since 23 September 2026. The card version went from decision to live in 12 days.' },
+  { big: '2 to 13 s', small: 'for the doctor’s workspace', text: 'Chart, imaging and photos open across two monitors from one click, down from about 33 seconds.', how: 'Timed on the clinic’s exam-room PCs, August 2026, across both imaging systems.' },
+  { big: '5,941', small: 'real decisions learned from', text: 'Eighteen clinic days of "who goes next" choices trained the first model. It agrees with experienced staff on the first pick 51% of the time; the best simple rule manages 24%.', how: 'Logged automatically from the boards. Age is never used to order patients.' },
+];
+---
+<section id="changed" class="section tint">
+  <div class="wrap">
+    <div class="section-head rv">
+      <p class="eyebrow"><span class="dot"></span> What changed</p>
+      <h2>Before and after, in the staff's words.</h2>
+      <p class="lead">Nothing here replaced the EMR or asked anyone to learn a new system. Each change took one recurring job off a real person.</p>
+    </div>
+
+    <div class="ba rv">
+      {rows.map((r) => (
+        <div class="ba-row">
+          <div class="ba-cell before"><span class="tag">Before</span><span>{r.before}</span></div>
+          <div class="ba-cell after"><span class="tag">After</span><span>{r.after}</span></div>
+        </div>
+      ))}
+    </div>
+
+    <div class="nm rv">
+      {numbers.map((n) => (
+        <div class="nm-item">
+          <div class="big">{n.big} <small>{n.small}</small></div>
+          <p>{n.text}</p>
+          <div class="how">{n.how}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

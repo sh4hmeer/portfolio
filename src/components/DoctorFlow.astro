@@ -1,0 +1,77 @@
+---
+// One click on the lounge board opens the doctor's whole workspace: the chart
+// on the first monitor, imaging and retinal photos side by side on the second.
+// A small looping animation: cursor to the purple row, click, three windows open.
+---
+<div class="df" data-dflow aria-label="One click opens the chart, imaging and photos across two monitors">
+  <div class="df-mon">
+    <span class="df-label">Monitor 1 · board + chart</span>
+    <div class="df-board">
+      <div class="hd"><i></i> Waiting for Dr. Rao</div>
+      <div class="df-prow"><b>J. Mensah</b><span style="color:var(--s-muted)">Macular OCT review</span><span class="t">14:12</span></div>
+      <div class="df-prow target"><b>M. Okafor</b><span style="color:var(--s-muted)">Glaucoma follow-up</span><span class="t">09:40</span></div>
+      <div class="df-prow"><b>R. Castellano</b><span style="color:var(--s-muted)">Injection OD</span><span class="t">06:05</span></div>
+    </div>
+    <div class="df-win echart" data-win="echart">
+      <div class="wb"><i></i><b>eChart · M. Okafor</b> · OSCAR eye form</div>
+      <div class="wc"><div class="ln w1"></div><div class="ln w3"></div><div class="ln w2"></div><div class="ln w3"></div><div class="ln w1"></div></div>
+    </div>
+    <svg class="df-cursor" data-cursor viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8.5-6.2 1.3L16.5 20l-2.8 1.4-3.7-7.2L5 18z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    <span class="df-timer" data-timer>opened in 2.4 s</span>
+  </div>
+  <div class="df-mon">
+    <span class="df-label">Monitor 2 · imaging, split in two</span>
+    <div class="df-win forum" data-win="forum">
+      <div class="wb"><i></i><b>FORUM</b> · OCT, macula · M. Okafor</div>
+      <div class="wc"><div class="ln w2"></div><div class="scan"></div><div class="ln w1"></div></div>
+    </div>
+    <div class="df-win optos" data-win="optos">
+      <div class="wb"><i></i><b>Optos</b> · retinal photos · M. Okafor</div>
+      <div class="wc"><div class="ln w2"></div><div class="retina"></div><div class="ln w1"></div></div>
+    </div>
+  </div>
+  <div class="df-ctl">
+    <button class="btn ghost small" type="button" data-click>▶ Click the patient</button>
+    <span>Each title routes to the right view: a macular visit opens the macula scan, a glaucoma visit opens fields and nerve fibre.</span>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    const root = document.querySelector('[data-dflow]');
+    if (!root) return;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cursor = root.querySelector('[data-cursor]');
+    const row = root.querySelector('.df-prow.target');
+    const wins = { echart: root.querySelector('[data-win="echart"]'), forum: root.querySelector('[data-win="forum"]'), optos: root.querySelector('[data-win="optos"]') };
+    const timer = root.querySelector('[data-timer]');
+    let seq = 0, visible = false, loop = null;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    function reset() {
+      Object.values(wins).forEach((w) => w.classList.remove('on'));
+      row.classList.remove('hit'); timer.classList.remove('on'); cursor.classList.remove('down');
+      cursor.style.left = '70%'; cursor.style.top = '85%';
+    }
+    async function play() {
+      const id = ++seq; reset();
+      await sleep(250); if (id !== seq) return;
+      // aim at the target row (centre of the row within the monitor)
+      const mon = root.querySelector('.df-mon').getBoundingClientRect(), r = row.getBoundingClientRect();
+      cursor.style.left = ((r.left - mon.left + r.width * 0.45) / mon.width * 100) + '%';
+      cursor.style.top = ((r.top - mon.top + r.height * 0.55) / mon.height * 100) + '%';
+      await sleep(900); if (id !== seq) return;
+      cursor.classList.add('down'); row.classList.add('hit');
+      await sleep(180); cursor.classList.remove('down');
+      await sleep(250); if (id !== seq) return; wins.echart.classList.add('on');
+      await sleep(500); if (id !== seq) return; wins.forum.classList.add('on');
+      await sleep(450); if (id !== seq) return; wins.optos.classList.add('on');
+      await sleep(300); if (id !== seq) return; timer.classList.add('on');
+    }
+    root.querySelector('[data-click]').addEventListener('click', play);
+    if (reduce) { Object.values(wins).forEach((w) => w.classList.add('on')); row.classList.add('hit'); timer.classList.add('on'); cursor.style.display = 'none'; return; }
+    function start() { if (loop) return; play(); loop = setInterval(play, 7500); }
+    function stop() { clearInterval(loop); loop = null; }
+    new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; if (visible && !document.hidden) start(); else stop(); }), { threshold: 0.35 }).observe(root);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else if (visible) start(); });
+  })();
+</script>

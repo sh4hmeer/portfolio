@@ -1,91 +1,125 @@
-# FDE Portfolio — HANDOFF
+# shahmeershahid.com · HANDOFF
 
-Single-page Astro portfolio branding **Shahmeer Shahid** as a *Forward Deployed Engineer*.
-Voice/north-star: ehmorris.com (proof plays in-page), but cohesive dark dashboard chrome.
-This doc is the source of truth for picking the project up cold.
+Single-page Astro site. Since the 2026-10-07 revamp it is a **plain, customer-facing page
+for clinic owners, managers and physicians**: what Shahmeer changes inside a clinic, shown as
+one clinic day in seven parts, with recreations of the real tools, then the numbers, how he
+works, questions, and contact. The previous dark, scroll-pinned, WebGL portfolio is gone
+(history: commits before `revamp-clear`; the old components were deleted, not hidden).
 
-## Run / build
+## Run / build / deploy
 ```
-cd fde-portfolio
-npm run dev        # localhost:4321 (serves source; HOT-RELOAD can go stale — see Gotchas)
-npm run build      # -> dist/  (predev/prebuild run scripts/sync-clinic.mjs)
-npm run preview    # serves dist (must restart after each build)
+npm run dev        # localhost:4321 (predev mirrors prototype/ -> public/clinic/)
+npm run build      # -> dist/
+npm run preview    # serves dist
 ```
-- **DEPLOYED & LIVE at https://shahmeershahid.com** (apex custom domain). Repo: **`github.com/sh4hmeer/portfolio`** (`main`). Every push to `main` triggers **`.github/workflows/deploy.yml`** (GitHub Actions → Pages: `npm ci` + `npm run build` → upload `dist` → deploy). `astro.config.mjs` → `site:'https://shahmeershahid.com'`, `base:'/'`. `public/CNAME` = shahmeershahid.com keeps the custom domain on each deploy. HTTPS enforced; `www` 301s to apex. DNS unchanged (apex A → GitHub Pages IPs, `www` CNAME → sh4hmeer.github.io).
-  - The OLD site is preserved in **`sh4hmeer/term-reports`** (its CNAME was removed to free the domain); not serving the apex anymore.
-  - **Deploy gotcha:** the *two-job* (build+deploy) Pages workflow startup-failed on this repo ("workflow file issue", no jobs, valid YAML) — bisected to the two-job split. The working form is a **single `build-deploy` job** (checkout → setup-node(cache:npm) → configure-pages → npm ci → npm run build → upload-pages-artifact → deploy-pages). Also: pushing `.github/workflows/**` needs the **`workflow` token scope** (sh4hmeer's gh login originally lacked it; granted via `gh auth refresh -s workflow`).
-- **Node 24 local / 22 on CI / Astro 5.18.** git repo at `fde-portfolio/` (remote `origin` = sh4hmeer/portfolio). Commits attributed to `Shahmeer Shahid <156625948+sh4hmeer@users.noreply.github.com>`.
-- **Screenshot/verify harness:** `scripts/_shot*.py` / `_chk*.py` (Playwright + swiftshader). Pattern: kill port 4321 (PowerShell `Get-NetTCPConnection`), `npm run dev`, then a python script that goto's localhost:4321, scrolls, evals state, screenshots. `scripts/_*.png` + `.dev.log`/`.preview.log` are gitignored.
+- **Live at https://shahmeershahid.com** (GitHub Pages, repo `sh4hmeer/portfolio`, branch `main`).
+  Every push to `main` runs `.github/workflows/deploy.yml` (single `build-deploy` job: `npm ci`,
+  `npm run build`, upload `dist`, deploy). `public/CNAME` keeps the custom domain. Node 24 local,
+  22 on CI, Astro 5.
+- The revamp was built on branch **`revamp-clear`**. Merge to `main` (or push the branch and
+  open a PR) to deploy. Pushing needs the `sh4hmeer` gh login (`gh auth switch`).
+- Screenshot harness used during the revamp lives in the session scratchpad, not the repo:
+  Playwright (`python -m playwright`) against `astro preview` at three viewports. Pattern: start
+  preview on a spare port, `goto`, scroll through, `screenshot(full_page=True)`, plus per-section
+  element screenshots. Easy to recreate.
 
-## Page order (one scroll, top → bottom)
-`Hero(#top)` → **stack**[ `ProjectsIntro(#projects)` · `ClinicSegment(#clinic)` · `.scroll-room` ] → **benchmark slider** (`.bench-section`: `OmniaRace` + `InjectionFax` in ONE pinned frame, `#omnia`/`#injections` anchors) → `Research(#research)` = pinned `QuantumBench` (intro-gated) → `Builds(#builds)` → `Path(#path)` → `Contact(#contact)`.
-Nav labels (`Base.astro` `sections`/`labels`): intro · projects · machine · injections · research · builds · path · contact.
+## Design rules (from the 2026-10 research, keep these)
+Two research passes (business sites that stay enjoyable; copy and credibility for a one-person
+clinic-tech service) converged on these. They are the reason the page looks the way it does.
+1. **Light theme, 18 to 19 px body, AAA contrast, one accent colour.** Older and less technical
+   readers; NN/g seniors + WCAG. Dark is reserved for the "screens" (board recreations).
+2. **No pinned or scroll-jacked sections, no carousels, no hover-only content, no accordions.**
+   Entrance fades only (450 ms), everything honours `prefers-reduced-motion` (visuals go static).
+3. **The hero is one plain-English outcome sentence** ("The clinic that always knows where every
+   patient is."). "Forward deployed engineer" never appears in the H1; it is explained once in
+   "How I work".
+4. **Proof is cut by the fold.** The lounge board sits directly under the hero text so the first
+   screen always shows the page continues (NN/g "illusion of completeness").
+5. **A visible, numbered "On this page" index** right under the hero, and **every part ends with
+   a "Next: ..." link**. Less technical visitors never have to discover that there is more below.
+6. **The spine is one clinic day** (7:55 am check-in ... 11:00 pm nightly report), each part = full-
+   sentence heading, two short paragraphs, one green "fact" box with a precise number and how it
+   was measured, one recreation of the real tool.
+7. **Numbers only inside sentences with a method footnote**; never a stats wall. All numbers on the
+   page are real and sourced from the project notes (see "Facts used" below).
+8. **Scarcity as a calm logistical fact, never a pitch**: "one clinic at a time", "Next start: one
+   clinic, 2027", "by introduction". Never "limited spots", "exclusive", countdowns.
+9. **First person ("I")**, Canadian spelling and vocabulary (EMR not EHR, health card, daysheet,
+   patient flow, front desk, exam room). Avoid: AI, ML, platform, integration, provider.
+10. **Primary CTA "See it running" (20-minute video call); secondary "Ask about 2027".**
+11. **NO EM OR EN DASHES anywhere** (standing rule). Verify: `grep -c "—\|–" dist/index.html` = 0.
+12. **Everything shown is fictional** (patients, staff, report numbers) and the footer says so. The
+    kiosk wording is the real kiosk's wording. Never put real OSCAR screenshots on the site (PHI).
 
-## Layout system (global.css)
-- One container: `--maxw:1100px` + `--pad:32px`; `.section` two-column header `.s-head` (`.s-l` heading rail + `.s-r` lead/body), stacks ≤860px.
-- Theme vars lifted from the real Tri-City dashboards: bg `#0b0e13`, surface `#181d25`, line `#2a313d`, ink `#e7ecf3`; accents yellow `#f5c542` / green `#5fc88f` / purple `#b18cf2` / blue `#5aa7ff`. Fonts: `--mono`, `--sans`, `--display` (Space Grotesk Variable, headings), `--script` (Spectral italic, the NAME only).
-- **NO EM DASHES anywhere visible — standing rule** (use commas/colons/periods/·).
-- `body{overflow-x:clip}` contains decorative pop-outs.
+## Page order (index.astro)
+`Hero` (#top) → `OnThisPage` → `#day` wrapper with seven `DayStop`s:
+`#checkin` Kiosk · `#boards` TriageBoard (flip) · `#devices` DeviceRace · `#doctor` DoctorFlow (flip) ·
+`#staff` FloorClock · `#map` ClinicMap (flip) · `#nightly` NightlyReport
+→ `Changed` (#changed: before/after rows + 4 numbers) → `HowIWork` (#how: 4 steps + status / fit /
+not-a-fit cards) → `BeforeThis` (#before: 3 earlier employers) → `Questions` (#questions, 6 Q&As, all
+visible) → `Contact` (#contact: two mailto CTAs + a fit-check form that composes a mailto; the site is
+static so there is no backend and nothing is stored).
+Top bar (`Base.astro`): brand, 5 links (hidden under 1000 px), "Ask about 2027" button, 2 px page-
+progress line. Scroll spy marks the current section.
 
-## Components & systems
+## Files
+- `src/layouts/Base.astro` – head, fonts (Space Grotesk headings, IBM Plex Sans body, Plex Mono
+  labels; all already in package.json), top bar, footer, reveal + scroll-spy script.
+- `src/styles/global.css` – tokens (`--accent #1d7a4b`, `--ink`, board palette `--s-*`), layout,
+  buttons, `.screen` dark frame, `.stop` grid (grid-areas: text / visual / next; `.flip` swaps columns
+  AND column widths so the visual always gets the 7fr side), `.fact`, `.next`.
+- `src/styles/visuals.css` – all visual-component styles, kept global on purpose (several visuals
+  build DOM from JS, which Astro-scoped styles would miss). Prefixes documented at the top.
+- `src/components/DayStop.astro` – the part wrapper (eyebrow "Part n of 7 · time", h2, slots `text` and
+  `visual`, Next link).
+- Visuals (each self-contained, inline script, pauses off-screen and on hidden tab, static under
+  reduced motion):
+  - `LoungeBoard.astro` (hero): 3 doctor cards with the 5 real status circles + waiting list; a
+    patient advances a step every 4.5 s, timers tick.
+  - `Kiosk.astro`: 4 screens (card / reading / confirm / seated), auto-steps, step buttons, Replay.
+  - `TriageBoard.astro`: doctors' purple counts, 3 imaging rooms, ready-for-scan queue; a scan
+    finishes every 6 s and the next in line takes the room. Phone: queue trimmed to 3 cards.
+  - `DeviceRace.astro`: typed-by-hand lane (10x speed, one typo fixed) vs script lane (0.5 s). Auto-
+    runs once at 45% visibility, "Run again" button; result strip appears at the end.
+  - `DoctorFlow.astro`: two stacked monitors; cursor clicks the purple row, chart opens beside the
+    board, FORUM + Optos windows open on monitor 2, "opened in 2.4 s" pill. Loops every 7.5 s.
+  - `FloorClock.astro`: stations list + time clock + "sent on its own" emails; last-event line cycles.
+  - `ClinicMap.astro`: poster + "Play the walkthrough" button that inserts the iframe
+    (`/clinic/clinic2d.html`, mirrored from `prototype/` by `scripts/sync-clinic.mjs`). Under 760 px
+    it opens the game in a new tab instead.
+  - `NightlyReport.astro`: document-style card, SVG bar chart (bars draw in via `.rv.in`), findings,
+    "try tomorrow", footer. Illustrative numbers.
+- `Changed.astro`, `HowIWork.astro`, `BeforeThis.astro`, `Questions.astro`, `Contact.astro` – copy
+  lives in each component's frontmatter arrays; edit there.
+- `src/lib/url.js` – `withBase()` for the game path. `prototype/` stays canonical for the game.
 
-**Base.astro** — `<head>`, font imports (Space Grotesk, Spectral 600-italic, IBM Plex Sans+Mono 400/500/600), the sticky **OS top-bar** (brand + nav + live clock + scroll-spy), footer ("All patient information shown is fictional…"), and three site-wide inline scripts:
-1. **Ambient particle backdrop** — `<canvas class="bg-fx">` fixed z0, ~50 soft green particles fading in/out; pauses tab-hidden + reduced-motion.
-2. **Cursor TextLens (WebGL)** — replaces an earlier glyph-bounce warp (now GONE). Targets `.hero-name` + `.pi-title`: renders the heading to a 2D-canvas texture and runs a fragment shader (lens distortion `off=-dir*falloff*amp*0.12` + chromatic aberration) following the eased cursor over a transparent overlay canvas (PAD=70). Original text hidden via `color:transparent` (aria-label kept). Tunables: `AMP=0.55, CHROM=0.7, EASE=0.16`; radius `radiusFor(el)` = **320** for `.pi-title`, 150 for `.hero-name`. Pauses off-screen; pointer-fine + non-reduced-motion only; graceful fallback to plain text.
-3. live clock + scroll-spy.
+## Facts used on the page (sources: project memory notes, 2026-10-07)
+- Device results: biometer exports → OSCAR, running since May 2026; 8 fields, 55 keystrokes by hand;
+  ~0.5 s by script vs ~2 min typed ("about 200x"). ~12 devices export to one share.
+- Check-in: card kiosk live at the front desk 2026-09-23; decision 2026-09-11 → live in 12 days;
+  one confirmation tap; chart address/phone updated from a newer card.
+- Doctor flow: FORUM/Optos/eChart open in ~2 to 13 s, down from ~33 s (speed rework 2026-08-14).
+- Time clock: live 2026-09-29; manager emails 9:00 / 17:00; bi-weekly PDF to the accountant;
+  uAttend history imported.
+- Model: 5,941 "who's next" decisions over 18 clinic days; vision ranker 51.4% top-1 vs 24.1% best
+  baseline; age never used in ordering; suggestion-first, staff decide.
+- Boards poll the OSCAR daysheet ~every 10 s; Done/room actions write back to OSCAR.
+If any of these change, update the fact box in `index.astro` AND the matching card in `Changed.astro`.
 
-**Hero.astro** (`#top`) — name (Spectral italic via `--script`) + "Forward Deployed Engineer" + lede ("…close to the problem … Lately it's all healthcare, from clinic-floor automation to quantum ML research.") + buttons **See my work**(#projects) / **Who I am**(#about→#contact). Has its own **green cursor-trail** canvas (`.hero-fx`, path + green status-dots).
-
-**ProjectsIntro.astro** (`#projects`, `.panel`) — big "PROJECTS" title (Space Grotesk 800, has TextLens) + flanking "some selected"/"live in page" + sub "Customer work, personal projects, some research and a playground."
-
-**ClinicSegment.astro** (`#clinic`, `.panel`) — the flagship: lazy `<iframe src=/clinic/clinic2d.html>` (the pixel clinic game + live dashboards, synced from `prototype/` by `scripts/sync-clinic.mjs`; auto-mounts desktop, poster-on-tap mobile). **Pinned recede choreography** driven by the tall transparent `.scroll-room` (480vh) right after it in the stack: `p=(vh-roomTop)/roomH`, phases over P — hold full → shrink+angle → small + BIG stickers rise from the sides in zig-zag and off the top → re-enlarge+angle → hold full. Screen near full-bleed at scale 1 → `SMALL=0.66`. Angle: `rotateX(-ANGLE*sin)` `ANGLE=34` (bottom leans back), perspective 900, PLUS a tiny `rotateY` `YSWING=6` nudge cresting just before the vertical peak. Stickers bigger (17px), `data-side` alternating, `ty=130-local*600`.
-
-**OmniaRace.astro** (`#omnia`) — **the EMR Race** (Manual entry vs. omnia-to-oscar Watcher). Ported faithfully from his design handoff `C:\Users\Shahmeer\Downloads\Portfolio edits\design_handoff_emr_race\` (README spec + `EMR Race.dc.html` authored source; the `.standalone.html` is bundler-encoded/not readable). Markup copied verbatim; `class Component` logic reproduced with `setInterval` tweens → **requestAnimationFrame** (same durations, ease `1-(1-p)^3`) and window-scroll calls neutralised. Real Topcon Omnia TRK-3 → OSCAR fields (OD: AR sph/cyl/axis, K1, K2, K-axis, IOP, CCT) from the actual `Desktop/Projects/omnia-to-oscar/parser.py`. Sequence: manual extrude→cut→zoom→clarify→per-field cursor+highlight+arrow+type(4 typos)→spotlight → watcher upload→reveal→fan-out→snap→spotlight → comparison bar counts up (~228× faster, 55 keys vs 1, 4 err vs 0). Auto-runs on view; Start/Run-again + Reset. Fonts IBM Plex Sans+Mono; `caretBlink`+`flow` keyframes in global.css. Tunables `this.PROPS{errorCount:4, manualPaceMs:120, timeCompression:4}`.
-  - **Dark-themed** to match the site (was light #ECEBE6) via `scripts/_darken_emr.py` (one-shot color map; accents/dots/dark-bar/LCD preserved; badge white-dots protected).
-  - **Physical-object pass** (so the hardware reads as hardware against the dark page): the biometer SVGs are **light gray** (`#c7cdd5` casing, dark LCD kept) and the manual **receipt is natural white thermal paper** (`#f6f5f1`) that extrudes from the machine, moves over, and expands. On the receipt **all labels/structure are black** (`#16181c`: NAME, date, NO/SN, `.DATA` headers, `<R>`/`<L>` and `S C A`/`D MM A` column headers, row labels, units, TOPCON) and **only the measurement values are dark grey** (`#6b7280`, the "messy" raw numbers to be extracted) — the manual `data-rcpt` grey is applied in `reset()` (watcher `data-rcpt` keep their own light ink). The read-marker highlight is yellow (`#ffe26b`). The watcher's browser/XML window **stays dark** (it's digital), giving a physical→digital contrast.
-  - **EMR fields:** all 16 input boxes carry a visible **grey border** (`#4a5260`; active = `#6B7B92`) so they read clearly as fields. On a manual typo the **wrong number itself turns red** (`valEl.style.color='#e8705f'` in `typeWithError`, reverts on correction) rather than flashing the box.
-  - **Pacing/legibility tweaks:** the typing cursor parks at the field's **lower-right** (`bp.r-18, bp.b-7`) so it never hides the digits (which fill from the left); a **2s beat** after the watcher fills the form before its metrics spotlight (`runSequence` watcher `sleep(2000)`); the final comparison dims the lanes to **0.66** (not 0.4) via `dimLane(lane, on, level)` so the flow above stays readable behind the result.
-  - **Scroll-locked + scaled:** now lives in slide 0 of the **benchmark slider** (was its own `.emr-track`/`.emr-pin`; those classes still exist in global.css but are unused). `fit()` scales the whole widget to fit the viewport (`transform: translateY(ty) scale(s)`, origin top center, s≈0.71) and reserves an **88px top strip** for the slider tabs. **`relTo()` + `movePaper` divide their rect math by `this.scale`** so SVG arrows stay aligned (the `ty` translate cancels in differences, so the top reserve is safe).
-
-**InjectionFax.astro** (`#injections`) — **the One-Tap Injection Fax benchmark** (second pinned animation, matched pair with the Omnia race). Ported from his design handoff `C:\Users\Shahmeer\Downloads\Manual vs One-Tap.standalone.html` (a bundler file: real scene lives in its `<script type="__bundler/template">` JSON, extracted readable). A 1200px dark SVG stage: red (manual) vs green (automated) walking figures move an **injection order → fax-ready document**; manual writes 8 fields, walks to the printer, collects, walks back, compares (gaze lines) ≈ **07:03**; automated one-taps the generator ≈ **00:07** (**60× faster**). The DCLogic `Component` class reproduced as a plain class: element lookups **scoped to the component root** (`root.querySelector('#id')`, since ids like `clock`/`result`/`monitor` are generic and the page has its own), `{{ start }}`/`{{ reset }}` → `data-start`/`data-reset`, `setInterval` 33ms loop kept as-is, auto-runs on view. **All motion is SVG user-space**, so `fit()` just scales the whole scene with one CSS transform (no rect math like the EMR race) to fit the pinned viewport (measures with the result strip shown so it doesn't overflow when it appears; `translateY` centers on desktop only). Text tailored to the real clinic: **Tri-City Eye Care** injection order, **same patient "Carl Shen"** as the biometry race (continuity), aflibercept 2mg intravitreal / neovascular AMD / H35.32. Lives in **slide 1 of the benchmark slider** (`.bench-panel--inject` bg `#131418`); its `fit()` also reserves the 88px tab strip. Patients fictional. NB the source's one em dash (`—`) was swapped to `·` for the no-em-dash rule.
-
-**Benchmark slider** (`index.astro` `.bench-section` + `global.css` `.bench-*` + inline `[data-bench]` script) — both races share ONE pinned frame; scrolling consolidates them. Structure: `.bench-track`(**190vh** = the lock; tune here) > sticky `.bench-pin`(100vh, overflow hidden) > `.bench-rail`(200vw flex row) holding two `.bench-panel`s (100vw each: Omnia, then Injection). The inline script maps pin-scroll progress `p` to a horizontal `translateX` on the rail: **hold slide 0** (`p<0.42`) → **slide** (smoothstep 0.42–0.62) → **hold slide 1** (`p>0.62`); it also toggles the `.bench-tab` `.on` state. Tabs ("01 biometry→emr / 02 injection→fax", top-center, `data-slide`, clickable to scroll to that slide). Each animation now sits behind a **first-view intro/context card** (`.bench-intro`, shared styles in global.css, mirrors the clinic2d intro): eyebrow + title + lede + two colour-coded racer rows + a green **Begin** button (`[data-begin]`). The card lives in a `.bench-scene` wrapper OUTSIDE the scene's `fit()` transform (so it stays full-size; `position:absolute` desktop, `relative` mobile), and the slider tabs render above it (the rail's `translateX` makes it a stacking context below the `z-index:8` tabs). The race/benchmark **no longer auto-runs** — it starts only on the Begin click (`intro.classList.add('gone')` + `start()`); an IntersectionObserver just adds `.in` to reveal the card when the panel scrolls in. Zero-size `#omnia`(top:55vh)/`#injections`(top:112vh) anchors sit in the track so the **nav + top-bar indicator** switch between "machine→emr" and "injection forms" as you cross (the giant section has no id). Both `fit()`s reserve a **top strip of 88px** (desktop) for the tab bar so it doesn't overlap. Mobile ≤760px: pin off, rail stacks vertically, tabs hidden. **Base.astro scroll-spy** was scoped to observe only the `labels` section ids (not every `[id]`) so the injection widget's internal ids (`#clock`/`#figR`/…) don't blank the nav.
-
-**QuantumBench.astro** (`#research`) — **Classical ML vs Quantum ML on MedMNIST** (PneumoniaMNIST), the research/breadth piece. Ported from his design handoff `C:\Users\Shahmeer\Downloads\Quantum ML Medical imaging\...\design_handoff_quantum_vs_classical\` (readable `.dc.html` source: template + `class Component`; thorough `README.md` spec). 1120px dark card: header + status/metrics strip (EPOCH, CLASSICAL ACC coral, QUANTUM ACC violet) + a 6×6 grid of **procedurally-drawn chest-X-ray tiles** (pokeable: hover → inspector shows each model's prediction ✓/✗) + an SVG **accuracy-vs-epoch** line chart (two curves drawing in) + a √-scaled **trainable-parameters** bar pair + an honest **verdict** caption + QCLab/Dr-Sykes footer. The whole thing is a **pure function of progress `tick(p)`**, `p∈[0,1]`, driven by `setInterval(33ms)`; phases idle→train(curves+readouts count up)→evaluate(tile dots stagger in)→verdict(bars+caption). Honest verdict: quantum reaches **91%** vs classical **96%** with **~1,300× fewer** params (96 vs 121,410), the message is parameter efficiency, not winning. The DCLogic `Component` is reproduced as a plain `class QuantumBench` (lookups scoped to `#qb-root`, `<sc-for>` tile loop expanded to 36 real tiles in the Astro frontmatter, `{{ runAgain }}`/`{{ reset }}`→`data-runagain`/`data-reset`). **All motion is inline SVG/attrs** so `fit()` scales the card with one transform (no rect math); pinned in its own `.bench-section > .bench-track.solo`(135vh) + intro-gated (`.bench-intro`, violet accent, "Run the benchmark"). NB the source's placeholder `—` glyphs (agree readout, inspector defaults) were swapped to `0`/`·` for the no-em-dash rule. Numbers/tiles are illustrative placeholders (swap for real MedMNIST + true metrics before shipping). **All planned project displays now exist** (clinic, biometry, injection, quantum).
-
-**Builds.astro** (`#builds`, indicator "more builds") — "More of what I've built." 2-col grid (distinct from the Path zig-zag) of **7 real builds** each with a `kind` chip (Customer/Playground) + scroll-reveal. Order: EMR auto-refresh, Clinic status boards, The device share, Clinic hub, Clinic server, Tri-City site, **eyecase last** (the one Playground). Reframed (2026-06-24) because the old "every one solves recurring friction" over-claimed: subtitle now "Most quietly take a load off a real clinic workflow ... The last one is just for the fun of it. All of them got shipped and have real users." 7 = odd, so eyecase sits alone on the last row (intentional, de-emphasized).
-
-**Scroll guide** (`Base.astro` `#scrollGuide` + `.scroll-guide` + `[data-pinned]` script) — a fixed bottom-center "keep scrolling ↓" pill (bouncing arrow) shown ONLY while a **pinned region spans the viewport** with more below, so a stopped/sticky screen never reads as the page bottom. The controller checks every `[data-pinned]` element (the clinic `.stack` + both `.bench-track`s) on scroll: shows when `rect.top<=4 && rect.bottom>=vh-4 && progress<0.8` (hides in the last ~20% and on all non-pinned sections; the hero keeps its own in-flow "scroll ↓"). z-index 30 (above pinned content, below the z40 osbar).
-
-**Path.astro** (`#path`) — career as a zig-zag SVG road, content from his old portfolio shahmeershahid.com (Bombardier → Onward → Mitsubishi → healthcare/now), steel→green gradient, draws on scroll.
-
-**Contact.astro / index `#contact`** — "Have something for me to build?" + pill links Email(`shahmeer_shahid@outlook.com`) · GitHub(`sh4hmeer`) · LinkedIn(`shahmeer-shahid-`) + a **dodging "top secret" button** (flees cursor, unclickable).
-
-## Recent (2026-06-30, later)
-- **Biometry race fills the screen**: the two lanes now sit **side-by-side** (`.emr-inner` is a 2-col grid on desktop, single-col ≤760px; comparison bar spans both). Its wide aspect fills wide/short laptops instead of stacking tall with big side gaps. `OmniaRace.fit()` sets `root.width:max-content` so the grid lays out full-size, then absolutely-centres + scales (RES=48 bar clearance, cap 1.5x). `relTo`/arrows still divide by `this.scale`. `QuantumBench.fit()` standardised to the same RES/cap/margins (it's a fixed-width card, so it keeps the translateY approach). Both verified: fill the width, no clip/overflow, arrows aligned, mobile stacked.
-
-## Recent (2026-06-30)
-- **Injection race PAUSED** (commented out, reversible): not in the slider or nav. The slider auto-degrades to a single pinned animation (biometry) when it has one `.bench-panel` — tabs hidden, no slide; track uses `bench-track solo` (135vh). Restore steps are in the index.astro comment.
-- **Per-animation progress bars** (`.scene-prog`, bottom:62px): quantum from `tick(p)`, biometry time-based (EST 30s, snap at comparison), clinic2d `#visitProg` from flow legs. Shown only while playing.
-- **Page scroll-progress**: right-edge vertical fill (`#ppFill`), driven by the scroll-guide controller.
-- Pacing: biometry manual sped up (`manualPaceMs 88`); clinic2d waits/escort/intro all quicker. Hero "Who I am" → `#contact` (was dead `#about`).
-
-## Mobile (≤760px; desktop untouched)
-- **Root cause that was fixed:** the wide scenes (1120/1160/1200px) are transform-scaled, but transform doesn't shrink the *layout* box, so on mobile they overflowed and **blew the layout viewport out to ~743px** (whole page zoomed out). Fixed by clamping.
-- Each `fit()` has a **mobile branch** (`!matchMedia('(min-width:761px)')`): scale the scene to the viewport **width**, `position:absolute; left/top:50%; transform: translate(-50%,-50%) scale(s)` (centred), and `.bench-scene` is `position:relative; overflow:hidden; min-height:86vh` (clips the wide box, holds height for the intro card). OmniaRace also **pins its width** (`root.style.width = cw+'px'`) on mobile since `.emr-root` is otherwise fluid. relTo/arrow math still divides by `this.scale`, so SVG arrows stay aligned.
-- **CSS-ordering gotcha:** the desktop `.bench-scene{position:absolute;inset:0}` rule sits LATER in global.css than the bench mobile media query, so the mobile override **must** come right after it (equal specificity, later wins) — it does now.
-- `html { overflow-x: clip }` added as a backstop. Top bar (≤720px): nav hidden, **section indicator hidden**, brand `nowrap` + clock kept. Scroll-guide hidden ≤760px. ProjectsIntro flanking `.pi-side` labels hidden ≤700px (they collapsed to "SOMESELECTED"). Builds grid → 1 col ≤680px; Path road hidden ≤680px (cards stack).
+## Things to confirm with Shahmeer (written as plausible defaults)
+- "What does it cost?" answer (fixed engagement, scoped after the first week on the floor).
+- "I read and answer every message myself." and the 20-minute call framing.
+- "Next start: one clinic, 2027" and "by introduction".
+- LinkedIn handle `shahmeer-shahid-` (carried over from the old site, still unverified).
+- Optional: a real photo (him, or the kiosk / a board in the actual waiting room) under the hero;
+  research ranked a real photo above any device frame. None exists in the repo, so none is used.
 
 ## Gotchas
-- **Stale dev server:** edits sometimes don't reflect — RESTART dev (kill 4321, `npm run dev`) before screenshotting; hard-refresh the browser. A clean `rm -rf dist && npm run build` also fixes stale dist.
-- **Bash cwd resets** to `Desktop/Projects` each call — `cd .../fde-portfolio &&` first.
-- **Astro scopes `<style>`** to build-time elements; JS-created elements need `:global(...)`.
-- **No em dashes** (standing rule). Verify `grep -c — dist/index.html` = 0.
-- EMR race arrows depend on the **`this.scale` division** — if you change the fit/pin, keep relTo+movePaper dividing by scale.
-- `prototype/` stays canonical for the clinic game; `sync-clinic.mjs` mirrors only the 8 runtime files into `public/clinic/`.
-
-## Next / open
-- All four project displays DONE (clinic, biometry, injection, quantum); Builds/Path/Contact done; **deployed live** to shahmeershahid.com. To ship an edit: commit to `main` and push — Actions rebuilds and deploys (~1-2 min).
-- Quantum widget uses **placeholder** MedMNIST tiles + metrics (per its README) — swap for real samples/numbers before treating as final.
-- Possible polish: fonts/a11y audit, the lone 7th Builds card (eyecase) on its own row, mobile pass on the wide pinned animations.
-- Running memory with the full blow-by-blow: `~/.claude/.../memory/project_fde_portfolio.md`.
+- Bash cwd resets to `Desktop/Projects` each call; `cd .../fde-portfolio &&` first.
+- Astro scopes `<style>` to build-time elements; JS-created nodes need global styles (hence visuals.css).
+- The `.stop.flip` rule must swap column widths, not just order, or the visual is squeezed into 5fr
+  (this clipped the imaging board's third column once).
+- Element screenshots taken right after `scrollIntoView` show the sticky top bar over the eyebrow;
+  real anchor navigation is fine because every section has `scroll-margin-top`.
+- Heredocs with non-ASCII box characters failed in the Windows Git Bash tool; write files with the
+  editor tools or Python instead.

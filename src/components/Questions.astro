@@ -1,0 +1,28 @@
+---
+// The questions clinic owners and managers actually ask. All visible, no
+// accordions: the audience needs most of this.
+const qs = [
+  { q: 'Does this replace OSCAR or our EMR?', a: 'No. Everything reads from and writes to the EMR you already use, through the same logged-in screens your staff use. If you changed EMRs tomorrow, the boards would be re-pointed, not rebuilt.' },
+  { q: 'Where does patient information go?', a: 'Nowhere new. The boards, the kiosk and the reports run on a small PC inside your clinic, on your network. Doctors who want the board on their phone reach it over a private connection, not the open internet.' },
+  { q: 'Do we need new hardware?', a: 'A card reader for the kiosk (about the size of a stapler) and a touch screen at the desk. The TVs most clinics already have. Device PCs stay as they are.' },
+  { q: 'How long before something is live?', a: 'The first board is usually running within the first weeks. At Tri-City the card check-in went from decision to live at the front desk in 12 days, and staff changes were shipped the next morning.' },
+  { q: 'What happens if you are unavailable?', a: 'The tools start themselves each morning, restart themselves if they stall, and keep a plain log. Everything is documented so another engineer could pick it up. Nothing depends on me being in the building.' },
+  { q: 'What does it cost?', a: 'A fixed engagement agreed before anything is built, scoped to the list we make on your floor in the first week. Ask, and I will give you a straight number.' },
+];
+---
+<section id="questions" class="section tint">
+  <div class="wrap">
+    <div class="section-head rv">
+      <p class="eyebrow"><span class="dot"></span> Questions</p>
+      <h2>The questions I get asked first.</h2>
+    </div>
+    <div class="fq rv">
+      {qs.map((x) => (
+        <div class="fq-item">
+          <h3>{x.q}</h3>
+          <p>{x.a}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

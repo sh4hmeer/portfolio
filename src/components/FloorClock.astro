@@ -1,0 +1,60 @@
+---
+// The staff side: the digital floor board (who is at which station this
+// afternoon) and the time clock built into it, with the emails it sends on its
+// own. Fictional staff names. A small toast shows a check-in landing.
+const stations = [
+  { st: 'VA 1', cls: 'va', who: 'Priya' }, { st: 'VA 2', cls: 'va', who: 'Dana' }, { st: 'VA 3', cls: 'va', who: 'Lee' },
+  { st: 'OCT', cls: 'oct', who: 'Sam' }, { st: 'HVF', cls: 'hvf', who: 'Noor' }, { st: 'Desk A', cls: 'desk', who: 'Theo' },
+  { st: 'Desk B', cls: 'desk', who: 'Maya' }, { st: 'Float', cls: 'float', who: 'Jo' },
+];
+---
+<div class="screen fl" data-floor aria-label="Floor board and time clock, recreated with fictional staff">
+  <div class="screen-bar">
+    <span class="sdots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="stitle">Tri-City Eye Care · Floor · Tuesday PM</span>
+    <span class="live">updates live</span>
+  </div>
+  <div class="fl-body">
+    <div class="fl-col">
+      <div class="fl-panel">
+        <div class="ph">Stations this afternoon <span>flips to PM at 12:00</span></div>
+        <div class="fl-st">
+          {stations.map((s) => <div class="fl-strow"><span class={`st ${s.cls}`}>{s.st}</span><span class="fl-chip">{s.who}</span></div>)}
+          <div class="fl-strow"><span class="st" style="background:#39404d;color:#e6e9ee">Home</span><span class="fl-chip home">Ravi</span><span style="color:var(--s-muted);font-size:12px">sent home 13:10, quiet day</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="fl-col">
+      <div class="fl-panel">
+        <div class="ph">Time clock <span>PIN, no badge</span></div>
+        <div class="fl-clock"><button type="button" class="in" tabindex="-1">Check in</button><button type="button" class="out" tabindex="-1">Check out</button></div>
+        <div class="fl-innow">In now: <b>Priya</b> <b>Dana</b> <b>Lee</b> <b>Sam</b> <b>Noor</b> <b>Theo</b> <b>Maya</b> <b>Jo</b></div>
+        <div class="fl-last" data-last><b>✓</b> <span data-last-text>Priya checked in · 7:52</span></div>
+      </div>
+      <div class="fl-panel">
+        <div class="ph">Sent on its own</div>
+        <div class="fl-mail">
+          <div><span class="when">Daily 9:00</span><span>Who is in, who is late<small class="to">to the manager</small></span></div>
+          <div><span class="when">Daily 17:00</span><span>Who forgot to check out<small class="to">to the manager</small></span></div>
+          <div><span class="when">Every 2nd Sun</span><span>Pay-period timesheet, as a PDF with totals<small class="to">to the accountant, copy to the manager</small></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (function () {
+    const root = document.querySelector('[data-floor]');
+    if (!root) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const last = root.querySelector('[data-last]'), txt = root.querySelector('[data-last-text]');
+    const msgs = ['Priya checked in · 7:52', 'Jo moved to Float · 13:00', 'Ravi sent home · 13:10', 'Sam checked out · 16:58', 'Timesheet PDF sent · Sun 7:00'];
+    let i = 0, loop = null, visible = false;
+    function show() { last.classList.add('swap'); setTimeout(() => { txt.textContent = msgs[i++ % msgs.length]; last.classList.remove('swap'); }, 300); }
+    function start() { if (loop) return; loop = setInterval(show, 4800); }
+    function stop() { clearInterval(loop); loop = null; }
+    new IntersectionObserver((es) => es.forEach((e) => { visible = e.isIntersecting; if (visible && !document.hidden) start(); else stop(); }), { threshold: 0.3 }).observe(root);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); else if (visible) start(); });
+  })();
+</script>

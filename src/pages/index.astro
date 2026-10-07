@@ -1,213 +1,166 @@
 ---
 import Base from '../layouts/Base.astro';
 import Hero from '../components/Hero.astro';
-import ProjectsIntro from '../components/ProjectsIntro.astro';
-import ClinicSegment from '../components/ClinicSegment.astro';
-import OmniaRace from '../components/OmniaRace.astro';
-// import InjectionFax from '../components/InjectionFax.astro';   // injection race paused (may return)
-import QuantumBench from '../components/QuantumBench.astro';
-import Builds from '../components/Builds.astro';
-import Path from '../components/Path.astro';
-
-// Contact links. Clicking the label opens it; no URLs shown.
-// TODO(shahmeer): confirm the LinkedIn handle (best guess for now).
-const contacts = [
-  { label: 'Email',    href: 'mailto:shahmeer_shahid@outlook.com',          external: false },
-  { label: 'GitHub',   href: 'https://github.com/sh4hmeer',                 external: true },
-  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/shahmeer-shahid-', external: true },
-];
+import OnThisPage from '../components/OnThisPage.astro';
+import DayStop from '../components/DayStop.astro';
+import Kiosk from '../components/Kiosk.astro';
+import TriageBoard from '../components/TriageBoard.astro';
+import DeviceRace from '../components/DeviceRace.astro';
+import DoctorFlow from '../components/DoctorFlow.astro';
+import FloorClock from '../components/FloorClock.astro';
+import ClinicMap from '../components/ClinicMap.astro';
+import NightlyReport from '../components/NightlyReport.astro';
+import Changed from '../components/Changed.astro';
+import HowIWork from '../components/HowIWork.astro';
+import BeforeThis from '../components/BeforeThis.astro';
+import Questions from '../components/Questions.astro';
+import Contact from '../components/Contact.astro';
 ---
 <Base>
   <Hero />
+  <OnThisPage />
 
-  <!-- Stacked project panels: each sticks and the next slides up over it -->
-  <div class="stack" data-pinned>
-    <ProjectsIntro />
+  <!-- The spine: one clinic day, seven parts, each with a recreation of the real tool. -->
+  <div id="day" style="scroll-margin-top: var(--bar-h)">
 
-    <ClinicSegment />
+    <DayStop id="checkin" n={1} time="7:55 am · front desk" title="Patients check themselves in. The chart updates itself." next={{ id: 'boards', label: 'Live boards for every role' }}>
+      <Fragment slot="text">
+        <p class="body">
+          The patient drops their health card or driver's licence into a reader. In about a second the kiosk
+          finds today's appointment, greets them by name, and asks one question: is your address and phone
+          still correct? One tap, and they are marked <b>Here</b> in the EMR. If the card is newer than the chart,
+          the chart is corrected on the spot.
+        </p>
+        <p class="body">No line at the desk. No one re-typing an address. Elderly patients manage it unaided because there is nothing to type.</p>
+        <div class="fact"><b>One tap for the patient. Zero for the front desk.</b><span>Live at the front desk since 23 September 2026. A touch-only path is always there for patients without a card.</span></div>
+      </Fragment>
+      <Fragment slot="visual">
+        <Kiosk />
+        <p class="screen-cap">The real kiosk's wording, step by step. It steps through on its own, or use the buttons.</p>
+      </Fragment>
+    </DayStop>
 
-    <!-- tall transparent scroll-room: the clinic stays pinned + visible through it
-         while the screen recedes and the stickers rise (lots of room for the effect) -->
-    <div class="scroll-room" aria-hidden="true"></div>
+    <DayStop id="boards" n={2} time="8:10 am · every TV in the clinic" title="Every screen shows who is next. Nobody walks the hall to ask." flip next={{ id: 'devices', label: 'Device results into the chart' }}>
+      <Fragment slot="text">
+        <p class="body">
+          Each role gets its own board, read straight from the EMR's daysheet about every ten seconds. The
+          doctors' lounge sees who is waiting for each doctor and for how long. The imaging tech sees who is
+          ready for a scan and which room is free. The front desk sees who has arrived and who is late.
+        </p>
+        <p class="body">
+          When a tech drags a patient into a room or taps <b>Done</b>, the board writes the new status back to
+          the EMR. One action, every screen updates, and the day's timeline writes itself.
+        </p>
+        <div class="fact"><b>One board per role, all reading the same daysheet.</b><span>Doctors' lounge, imaging, visual fields, vision rooms and the front desk. Doctors can open theirs on a phone.</span></div>
+      </Fragment>
+      <Fragment slot="visual">
+        <TriageBoard />
+        <ul class="tb-roles" aria-label="who sees what">
+          <li><i style="background:var(--s-purple)"></i><span><b>Doctors' lounge:</b> who is waiting for each doctor, longest first.</span></li>
+          <li><i style="background:var(--s-yellow)"></i><span><b>Imaging:</b> who is ready for a scan, which room is free.</span></li>
+          <li><i style="background:var(--s-orange)"></i><span><b>Visual fields and vision rooms:</b> the same, for those stations.</span></li>
+          <li><i style="background:var(--s-green)"></i><span><b>Front desk:</b> who checked in at the kiosk, who needs a hand.</span></li>
+        </ul>
+      </Fragment>
+    </DayStop>
+
+    <DayStop id="devices" n={3} time="9:30 am · imaging room" title="Results reach the chart before the patient reaches the next room." next={{ id: 'doctor', label: 'One click for the doctor' }}>
+      <Fragment slot="text">
+        <p class="body">
+          Diagnostic machines print a slip or save a file, and then someone types the numbers into the chart.
+          Eight fields, every patient, every day, with the occasional slipped digit.
+        </p>
+        <p class="body">
+          Instead, every device in the clinic exports to one shared folder, and a small script watches it.
+          A new file appears, the script reads the values, finds the patient's appointment, and writes the
+          measurements into their chart. The tech never touches a keyboard.
+        </p>
+        <div class="fact"><b>About 200 times faster than typing, with no typos.</b><span>Running since May 2026 on the clinic's biometers. Roughly a dozen devices export to the same shared folder.</span></div>
+      </Fragment>
+      <Fragment slot="visual">
+        <DeviceRace />
+      </Fragment>
+    </DayStop>
+
+    <DayStop id="doctor" n={4} time="10:40 am · exam lane" title="One click, and the doctor's whole workspace is open." flip next={{ id: 'staff', label: 'Staff schedule and time clock' }}>
+      <Fragment slot="text">
+        <p class="body">
+          Before the exam can start, the doctor needs the chart, the OCT scans, and the retinal photos. Three
+          systems, three name searches, two monitors, every patient.
+        </p>
+        <p class="body">
+          Now the doctor clicks the patient's name on the lounge board. The chart opens on the first monitor.
+          The imaging system and the photo viewer open side by side on the second, already on the right patient
+          and the right scan for that visit. Name and date of birth are matched in all three before anything is shown.
+        </p>
+        <div class="fact"><b>Three systems open in 2 to 13 seconds, down from about 33.</b><span>Timed on the clinic's exam-room PCs, August 2026. A wrong-patient match stops and warns instead of opening.</span></div>
+      </Fragment>
+      <Fragment slot="visual">
+        <DoctorFlow />
+      </Fragment>
+    </DayStop>
+
+    <DayStop id="staff" n={5} time="12:00 pm · staff room" title="The manager's week runs from one screen." next={{ id: 'map', label: 'The clinic map' }}>
+      <Fragment slot="text">
+        <p class="body">
+          The paper station sheet became a board on the staff-room TV: who is at which station this morning
+          and this afternoon, who went home early, and the day's announcement. The manager changes it from
+          the office and every screen follows.
+        </p>
+        <p class="body">
+          The punch clock went too. Staff check in and out with a PIN on the same board. The manager gets a
+          short email at 9:00 and 5:00. Every second Sunday the pay-period timesheet is emailed as a PDF, totals done.
+        </p>
+        <div class="fact"><b>Punch clock and paper sheet retired. Timesheets send themselves.</b><span>Live since 29 September 2026. Imported the old clock's history so nothing was lost in the switch.</span></div>
+      </Fragment>
+      <Fragment slot="visual">
+        <FloorClock />
+        <p class="screen-cap">The floor board with the time clock built in. Staff names are fictional.</p>
+      </Fragment>
+    </DayStop>
+
+    <DayStop id="map" n={6} time="3:15 pm · anywhere in the clinic" title="Staff can watch the day move across the floor." flip next={{ id: 'nightly', label: 'The nightly report' }}>
+      <Fragment slot="text">
+        <p class="body">
+          The same status changes that drive the boards also drive a pixel-art map of the clinic. Patients
+          appear at the desk, walk to the field machine, to imaging, into an exam lane, and out.
+        </p>
+        <p class="body">
+          It is the one screen in the clinic that is just for fun, and it is also the clearest picture of a
+          day anyone there has had. Play it below: walk one visit and watch the boards update as you go.
+        </p>
+        <div class="fact"><b>Every step you walk is also a row of data.</b><span>Door-to-door time, with no typing, is what the nightly report is built from.</span></div>
+      </Fragment>
+      <Fragment slot="visual">
+        <ClinicMap />
+        <p class="screen-cap">Built with the clinic's real floor plan. Fictional patients. Best on a laptop or desktop.</p>
+      </Fragment>
+    </DayStop>
+
+    <DayStop id="nightly" n={7} time="11:00 pm · after close" title="At night, the clinic reviews its own day." next={{ id: 'changed', label: 'What changed, with numbers' }}>
+      <Fragment slot="text">
+        <p class="body">
+          Every status change on every board is logged with a time, automatically. After close, a model reads
+          the day: how long each patient waited at each step, which rooms sat empty while people waited, and
+          which choices moved the day along.
+        </p>
+        <p class="body">
+          The result is a short written report, in plain language, before the first patient arrives. Over
+          weeks it learns the clinic's own patterns, and on the boards it can quietly suggest who to take
+          next and why. The staff always decide.
+        </p>
+        <div class="fact"><b>The first model learned from 5,941 real staffing decisions.</b><span>It picks the same next patient as experienced staff 51% of the time on the first try; the best simple rule manages 24%. Age is never used to order patients.</span></div>
+      </Fragment>
+      <Fragment slot="visual">
+        <NightlyReport />
+        <p class="screen-cap">An illustrative night's report, in the shape of the real one. The numbers change every day.</p>
+      </Fragment>
+    </DayStop>
   </div>
 
-  <!-- Workflow benchmarks: the before/after races live in ONE pinned frame. With two
-       panels the rail slides horizontally between them (tabs 01/02); the slide driver
-       gracefully degrades to a single pinned animation when there's only one panel.
-       NOTE: the injection (02) race is COMMENTED OUT for now (may return). To restore:
-       uncomment the InjectionFax import, the #injections anchor, the 02 tab, the second
-       bench-panel, the injections nav entry in Base.astro, and switch the track class
-       back to "bench-track" (190vh) from "bench-track solo". -->
-  <section class="bench-section" aria-label="workflow benchmarks">
-    <div class="bench-track solo" data-bench data-pinned>
-      <span id="omnia" class="bench-anchor" style="top: 55vh;" aria-hidden="true"></span>
-      {/* <span id="injections" class="bench-anchor" style="top: 112vh;" aria-hidden="true"></span> */}
-
-      <div class="bench-pin">
-        <div class="bench-tabs" role="tablist" aria-label="benchmark">
-          <button class="bench-tab on" data-slide="0" type="button"><b>01</b> biometry <span class="bt-arr">&rarr;</span> emr</button>
-          {/* <button class="bench-tab" data-slide="1" type="button"><b>02</b> injection <span class="bt-arr">&rarr;</span> fax</button> */}
-        </div>
-
-        <div class="bench-rail" data-rail>
-          <div class="bench-panel"><OmniaRace /></div>
-          {/* <div class="bench-panel bench-panel--inject"><InjectionFax /></div> */}
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Research: the quantum vs classical ML benchmark. Pinned + intro-gated like the
-       other project displays, but its own section (a breadth piece, not a workflow race). -->
-  <section id="research" class="bench-section">
-    <div class="bench-track solo" data-pinned>
-      <div class="bench-pin" style="background:#0e0f12;">
-        <QuantumBench />
-      </div>
-    </div>
-  </section>
-
-  <Builds />
-
-  <Path />
-
-  <section id="contact" class="section" style="--accent: var(--green);">
-    <div class="s-head">
-      <div class="s-l">
-        <p class="eyebrow">get in touch</p>
-        <h2>Have something for me to build?</h2>
-      </div>
-      <div class="s-r">
-        <p class="lead">
-          I’m always interested in opportunities where being close to the problem matters,
-          healthcare especially, and teams that ship software people actually lean on. If
-          that’s you, or you just want to talk shop, reach out.
-        </p>
-        <div class="contact-links">
-          {contacts.map((c) => (
-            <a href={c.href} {...(c.external ? { target: '_blank', rel: 'noopener' } : {})}>
-              {c.label}<span class="cl-arrow">{c.external ? '↗' : '✉'}</span>
-            </a>
-          ))}
-          <button type="button" class="cl-secret" id="secretBtn" aria-hidden="true" tabindex="-1">
-            top secret<span class="cl-arrow">🔒</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <style>
-    /* Benchmark slider tabs (01 biometry / 02 injection) pinned at the top of the frame */
-    .bench-tabs {
-      position: absolute; top: calc(var(--bar-h) + 7px); left: 50%; transform: translateX(-50%);
-      z-index: 8; display: flex; align-items: center; gap: 8px;
-    }
-    .bench-tab {
-      font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
-      color: var(--ink-faint); background: rgba(14,17,22,.6); border: 1px solid var(--line);
-      padding: 7px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap;
-      display: inline-flex; align-items: center; gap: 7px;
-      transition: color .25s, border-color .25s, background .25s;
-      -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-    }
-    .bench-tab b { color: var(--ink-faint); font-weight: 600; transition: color .25s; }
-    .bench-tab .bt-arr { opacity: .5; }
-    .bench-tab:hover { color: var(--ink-dim); border-color: var(--ink-faint); }
-    .bench-tab.on { color: var(--ink); border-color: var(--green); background: rgba(14,17,22,.85); }
-    .bench-tab.on b { color: var(--green); }
-    @media (max-width: 760px) { .bench-tabs { display: none; } }
-
-    .contact-links { display: flex; flex-wrap: wrap; gap: 12px; }
-    .contact-links a {
-      display: inline-flex; align-items: center; gap: 9px;
-      padding: 12px 18px; border-radius: 999px;
-      border: 1px solid var(--line); background: var(--surface);
-      color: var(--ink); font-family: var(--mono); font-size: 14px;
-      transition: border-color .2s, background .2s, color .2s;
-    }
-    .contact-links a:hover { text-decoration: none; border-color: var(--green); color: #fff; background: var(--surface-2); }
-    .cl-arrow { color: var(--ink-faint); font-size: 12px; }
-    .contact-links a:hover .cl-arrow { color: var(--green); }
-
-    /* the un-clickable joke: looks like a normal button so people reach for it,
-       but it dodges the cursor and never lets you press it */
-    .cl-secret {
-      display: inline-flex; align-items: center; gap: 9px;
-      padding: 12px 18px; border-radius: 999px;
-      border: 1px solid var(--line); background: var(--surface);
-      color: var(--ink); font-family: var(--mono); font-size: 14px;
-      cursor: pointer; position: relative; z-index: 6;
-      transition: transform .15s ease-out;
-      will-change: transform;
-    }
-  </style>
-
-  <script is:inline>
-    (function () {
-      const b = document.getElementById('secretBtn');
-      if (!b) return;
-      if (!matchMedia('(pointer:fine)').matches) { b.remove(); return; } // touch: just drop it
-      const clamp = (v, m) => Math.max(-m, Math.min(m, v));
-      addEventListener('pointermove', (e) => {
-        const r = b.getBoundingClientRect();
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        const dx = cx - e.clientX, dy = cy - e.clientY;
-        const dist = Math.hypot(dx, dy) || 1;
-        const R = 140;
-        if (dist < R) {
-          const push = R - dist;
-          b.style.transform =
-            `translate(${clamp(dx / dist * push, 150).toFixed(0)}px, ${clamp(dy / dist * push, 110).toFixed(0)}px)`;
-        } else {
-          b.style.transform = 'translate(0,0)';
-        }
-      }, { passive: true });
-      b.addEventListener('click', (e) => e.preventDefault());          // never clickable
-    })();
-  </script>
-
-  <script is:inline>
-    /* Benchmark slider: scroll through the pinned .bench-track drives a horizontal slide
-       between the two race panels. Holds on each, slides between. Each animation auto-runs
-       off its own IntersectionObserver as its panel slides into view. */
-    (function () {
-      const track = document.querySelector('[data-bench]');
-      const rail = document.querySelector('[data-rail]');
-      if (!track || !rail) return;
-      const tabs = [...document.querySelectorAll('.bench-tab')];
-      const panels = rail.querySelectorAll('.bench-panel').length;
-      const tabsEl = document.querySelector('.bench-tabs');
-      const small = matchMedia('(max-width: 760px)');
-      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-      const smooth = (t) => t * t * (3 - 2 * t);
-      const A = 0.42, B = 0.62;   // slide happens between these fractions of the lock
-      let ticking = false;
-
-      // single panel: nothing to slide to; just a pinned animation (hide the lone tab)
-      if (panels < 2) { rail.style.transform = 'none'; if (tabsEl) tabsEl.style.display = 'none'; return; }
-
-      function update() {
-        ticking = false;
-        if (small.matches) { rail.style.transform = 'none'; return; }
-        const total = track.offsetHeight - window.innerHeight;
-        const p = clamp(-track.getBoundingClientRect().top / total, 0, 1);
-        const s = p < A ? 0 : p > B ? 1 : smooth((p - A) / (B - A));
-        rail.style.transform = `translateX(${(-s * 100).toFixed(3)}vw)`;
-        const active = s < 0.5 ? 0 : 1;
-        tabs.forEach((t, i) => t.classList.toggle('on', i === active));
-      }
-      addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
-      addEventListener('resize', update, { passive: true });
-
-      // click a tab -> scroll to that slide's hold zone
-      tabs.forEach((t) => t.addEventListener('click', () => {
-        const total = track.offsetHeight - window.innerHeight;
-        const top = track.getBoundingClientRect().top + window.scrollY;
-        const target = t.dataset.slide === '1' ? top + total * 0.84 : top + total * 0.12;
-        scrollTo({ top: target, behavior: 'smooth' });
-      }));
-      update();
-    })();
-  </script>
+  <Changed />
+  <HowIWork />
+  <BeforeThis />
+  <Questions />
+  <Contact />
 </Base>

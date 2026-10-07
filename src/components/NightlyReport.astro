@@ -1,0 +1,59 @@
+---
+// The nightly flow report, as a document. Illustrative numbers in the shape of
+// the real thing: waits by hour, where the day slowed, what to try tomorrow.
+// Bars draw in once when scrolled into view (CSS only).
+const hours = ['8', '9', '10', '11', '12', '1', '2', '3', '4'];
+const waits = [6, 9, 14, 18, 15, 11, 29, 38, 22];     // minutes waiting for the doctor, average per hour
+const W = 560, H = 190, padL = 34, padB = 26, padT = 24;
+const max = 40;
+const bw = (W - padL - 10) / waits.length;
+const peak = waits.indexOf(Math.max(...waits));
+---
+<div class="rp" data-report aria-label="Nightly flow report, illustrative">
+  <div class="rp-head">
+    <b>NIGHTLY FLOW REPORT</b>
+    <span>Tuesday 6 October · written 23:05 · from 212 status changes logged today</span>
+  </div>
+
+  <div class="rp-chart rv">
+    <h4>Minutes waiting for the doctor, by hour</h4>
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Bar chart of average minutes waiting for the doctor per hour; the peak is 38 minutes in the 2 pm hour">
+      {[0, 10, 20, 30, 40].map((g) => {
+        const y = padT + (H - padT - padB) * (1 - g / max);
+        return (<g><line x1={padL} x2={W - 6} y1={y} y2={y} stroke="#e2dfd7" stroke-width="1" /><text x={padL - 8} y={y + 4} text-anchor="end">{g}</text></g>);
+      })}
+      {waits.map((v, i) => {
+        const h = (H - padT - padB) * (v / max);
+        const x = padL + i * bw + bw * 0.18;
+        const y = H - padB - h;
+        return (<g>
+          <rect class={`bar ${i === peak ? 'peak' : ''}`} x={x} y={y} width={bw * 0.64} height={h} rx="3" style={`transform-origin: ${x + bw * 0.32}px ${H - padB}px`} />
+          <text x={x + bw * 0.32} y={H - 8} text-anchor="middle">{hours[i]}{i < 5 ? 'a' : 'p'}</text>
+          {i === peak && <text class="callout" x={x + bw * 0.32} y={y - 8} text-anchor="middle">peak 2:40 pm · 38 min</text>}
+        </g>);
+      })}
+    </svg>
+  </div>
+
+  <h4>Where the day slowed</h4>
+  <ul>
+    <li><span><b>2:10 to 3:20 pm:</b> eleven patients waiting for Dr. Rao at once, after three injection visits ran long.</span></li>
+    <li><span><b>Imaging room 2</b> sat empty from 11:10 to 11:40 while four patients were ready for a scan.</span></li>
+    <li><span><b>Longest single wait:</b> 52 minutes, a fields-first patient who was dilated before the test.</span></li>
+  </ul>
+
+  <h4>Try tomorrow</h4>
+  <ul class="rp-try">
+    <li><span>Pull two of Dr. Rao's 2 pm imaging patients forward to 1:20; the rooms are free then.</span></li>
+    <li><span>Run fields before drops for glaucoma visits (the board can flag these automatically).</span></li>
+  </ul>
+
+  <div class="rp-foot">Nobody typed any of this. Every status change on the boards is logged with a time, and the report is written from the log.</div>
+</div>
+
+<style is:global>
+  .rp-chart .bar { transform: scaleY(0); transition: transform .7s cubic-bezier(.2,.7,.2,1); }
+  .rp-chart.in .bar { transform: scaleY(1); }
+  .rp-chart .bar:nth-child(1) { transition-delay: .05s; }
+  @media (prefers-reduced-motion: reduce) { .rp-chart .bar { transform: none; transition: none; } }
+</style>

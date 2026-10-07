@@ -1,0 +1,33 @@
+---
+// A visible, numbered index right under the hero. Older and less technical
+// visitors should never have to discover that the page continues.
+const parts = [
+  { id: 'checkin', label: 'Check-in from the health card' },
+  { id: 'boards',  label: 'Live boards for every role' },
+  { id: 'devices', label: 'Device results into the chart' },
+  { id: 'doctor',  label: 'One click for the doctor' },
+  { id: 'staff',   label: 'Staff schedule and time clock' },
+  { id: 'map',     label: 'The clinic map (playable)' },
+  { id: 'nightly', label: 'The nightly report' },
+];
+const more = [
+  { id: 'changed',   label: 'What changed, with numbers' },
+  { id: 'how',       label: 'How I work' },
+  { id: 'questions', label: 'Questions' },
+  { id: 'contact',   label: 'Contact' },
+];
+---
+<nav class="toc" aria-label="on this page">
+  <div class="wrap">
+    <div class="toc-in rv">
+      <div class="toc-head">
+        <b>On this page</b>
+        <span>One clinic day, in seven parts. Then the numbers and how to start.</span>
+      </div>
+      <ol class="toc-list">
+        {parts.map((p) => <li><a href={`#${p.id}`}>{p.label}</a></li>)}
+        {more.map((m) => <li class="more"><a href={`#${m.id}`}>{m.label}</a></li>)}
+      </ol>
+    </div>
+  </div>
+</nav>
