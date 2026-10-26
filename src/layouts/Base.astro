@@ -132,7 +132,7 @@ const nav = [
             sc = Math.max(1, innerWidth / 1440); tileH = 3000 * sc;
             const tx = (innerWidth - 1440 * sc) / 2;
             ltp.setAttribute('patternTransform', 'translate(' + tx.toFixed(1) + ' 0) scale(' + sc.toFixed(4) + ')');
-            lt.style.height = (innerHeight + tileH) + 'px'; lt.style.top = (-tileH) + 'px';
+            lt.style.height = (innerHeight + tileH) + 'px';
             drift();
           };
           const drift = () => { t2 = false; const y = reduceLt ? 0 : -((scrollY * 0.35) % tileH); lt.style.transform = 'translateY(' + y.toFixed(1) + 'px)'; };
@@ -170,7 +170,7 @@ const nav = [
       /* leaf trail (Shahmeer's design): fixed layer behind everything; the inline svg is one tile
          taller than the viewport and slides up as you scroll. Hidden under 900px. */
       .leaf-trail { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-      .leaf-trail .lt { position: absolute; left: 0; top: -3000px; width: 100%; height: calc(100vh + 3000px); max-width: none; display: block; will-change: transform; }
+      .leaf-trail .lt { position: absolute; left: 0; top: 0; width: 100%; height: calc(100vh + 3000px); max-width: none; display: block; will-change: transform; }
       @media (max-width: 900px) { .leaf-trail { display: none; } }
     </style>
   </body>
