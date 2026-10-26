@@ -8,6 +8,12 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '../styles/global.css';
 import '../styles/visuals.css';
+// Shahmeer's leaf-trail tile (public/leaf-trail.svg) inlined at build time: shapes -> <defs>,
+// layout -> a 1440x3000 <pattern>. Inline on purpose: CSS background images did not render for him.
+import leafRaw from '../../public/leaf-trail.svg?raw';
+const leafInner = leafRaw.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '').replace(/<!--[\s\S]*?-->/g, '');
+const leafDefs = (leafInner.match(/<defs>([\s\S]*?)<\/defs>/) || ['', ''])[1];
+const leafBody = leafInner.replace(/<defs>[\s\S]*?<\/defs>/, '');
 
 const {
   title = 'Shahmeer Shahid · Software that makes your workflow efficient',
@@ -57,7 +63,17 @@ const nav = [
     <!-- leaf trail: Shahmeer's margin art (public/leaf-trail.svg, one 1440x3000 tile that runs down
          the left margin, crosses behind the content, runs down the right, and crosses back). Fixed
          layer drifting at 0.35x scroll speed; hidden under 900px. -->
-    <div class="leaf-trail" aria-hidden="true"></div>
+    <div class="leaf-trail" aria-hidden="true">
+      <svg class="lt" data-lt>
+        <defs>
+          <Fragment set:html={leafDefs} />
+          <pattern id="lt-tile" width="1440" height="3000" patternUnits="userSpaceOnUse" data-lt-pattern>
+            <Fragment set:html={leafBody} />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#lt-tile)" />
+      </svg>
+    </div>
 
     <main id="main">
       <slot />
@@ -106,13 +122,23 @@ const nav = [
         addEventListener('resize', update, { passive: true });
         update();
 
-        // leaf trail drifts at 0.35x scroll speed (slower than the content)
-        const trail = document.querySelector('.leaf-trail');
-        if (trail && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          let t2 = false;
-          const drift = () => { t2 = false; trail.style.backgroundPositionY = (-scrollY * 0.35).toFixed(1) + 'px'; };
+        // leaf trail: centred at native size up to 1440px, scaled to the viewport above; drifts at
+        // 0.35x scroll speed and loops every tile. Transform only, so it stays cheap.
+        const lt = document.querySelector('[data-lt]'), ltp = document.querySelector('[data-lt-pattern]');
+        if (lt && ltp) {
+          const reduceLt = matchMedia('(prefers-reduced-motion: reduce)').matches;
+          let sc = 1, tileH = 3000, t2 = false;
+          const size = () => {
+            sc = Math.max(1, innerWidth / 1440); tileH = 3000 * sc;
+            const tx = (innerWidth - 1440 * sc) / 2;
+            ltp.setAttribute('patternTransform', 'translate(' + tx.toFixed(1) + ' 0) scale(' + sc.toFixed(4) + ')');
+            lt.style.height = (innerHeight + tileH) + 'px'; lt.style.top = (-tileH) + 'px';
+            drift();
+          };
+          const drift = () => { t2 = false; const y = reduceLt ? 0 : -((scrollY * 0.35) % tileH); lt.style.transform = 'translateY(' + y.toFixed(1) + 'px)'; };
           addEventListener('scroll', () => { if (!t2) { t2 = true; requestAnimationFrame(drift); } }, { passive: true });
-          drift();
+          addEventListener('resize', size, { passive: true });
+          size();
         }
       })();
     </script>
@@ -141,13 +167,10 @@ const nav = [
       .topbar-progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
       main { position: relative; z-index: 1; }
       footer { position: relative; z-index: 1; }
-      /* leaf trail (Shahmeer's design): fixed layer behind everything, tile centred at native size,
-         scaled to the viewport above 1440px so the bends stay in the margins, hidden under 900px. */
-      .leaf-trail {
-        position: fixed; inset: 0; z-index: 0; pointer-events: none;
-        background: url("/leaf-trail.svg") center top / 1440px 3000px repeat-y;
-      }
-      @media (min-width: 1441px) { .leaf-trail { background-size: 100% auto; } }
+      /* leaf trail (Shahmeer's design): fixed layer behind everything; the inline svg is one tile
+         taller than the viewport and slides up as you scroll. Hidden under 900px. */
+      .leaf-trail { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+      .leaf-trail .lt { position: absolute; left: 0; top: -3000px; width: 100%; height: calc(100vh + 3000px); max-width: none; display: block; will-change: transform; }
       @media (max-width: 900px) { .leaf-trail { display: none; } }
     </style>
   </body>
