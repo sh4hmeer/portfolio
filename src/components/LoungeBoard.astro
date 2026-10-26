@@ -78,13 +78,13 @@
       moves.push(() => bump(i, 'here', +1));
       if (d.here > 0) moves.push(() => { bump(i, 'here', -1); bump(i, Math.random() < 0.5 ? 'hvf' : 'oct', +1); });
       if (d.hvf > 0) moves.push(() => { bump(i, 'hvf', -1); bump(i, 'oct', +1); });
-      if (d.oct > 0) moves.push(() => {
+      if (d.oct > 0 && waiting.length < 6) moves.push(() => {
         bump(i, 'oct', -1); bump(i, 'wait', +1);
         const w = { name: nextName(), reason: pick(REASONS), doc: i, since: 0 };
         waiting.push(w); renderRows();
         const el = rowsEl.querySelector(`[data-id="${w.name}"]`); if (el) el.classList.add('new');
       });
-      if (d.wait > 0 && waiting.some((w) => w.doc === i)) moves.push(() => {
+      if (d.wait > 0 && waiting.length > 2 && waiting.some((w) => w.doc === i)) moves.push(() => {
         const mine = waiting.filter((w) => w.doc === i).sort((a, b) => b.since - a.since)[0];
         const el = rowsEl.querySelector(`[data-id="${mine.name}"]`);
         if (el) el.classList.add('out');

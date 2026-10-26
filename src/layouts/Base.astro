@@ -70,8 +70,14 @@ const nav = [
           <pattern id="lt-tile" width="1440" height="3000" patternUnits="userSpaceOnUse" data-lt-pattern>
             <Fragment set:html={leafBody} />
           </pattern>
+          <linearGradient id="lt-dim" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100%" y2="0" data-lt-dim>
+            <stop offset="0" stop-color="#fff"/><stop offset="0.12" stop-color="#fff"/>
+            <stop offset="0.24" stop-color="#555"/><stop offset="0.76" stop-color="#555"/>
+            <stop offset="0.88" stop-color="#fff"/><stop offset="1" stop-color="#fff"/>
+          </linearGradient>
+          <mask id="lt-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%"><rect width="100%" height="100%" fill="url(#lt-dim)"/></mask>
         </defs>
-        <rect width="100%" height="100%" fill="url(#lt-tile)" />
+        <rect width="100%" height="100%" fill="url(#lt-tile)" mask="url(#lt-mask)" />
       </svg>
     </div>
 
@@ -132,6 +138,14 @@ const nav = [
             sc = Math.max(1, innerWidth / 1440); tileH = 3000 * sc;
             const tx = (innerWidth - 1440 * sc) / 2;
             ltp.setAttribute('patternTransform', 'translate(' + tx.toFixed(1) + ' 0) scale(' + sc.toFixed(4) + ')');
+            // dim the leaves behind the content column (1120px centred) to about a third; full strength in the margins
+            const dim = document.querySelector('[data-lt-dim]');
+            if (dim) {
+              const L = Math.max(0, (innerWidth - 1120) / 2 / innerWidth), R = 1 - L;
+              const st = dim.querySelectorAll('stop');
+              st[1].setAttribute('offset', Math.max(0, L - 0.05).toFixed(3)); st[2].setAttribute('offset', Math.min(0.5, L + 0.05).toFixed(3));
+              st[3].setAttribute('offset', Math.max(0.5, R - 0.05).toFixed(3)); st[4].setAttribute('offset', Math.min(1, R + 0.05).toFixed(3));
+            }
             lt.style.height = (innerHeight + tileH) + 'px';
             drift();
           };

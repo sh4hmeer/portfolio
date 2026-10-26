@@ -52,7 +52,9 @@ npm run preview    # serves dist
   translated by 0.35x scroll, modulo one tile, so it loops seamlessly. Hidden under 900px, static
   under reduced motion. `.section.tint` is 60% white so the trail shows through. To change the
   look, replace `public/leaf-trail.svg` (re-export from his design) keeping the two colours.
-- **Arrows sit a little to the right of the numeral** (`padding-left: 48px` / `56%`), by request.
+- **Arrows sit a little to the right of the numeral** (`padding-left: 48px` / `56%`), by request. The
+  arrowheads are symmetric chevrons placed on the end of each line (recomputed from the line's end
+  tangent); if a line shape changes, recompute the head.
 - **Squiggle arrows use `pathLength="300"`** on both shapes so the draw-in dash covers the whole
   path. Without it the longer (even-part) shape was cut off.
 - **No GitHub link** (he rarely updates it). Links read "Email" and "LinkedIn".
@@ -67,6 +69,15 @@ npm run preview    # serves dist
   `.hero-screen`, nested one on `.rc-lane`), not the viewport, because the same visual sits in
   columns of very different widths. Verified at 22 widths from 320 to 2560 px with the overflow
   audit (see below).
+- **Nothing on the page may change height while it animates.** Every state an animation moves
+  through must occupy the same space: the kiosk screens are all laid out in the same grid cell
+  (visibility toggles, not display), the device race keeps its result strip in the flow (hidden
+  until the end) and its value fields at a fixed height, the lounge list is capped at four rows with
+  a min-height, the doctor's windows are absolutely positioned. Check with a Playwright loop that
+  records `document.documentElement.scrollHeight` while each part runs: it must never change.
+- **Leaf trail fades behind the content column:** an SVG mask with a horizontal gradient whose stops
+  are placed on resize at the content edges (full strength in the margins, about a third behind the
+  1120px column) so grey body text stays readable.
 - **No em or en dashes anywhere** (standing rule). `grep -c "—\|–" dist/index.html` must be 0.
 - Canadian spelling and vocabulary: EMR (not EHR), health card, front desk, exam room, scan.
 
