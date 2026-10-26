@@ -75,7 +75,7 @@ strong, b { font-weight: 600; }
 .wrap { max-width: var(--maxw); margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); min-width: 0; }
 .section { padding: 64px 0; scroll-margin-top: calc(var(--bar-h) + 12px); }
 @media (min-width: 900px) { .section { padding: 84px 0; } }
-.section.tint { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.section.tint { background: rgba(255,255,255,.6); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .section-head { margin-bottom: 36px; }
 .section-head h2 { margin-bottom: 14px; }
 
