@@ -43,11 +43,15 @@ npm run preview    # serves dist
   arrow shape so two neighbouring arrows never look copied.
 - **Margin art is Shahmeer's own design** (Claude Design export, `Downloads/leaf-trail`): one
   1440x3000 leaf tile at `public/leaf-trail.svg`, leaves recoloured to the site's warm grey
-  (`#dcd8cc`) and the veins to the page cream (`#f7f6f2`). Used as the parallax option from his
-  README: a fixed `.leaf-trail` layer in `Base.astro`, `background-position-y` driven at 0.35x
-  scroll, centred at native size up to 1440px, `background-size: 100% auto` above that, hidden
-  under 900px, static under reduced motion. `.section.tint` is 60% white so the trail shows through.
-  To change the look, edit the SVG (or re-export from his design) and keep the two colours.
+  (`#dcd8cc`) and the veins to the page cream (`#f7f6f2`). INLINED, not a CSS background: CSS background
+  images (data URI and file URL alike) did not render on Shahmeer's machine, inline SVG does. So
+  `Base.astro` imports the tile with `?raw` at build time, puts its leaf shapes in `<defs>` and its
+  layout in a 1440x3000 `<pattern>`, and fills a tall inline `<svg>` (viewport + one tile, anchored
+  at the viewport top inside a fixed layer) with it. JS: on resize the pattern is centred at native
+  size up to 1440px and scaled to the viewport above (`patternTransform`); on scroll the svg is
+  translated by 0.35x scroll, modulo one tile, so it loops seamlessly. Hidden under 900px, static
+  under reduced motion. `.section.tint` is 60% white so the trail shows through. To change the
+  look, replace `public/leaf-trail.svg` (re-export from his design) keeping the two colours.
 - **Arrows sit a little to the right of the numeral** (`padding-left: 48px` / `56%`), by request.
 - **Squiggle arrows use `pathLength="300"`** on both shapes so the draw-in dash covers the whole
   path. Without it the longer (even-part) shape was cut off.
