@@ -9,7 +9,7 @@ import DoctorFlow from '../components/DoctorFlow.astro';
 import FloorClock from '../components/FloorClock.astro';
 import FloorMap from '../components/FloorMap.astro';
 import NightlyReport from '../components/NightlyReport.astro';
-import Changed from '../components/Changed.astro';
+import Numbers from '../components/Numbers.astro';
 import HowIWork from '../components/HowIWork.astro';
 import Questions from '../components/Questions.astro';
 import Contact from '../components/Contact.astro';
@@ -17,22 +17,25 @@ import Contact from '../components/Contact.astro';
 <Base>
   <Hero />
 
-  <!-- One clinic day in seven parts. Each part: one bold claim with a number, one grey line, one screen. -->
+  <!-- One clinic day in seven parts. Each part: one bold claim with a number, one grey line, one screen.
+       nextFlip tells the squiggle which side the next part's numeral is on. -->
   <div id="day" style="scroll-margin-top: var(--bar-h)">
 
-    <DayStop id="checkin" n={1} time="Early morning · front desk">
+    <DayStop id="checkin" n={1} time="Front desk" nextFlip={false}>
       <Fragment slot="claim">
-        A patient walks in and checks in at a kiosk. They drop in their health card, and the EMR checks them
-        in on its own. At the clinic's 400 patients a day, that frees the staff 4 hours every day.
+        A patient walks in and checks in at a kiosk. They drop in their card, and the EMR checks them in on
+        its own. Every check-in hands the front desk 35 seconds back. At this clinic's 380 patients a day,
+        that is 3 hours and 40 minutes, every day.
       </Fragment>
       <Fragment slot="detail">
-        Any card, inserted any direction. If the card is new, it is verified and the patient's file is
-        updated automatically. No typing, no line at the desk. Foolproof.
+        It reads the person's details off whatever card they drop in, inserted any direction. A health card
+        is verified on the spot, and if it is new, the file is updated automatically. No typing, no line at
+        the desk.
       </Fragment>
       <Fragment slot="visual"><Kiosk /></Fragment>
     </DayStop>
 
-    <DayStop id="boards" n={2} time="Mid-morning · every screen in the clinic" wide>
+    <DayStop id="boards" n={2} time="Every screen in the clinic" wide nextFlip={false}>
       <Fragment slot="claim">
         Every screen in the clinic shows who is next and how long they have waited. Doctors, techs and the
         front desk all see the same picture, so nobody walks the hall to ask, and nobody is left waiting in a
@@ -45,23 +48,24 @@ import Contact from '../components/Contact.astro';
       <Fragment slot="visual"><LoungeBoard /></Fragment>
     </DayStop>
 
-    <DayStop id="devices" n={3} time="Late morning · imaging room">
+    <DayStop id="devices" n={3} time="Imaging room" nextFlip={true}>
       <Fragment slot="claim">
-        Test results go straight from the machine into the patient's chart. 200 times faster than typing
-        them in, with zero typos. Across the clinic's machines, that is another 2 hours a day back.
+        Test results go straight from the machine into the patient's chart: half a second instead of the two
+        minutes it takes to type them, with zero typos. Across this clinic's 11 machines, that is another
+        1 hour and 50 minutes a day.
       </Fragment>
       <Fragment slot="detail">
-        Every machine in the clinic feeds the chart the same way. The tech finishes the test and walks the
-        patient to the next room. The numbers are already in the chart, exactly as measured.
+        Every machine feeds the chart the same way. The tech finishes the test and walks the patient to the
+        next room. The numbers are already in the chart, exactly as measured.
       </Fragment>
       <Fragment slot="visual"><DeviceRace /></Fragment>
     </DayStop>
 
-    <DayStop id="doctor" n={4} time="Late morning · exam room" flip>
+    <DayStop id="doctor" n={4} time="Exam room" flip nextFlip={false}>
       <Fragment slot="claim">
         The doctor taps the patient's name once, and the chart, the scans and the photos open across two
-        monitors. Half a minute saved on every patient. Across 400 patients, that is over 3 hours of doctor
-        time a day.
+        monitors. 27 seconds back on every patient. Across 380 patients, that is 2 hours and 50 minutes of
+        doctor time a day.
       </Fragment>
       <Fragment slot="detail">
         Always the right patient, and the right view for that visit: a scan review brings up the scan, a
@@ -70,10 +74,11 @@ import Contact from '../components/Contact.astro';
       <Fragment slot="visual"><DoctorFlow /></Fragment>
     </DayStop>
 
-    <DayStop id="staff" n={5} time="Midday · staff room">
+    <DayStop id="staff" n={5} time="Staff room" nextFlip={true}>
       <Fragment slot="claim">
         The staff schedule and the time clock live on one screen in the staff room. The manager runs the
-        floor from the office, and payroll that used to take an afternoon now takes no time at all.
+        floor from the office, and payroll that used to take an afternoon every two weeks now takes no time
+        at all.
       </Fragment>
       <Fragment slot="detail">
         Staff clock in and out with a personal code. The manager gets a morning and an end-of-day summary,
@@ -82,7 +87,7 @@ import Contact from '../components/Contact.astro';
       <Fragment slot="visual"><FloorClock /></Fragment>
     </DayStop>
 
-    <DayStop id="map" n={6} time="Afternoon · anywhere in the clinic" flip>
+    <DayStop id="map" n={6} time="Anywhere in the clinic" flip nextFlip={false}>
       <Fragment slot="claim">
         A live map of the clinic. Every patient is a dot moving from the front desk to the exam room,
         colour-coded by stage. Anyone on staff sees the whole clinic in one glance.
@@ -93,7 +98,7 @@ import Contact from '../components/Contact.astro';
       <Fragment slot="visual"><FloorMap /></Fragment>
     </DayStop>
 
-    <DayStop id="nightly" n={7} time="After close" last>
+    <DayStop id="nightly" n={7} time="The manager's inbox" last>
       <Fragment slot="claim">
         Every night the day is reviewed, and a short note lands in the manager's inbox: where the day slowed
         down, and what to change tomorrow. The clinic gets faster every week.
@@ -106,7 +111,7 @@ import Contact from '../components/Contact.astro';
     </DayStop>
   </div>
 
-  <Changed />
+  <Numbers />
   <HowIWork />
   <Questions />
   <Contact />

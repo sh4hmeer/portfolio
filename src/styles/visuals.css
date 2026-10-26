@@ -294,26 +294,23 @@
 .rp-try li::before { content: "→"; }
 .rp-foot { border-top: 1px solid var(--line); padding-top: 12px; font-size: 14px; color: var(--ink-faint); }
 
-/* ── Before / after ───────────────────────────────────────────────────────── */
-.ba { display: grid; gap: 10px; }
-.ba-row { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-@media (min-width: 720px) { .ba-row { grid-template-columns: 1fr 1fr; gap: 0; } }
-.ba-cell { padding: 16px 18px; font-size: 17px; line-height: 1.45; display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
-.ba-cell .tag { flex: none; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; padding: 3px 7px; border-radius: 5px; margin-top: 3px; }
-.ba-cell.before { color: var(--ink-dim); }
-.ba-cell.before .tag { background: var(--bg-2); color: var(--ink-faint); }
-.ba-cell.after { background: var(--accent-soft); color: var(--ink); }
-.ba-cell.after .tag { background: var(--accent); color: #fff; }
-@media (min-width: 720px) { .ba-cell.before { border-right: 1px solid var(--line); } }
-
-/* ── Numbers ──────────────────────────────────────────────────────────────── */
-.nm { display: grid; gap: 14px; margin-top: 40px; }
-@media (min-width: 900px) { .nm { grid-template-columns: 1fr 1fr; } }
-.nm-item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; min-width: 0; }
-.nm-item .big { font-family: var(--display); font-size: clamp(28px, 3.2vw, 38px); letter-spacing: -.02em; line-height: 1; color: var(--accent); margin-bottom: 8px; }
-.nm-item .big small { font-size: .5em; color: var(--ink-faint); letter-spacing: 0; font-family: var(--sans); font-weight: 500; }
-.nm-item p { margin: 0; font-size: 17px; }
-.nm-item .how { margin-top: 10px; font-size: 14.5px; color: var(--ink-faint); }
+/* ── Your numbers (calculator) ────────────────────────────────────────────── */
+.yn { display: grid; gap: 22px; }
+@media (min-width: 900px) { .yn { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: start; } }
+.yn-input { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; }
+.yn-input label { display: block; font-weight: 600; font-size: 17px; margin-bottom: 10px; }
+.yn-input input { font: inherit; font-family: var(--display); font-weight: 700; font-size: 34px; color: var(--ink); background: var(--bg); border: 2px solid var(--line-2); border-radius: 12px; padding: 8px 16px; width: 100%; min-height: 64px; }
+.yn-input input:focus { border-color: var(--accent); outline: 3px solid var(--accent-soft); }
+.yn-input .unit { margin-top: 8px; font-size: 15px; color: var(--ink-faint); }
+.yn-out { display: grid; gap: 10px; }
+.yn-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: baseline; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
+.yn-row b { font-size: 17px; }
+.yn-row small { display: block; color: var(--ink-faint); font-size: 14.5px; }
+.yn-row .v { font-family: var(--display); font-weight: 700; font-size: 24px; color: var(--accent); white-space: nowrap; }
+.yn-total { background: var(--accent); color: #fff; border: 0; }
+.yn-total b, .yn-total small { color: #fff; }
+.yn-total .v { color: #fff; font-size: 30px; }
+.yn-note { margin: 8px 0 0; font-size: 14.5px; color: var(--ink-faint); }
 
 /* ── How I work ───────────────────────────────────────────────────────────── */
 .hw { display: grid; gap: 36px; }

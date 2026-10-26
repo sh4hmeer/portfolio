@@ -37,8 +37,12 @@ npm run preview    # serves dist
   nothing the visitor has to press to make a demo run.** Every visual moves slowly and
   continuously on its own, pauses off-screen and on a hidden tab, and goes static under
   `prefers-reduced-motion`.
-- **Structure is visible:** a big numeral and a time of day on each part, and a hand-drawn
-  squiggle arrow between parts that leans toward where the next part's text starts. No table of
+- **Structure is visible:** a big numeral and a LOCATION (not a time of day; the tools loop all
+  day) on each part, and a hand-drawn squiggle arrow between parts that lands on the next part's
+  numeral (`nextFlip` prop on `DayStop` says which side that is).
+- **Numbers read as measured, not made up:** per-person figure first (so a small clinic sees itself
+  in it), then the clinic's own uneven total (380 patients a day, 3 h 40 min, 11 machines, 1 h 50
+  min, 27 s, 2 h 50 min). Never round, even numbers like 400 / 4 hours / 200x / 2 hours. No table of
   contents, no captions under the screens, no explanatory grey notes.
 - **Visuals size themselves by their own container** (`@container` queries on `.stop-visual` /
   `.hero-screen`, nested one on `.rc-lane`), not the viewport, because the same visual sits in
@@ -52,9 +56,13 @@ npm run preview    # serves dist
 `DayStop`s, each = numeral + time of day, ONE bold claim with a number, ONE grey line, one screen:
 `#checkin` Kiosk · `#boards` LoungeBoard (wide, full-width under the text) · `#devices` DeviceRace ·
 `#doctor` DoctorFlow (flip) · `#staff` FloorClock · `#map` FloorMap (flip) · `#nightly` NightlyReport
-→ `Changed` (#changed) → `HowIWork` (#how) → `Questions` (#questions, "Good to know", 4 direct
-answers) → `Contact` (#contact; two mailto buttons + a 3-field form, name / industry / what slows
-your day down, that composes a mailto; no backend, nothing stored).
+→ `Numbers` (#numbers, "Your numbers": the visitor types people-per-day and the per-person savings
+measured at the clinic, 35 s check-in / 115 s per result / 27 s doctor, add up to hours a week; this
+replaced the before/after rows and metric cards, which repeated the parts) → `HowIWork` (#how, broad
+enough for any business, no "Right now" card: it revealed too much and could put off a clinic on a
+different EMR) → `Questions` (#questions, "Good to know", 4 direct answers) → `Contact` (#contact;
+two mailto buttons + a 3-field form, name / industry / what slows your day down, that composes a
+mailto; links read "Email", never the address; no backend, nothing stored).
 Top bar (`Base.astro`): brand, five links (hidden under 1000 px), "Get in touch" button, 2 px
 page-progress line, scroll spy.
 
@@ -70,7 +78,7 @@ page-progress line, scroll spy.
 - Visuals (self-contained, inline script, slow continuous loops):
   `Kiosk`, `LoungeBoard`, `DeviceRace`, `DoctorFlow`, `FloorClock`,
   `FloorMap` (SVG map with moving dots), `NightlyReport` (SVG bars + cycling highlight).
-- `Changed`, `HowIWork`, `Questions`, `Contact` – copy lives in each component.
+- `Numbers`, `HowIWork`, `Questions`, `Contact` – copy lives in each component.
 - Privacy wording: "built to PHIPA and HIPAA standards" (PHIPA is Ontario's health privacy law).
 
 ## Checking a change

@@ -4,8 +4,10 @@
 // hand-drawn squiggle arrow leads to the next part, leaning toward the side
 // where the next part's text begins. `wide` puts the screen full-width under the
 // text (used for the big lounge screen).
-const { id, n, time, flip = false, wide = false, last = false } = Astro.props;
-const dir = wide ? 'to-mid' : (flip ? 'to-left' : 'to-right');
+// `nextFlip` says which side the NEXT part's text (and numeral) sits on, so the
+// arrow leans toward it: right when the next part is flipped, left otherwise.
+const { id, n, time, flip = false, wide = false, last = false, nextFlip = false } = Astro.props;
+const dir = nextFlip ? 'to-right' : 'to-left';
 ---
 <section id={id} class:list={['stop', { flip, wide }]}>
   <div class="wrap stop-grid">
