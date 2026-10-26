@@ -189,8 +189,8 @@ h3 { font-size: clamp(20px, 2.2vw, 24px); line-height: 1.25; }
 .squig.to-left svg { transform: scaleX(-1); }
 @media (min-width: 960px) {
   /* land the arrowhead on the next part's numeral: left edge, or the start of the flipped text column */
-  .squig.to-left { justify-content: flex-start; padding-left: 0; }
-  .squig.to-right { justify-content: flex-start; padding-left: 52%; }
+  .squig.to-left { justify-content: flex-start; padding-left: 48px; }
+  .squig.to-right { justify-content: flex-start; padding-left: 56%; }
 }
 @media (prefers-reduced-motion: reduce) { .squig .line, .squig .head { stroke-dashoffset: 0; transition: none; } }
 
