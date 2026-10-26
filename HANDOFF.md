@@ -41,15 +41,13 @@ npm run preview    # serves dist
   day) on each part, and a hand-drawn squiggle arrow between parts that lands on the next part's
   numeral (`nextFlip` prop on `DayStop` says which side that is). Even-numbered parts use a second
   arrow shape so two neighbouring arrows never look copied.
-- **Margin art:** two hand-made, NON-mirrored compositions (260x4600 px each) of elongated
-  droplets, thin trails and drips, all leaning down-right with real gaps between them, inlined as
-  `<svg>` in `Base.astro` (inline SVG on purpose: a CSS data-URI background did not show on
-  Shahmeer's machine). They sit just inside the content edge (`right/left: calc(50% + 500px)`),
-  fade toward the content with an SVG mask, and drift up at 0.18x scroll speed (capped at 1800 px).
-  Only from 1366 px up, hidden below that, static under reduced motion. Regenerate with a
-  different look by editing the seeds / ranges in the generator (session scratchpad `patch7.py`;
-  easy to recreate: tapered teardrop outlines along quadratic centrelines, random gaps 120 to 420 px).
-  Shahmeer's reference: Mimi Chao's portfolio gif (droplets of different lengths, loose, not rigid).
+- **Margin art is Shahmeer's own design** (Claude Design export, `Downloads/leaf-trail`): one
+  1440x3000 leaf tile at `public/leaf-trail.svg`, leaves recoloured to the site's warm grey
+  (`#dcd8cc`) and the veins to the page cream (`#f7f6f2`). Used as the parallax option from his
+  README: a fixed `.leaf-trail` layer in `Base.astro`, `background-position-y` driven at 0.35x
+  scroll, centred at native size up to 1440px, `background-size: 100% auto` above that, hidden
+  under 900px, static under reduced motion. `.section.tint` is 60% white so the trail shows through.
+  To change the look, edit the SVG (or re-export from his design) and keep the two colours.
 - **Arrows sit a little to the right of the numeral** (`padding-left: 48px` / `56%`), by request.
 - **Squiggle arrows use `pathLength="300"`** on both shapes so the draw-in dash covers the whole
   path. Without it the longer (even-part) shape was cut off.
