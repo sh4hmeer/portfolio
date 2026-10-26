@@ -54,6 +54,9 @@ const nav = [
       <span class="topbar-progress" aria-hidden="true"><i id="pageProgress"></i></span>
     </header>
 
+    <!-- margin art: light sketch lines in the empty side gutters, drifting with the scroll (desktop only) -->
+    <div class="margin-art" aria-hidden="true"><div class="ma ma-l" data-ma></div><div class="ma ma-r" data-ma></div></div>
+
     <main id="main">
       <slot />
     </main>
@@ -63,7 +66,6 @@ const nav = [
         <span><b>Shahmeer Shahid</b> · Kitchener, Ontario</span>
         <a href="mailto:shahmeer_shahid@outlook.com">Email</a>
         <a href="https://www.linkedin.com/in/shahmeer-shahid-" target="_blank" rel="noopener">LinkedIn</a>
-        <a href="https://github.com/sh4hmeer" target="_blank" rel="noopener">GitHub</a>
       </div>
     </footer>
 
@@ -101,6 +103,15 @@ const nav = [
         addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
         addEventListener('resize', update, { passive: true });
         update();
+
+        // margin art drifts up slowly as the page scrolls (tile is 900px, so it loops without a seam)
+        const art = [...document.querySelectorAll('[data-ma]')];
+        if (art.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          let t2 = false;
+          const drift = () => { t2 = false; const y = -((scrollY * 0.18) % 900); art.forEach((a) => { a.style.transform = (a.classList.contains('ma-r') ? 'scaleX(-1) ' : '') + 'translateY(' + y.toFixed(1) + 'px)'; }); };
+          addEventListener('scroll', () => { if (!t2) { t2 = true; requestAnimationFrame(drift); } }, { passive: true });
+          drift();
+        }
       })();
     </script>
 
@@ -126,7 +137,21 @@ const nav = [
       @media (min-width: 1000px) { .topnav { display: flex; } }
       .topbar-progress { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: transparent; }
       .topbar-progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
-      .foot-note { flex-basis: 100%; }
+      main { position: relative; z-index: 1; }
+      footer { position: relative; z-index: 1; }
+      .margin-art { display: none; }
+      @media (min-width: 1400px) {
+        .margin-art { display: block; }
+        .ma {
+          position: fixed; top: -900px; height: calc(100vh + 1800px); z-index: 0; pointer-events: none;
+          width: clamp(220px, calc((100vw - 1120px) / 2 + 70px), 460px);
+          background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='900' viewBox='0 0 220 900' fill='none' stroke='%23d6d2c7' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M44 0C118 140 -14 300 62 452S150 760 44 900'/%3E%3Cpath d='M152 0C96 118 214 262 134 420S72 704 152 900' stroke-dasharray='3 10'/%3E%3Cpath d='M96 180c18-22 44-8 36 18s-40 26-36-2'/%3E%3Ccircle cx='70' cy='118' r='4'/%3E%3Ccircle cx='124' cy='522' r='3'/%3E%3Ccircle cx='44' cy='760' r='5'/%3E%3Cpath d='M170 296v16M162 304h16'/%3E%3Cpath d='M24 600c14-10 30-10 44 0'/%3E%3Cpath d='M186 820c-12 10-28 10-40 0'/%3E%3Cpath d='M60 340l6 6M66 340l-6 6'/%3E%3Cpath d='M190 60c-8 12-8 24 0 36'/%3E%3C/svg%3E") repeat-y left top;
+          opacity: .9; will-change: transform;
+          -webkit-mask-image: linear-gradient(to right, #000 52%, transparent); mask-image: linear-gradient(to right, #000 52%, transparent);
+        }
+        .ma-l { left: 0; }
+        .ma-r { right: 0; transform: scaleX(-1); }
+      }
     </style>
   </body>
 </html>

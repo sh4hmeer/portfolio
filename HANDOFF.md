@@ -39,7 +39,13 @@ npm run preview    # serves dist
   `prefers-reduced-motion`.
 - **Structure is visible:** a big numeral and a LOCATION (not a time of day; the tools loop all
   day) on each part, and a hand-drawn squiggle arrow between parts that lands on the next part's
-  numeral (`nextFlip` prop on `DayStop` says which side that is).
+  numeral (`nextFlip` prop on `DayStop` says which side that is). Even-numbered parts use a second
+  arrow shape so two neighbouring arrows never look copied.
+- **Margin art:** light sketch lines (an SVG tile, data URI in `Base.astro`) in the empty side
+  gutters, fixed, drifting up at 0.18x scroll speed and fading toward the content with a mask. Only
+  from 1400 px up; hidden below that, static under reduced motion. Width tracks the gutter so it
+  always touches the content edge slightly.
+- **No GitHub link** (he rarely updates it). Links read "Email" and "LinkedIn".
 - **Numbers read as measured, not made up:** per-person figure first (so a small clinic sees itself
   in it), then the clinic's own uneven total (380 patients a day, 3 h 40 min, 11 machines, 1 h 50
   min, 27 s, 2 h 50 min). Never round, even numbers like 400 / 4 hours / 200x / 2 hours. No table of
@@ -56,9 +62,11 @@ npm run preview    # serves dist
 `DayStop`s, each = numeral + time of day, ONE bold claim with a number, ONE grey line, one screen:
 `#checkin` Kiosk · `#boards` LoungeBoard (wide, full-width under the text) · `#devices` DeviceRace ·
 `#doctor` DoctorFlow (flip) · `#staff` FloorClock · `#map` FloorMap (flip) · `#nightly` NightlyReport
-→ `Numbers` (#numbers, "Your numbers": the visitor types people-per-day and the per-person savings
-measured at the clinic, 35 s check-in / 115 s per result / 27 s doctor, add up to hours a week; this
-replaced the before/after rows and metric cards, which repeated the parts) → `HowIWork` (#how, broad
+→ `Numbers` (#numbers, "Your numbers", labelled rough math on purpose: the visitor types people-per-
+day and five lines add up to hours a week and a month: 35 s check-in, 30 s finding out who is next,
+2 min results per visit, 27 s doctor, plus a FLAT 2 h 30 min a week for schedules and payroll so a
+30-a-day clinic still sees real hours; the per-X rate sits under each green figure; this replaced the
+before/after rows and metric cards, which repeated the parts) → `HowIWork` (#how, broad
 enough for any business, no "Right now" card: it revealed too much and could put off a clinic on a
 different EMR) → `Questions` (#questions, "Good to know", 4 direct answers) → `Contact` (#contact;
 two mailto buttons + a 3-field form, name / industry / what slows your day down, that composes a

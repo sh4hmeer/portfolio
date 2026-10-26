@@ -30,20 +30,19 @@ import Contact from '../components/Contact.astro';
       <Fragment slot="detail">
         It reads the person's details off whatever card they drop in, inserted any direction. A health card
         is verified on the spot, and if it is new, the file is updated automatically. No typing, no line at
-        the desk.
+        the desk. Foolproof.
       </Fragment>
       <Fragment slot="visual"><Kiosk /></Fragment>
     </DayStop>
 
-    <DayStop id="boards" n={2} time="Every screen in the clinic" wide nextFlip={false}>
+    <DayStop id="boards" n={2} time="The TVs on the wall" wide nextFlip={false}>
       <Fragment slot="claim">
-        Every screen in the clinic shows who is next and how long they have waited. Doctors, techs and the
-        front desk all see the same picture, so nobody walks the hall to ask, and nobody is left waiting in a
-        room.
+        Every TV in the clinic shows who is next and how long they have waited. Doctors, techs and the front
+        desk all see the same picture, so nobody walks the hall to ask, and nobody is left waiting in a room.
       </Fragment>
       <Fragment slot="detail">
-        One screen per role, on the TVs the clinic already had. Move a patient along on one screen and
-        every other screen follows, with the EMR updated at the same time. Doctors can open theirs on a phone.
+        One view per role, on the TVs the clinic already had. Move a patient along on one and all the others
+        follow, with the EMR updated at the same time. Open it on any device the clinic wants.
       </Fragment>
       <Fragment slot="visual"><LoungeBoard /></Fragment>
     </DayStop>
@@ -51,8 +50,8 @@ import Contact from '../components/Contact.astro';
     <DayStop id="devices" n={3} time="Imaging room" nextFlip={true}>
       <Fragment slot="claim">
         Test results go straight from the machine into the patient's chart: half a second instead of the two
-        minutes it takes to type them, with zero typos. Across this clinic's 11 machines, that is another
-        1 hour and 50 minutes a day.
+        minutes it takes to type them, with zero typos. On just three of this clinic's machines, that is
+        another 1 hour and 50 minutes a day.
       </Fragment>
       <Fragment slot="detail">
         Every machine feeds the chart the same way. The tech finishes the test and walks the patient to the
@@ -64,8 +63,8 @@ import Contact from '../components/Contact.astro';
     <DayStop id="doctor" n={4} time="Exam room" flip nextFlip={false}>
       <Fragment slot="claim">
         The doctor taps the patient's name once, and the chart, the scans and the photos open across two
-        monitors. 27 seconds back on every patient. Across 380 patients, that is 2 hours and 50 minutes of
-        doctor time a day.
+        monitors. On average, 27 seconds back on every patient. Across 380 patients, that is 2 hours and
+        50 minutes of doctor time a day.
       </Fragment>
       <Fragment slot="detail">
         Always the right patient, and the right view for that visit: a scan review brings up the scan, a
@@ -104,8 +103,11 @@ import Contact from '../components/Contact.astro';
         down, and what to change tomorrow. The clinic gets faster every week.
       </Fragment>
       <Fragment slot="detail">
-        Every step of every visit is recorded automatically, with a time. Nobody types any of it, and the
-        staff always make the final call.
+        One system watching the whole clinic builds a far more detailed record than anyone could keep by
+        hand, and the machine-learning model trained on it gets sharper every day: where each staff member
+        performs best, which schedule brings in the most, where the bottlenecks form, and metrics you would
+        never think to ask for, found daily and handed to you. Nobody types any of it, and the staff always
+        make the final call.
       </Fragment>
       <Fragment slot="visual"><NightlyReport /></Fragment>
     </DayStop>

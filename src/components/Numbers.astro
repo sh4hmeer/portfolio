@@ -1,13 +1,16 @@
 ---
 // Your numbers: the visitor types how many people come through their door on a
-// typical day, and the per-person savings measured at the clinic add up for
-// them. Replaces the before/after rows and metric cards, which repeated the
-// parts above. Per-person figures (seconds) are the flat savings per visit.
+// typical day and the savings add up for them. Rough math on purpose. Four
+// per-person lines (the same figures used in the parts above, plus the walk
+// down the hall) and one flat line for the manager, so a small clinic still
+// sees real hours. Shown per week and per month.
 const rates = [
-  { key: 'checkin', label: 'Check-in', each: '35 s back at the front desk, per person', sec: 35 },
-  { key: 'results', label: 'Results into the chart', each: '1 min 55 s of typing gone, per result', sec: 115 },
-  { key: 'doctor',  label: "The doctor's workspace", each: '27 s back, per patient', sec: 27 },
+  { label: 'Check-in', desc: 'No line at the desk', sec: 35, each: '35 s per person' },
+  { label: 'Finding out who is next', desc: 'No walking the hall to ask', sec: 30, each: '30 s per person' },
+  { label: 'Results into the chart', desc: 'No typing from printouts', sec: 120, each: '2 min per visit' },
+  { label: "The doctor's workspace", desc: 'Everything open on one tap', sec: 27, each: '27 s per patient' },
 ];
+const flat = { label: 'Schedules and payroll', desc: 'For the manager, whatever your volume', hours: 2.5, each: '2 h 30 min a week' };
 const DEFAULT = 120;
 ---
 <section id="numbers" class="section tint">
@@ -15,7 +18,7 @@ const DEFAULT = 120;
     <div class="section-head rv">
       <p class="eyebrow"><span class="dot"></span> Your numbers</p>
       <h2>Put in your own numbers.</h2>
-      <p class="lead">Every figure above is per person through the door, measured at the clinic. Change the number and see what it adds up to for you.</p>
+      <p class="lead">Rough math, on purpose. Each line is the time one person's visit gives back, taken from the clinic. Change the number and see what it adds up to for you.</p>
     </div>
 
     <div class="yn rv" data-yn>
@@ -27,13 +30,17 @@ const DEFAULT = 120;
       <div class="yn-out">
         {rates.map((r) => (
           <div class="yn-row" data-rate={r.sec}>
-            <div><b>{r.label}</b><small>{r.each}</small></div>
-            <span class="v" data-v>0 h</span>
+            <div><b>{r.label}</b><small>{r.desc}</small></div>
+            <div class="r"><span class="v" data-v>0 h a week</span><span class="each">{r.each}</span></div>
           </div>
         ))}
+        <div class="yn-row" data-flat={flat.hours}>
+          <div><b>{flat.label}</b><small>{flat.desc}</small></div>
+          <div class="r"><span class="v">{flat.hours} h a week</span><span class="each">{flat.each}, flat</span></div>
+        </div>
         <div class="yn-row yn-total">
-          <div><b>Back every week</b><small>Five-day week, one result per person.</small></div>
-          <span class="v" data-total>0 h</span>
+          <div><b>Back every week</b><small>Five-day week</small></div>
+          <div class="r"><span class="v" data-total>0 h</span><span class="each" data-month>about 0 h a month</span></div>
         </div>
       </div>
     </div>
@@ -46,13 +53,15 @@ const DEFAULT = 120;
     if (!root) return;
     const input = root.querySelector('#yn-n');
     const rows = [...root.querySelectorAll('[data-rate]')];
-    const total = root.querySelector('[data-total]');
+    const flat = +(root.querySelector('[data-flat]').dataset.flat);
+    const total = root.querySelector('[data-total]'), month = root.querySelector('[data-month]');
     const fmt = (h) => (h >= 10 ? Math.round(h) : Math.round(h * 10) / 10) + ' h';
     function update() {
       const n = Math.max(0, Math.min(5000, parseInt(input.value, 10) || 0));
-      let sum = 0;
+      let sum = flat;
       rows.forEach((r) => { const h = n * (+r.dataset.rate) * 5 / 3600; sum += h; r.querySelector('[data-v]').textContent = fmt(h) + ' a week'; });
       total.textContent = fmt(sum);
+      month.textContent = 'about ' + Math.round(sum * 4.33) + ' h a month';
     }
     input.addEventListener('input', update);
     update();

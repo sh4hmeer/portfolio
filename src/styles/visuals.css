@@ -303,13 +303,16 @@
 .yn-input input:focus { border-color: var(--accent); outline: 3px solid var(--accent-soft); }
 .yn-input .unit { margin-top: 8px; font-size: 15px; color: var(--ink-faint); }
 .yn-out { display: grid; gap: 10px; }
-.yn-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: baseline; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
+.yn-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 13px 18px; }
 .yn-row b { font-size: 17px; }
 .yn-row small { display: block; color: var(--ink-faint); font-size: 14.5px; }
-.yn-row .v { font-family: var(--display); font-weight: 700; font-size: 24px; color: var(--accent); white-space: nowrap; }
+.yn-row .r { text-align: right; }
+.yn-row .v { display: block; font-family: var(--display); font-weight: 700; font-size: 23px; color: var(--accent); white-space: nowrap; line-height: 1.15; }
+.yn-row .each { display: block; font-family: var(--mono); font-size: 12.5px; color: var(--ink-faint); white-space: nowrap; margin-top: 2px; }
 .yn-total { background: var(--accent); color: #fff; border: 0; }
 .yn-total b, .yn-total small { color: #fff; }
 .yn-total .v { color: #fff; font-size: 30px; }
+.yn-total .each { color: rgba(255,255,255,.85); }
 .yn-note { margin: 8px 0 0; font-size: 14.5px; color: var(--ink-faint); }
 
 /* ── How I work ───────────────────────────────────────────────────────────── */
