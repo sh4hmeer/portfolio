@@ -55,7 +55,32 @@ const nav = [
     </header>
 
     <!-- margin art: light sketch lines in the empty side gutters, drifting with the scroll (desktop only) -->
-    <div class="margin-art" aria-hidden="true"><div class="ma ma-l" data-ma></div><div class="ma ma-r" data-ma></div></div>
+    <div class="margin-art" aria-hidden="true">
+      <svg class="ma ma-l" data-ma>
+        <defs>
+          <pattern id="ma-tile" width="470" height="900" patternUnits="userSpaceOnUse">
+            <g fill="none" stroke="#c9c4b7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M44 0C118 140 -14 300 62 452S150 760 44 900"/>
+              <path d="M152 0C96 118 214 262 134 420S72 704 152 900" stroke-dasharray="3 10"/>
+              <path d="M96 180c18-22 44-8 36 18s-40 26-36-2"/>
+              <circle cx="70" cy="118" r="4"/><circle cx="124" cy="522" r="3"/><circle cx="44" cy="760" r="5"/>
+              <path d="M170 296v16M162 304h16"/><path d="M24 600c14-10 30-10 44 0"/><path d="M186 820c-12 10-28 10-40 0"/>
+              <path d="M60 340l6 6M66 340l-6 6"/><path d="M190 60c-8 12-8 24 0 36"/>
+              <path d="M330 0C280 160 400 320 330 480S270 760 340 900" stroke-dasharray="2 14"/>
+              <circle cx="400" cy="250" r="4"/><circle cx="290" cy="640" r="3"/><path d="M420 560v14M413 567h14"/>
+            </g>
+          </pattern>
+          <linearGradient id="ma-fade" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0.5" stop-color="#fff"/><stop offset="1" stop-color="#000"/>
+          </linearGradient>
+          <mask id="ma-mask" maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox">
+            <rect width="1" height="1" fill="url(#ma-fade)"/>
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#ma-tile)" mask="url(#ma-mask)"/>
+      </svg>
+      <svg class="ma ma-r" data-ma><rect width="100%" height="100%" fill="url(#ma-tile)" mask="url(#ma-mask)"/></svg>
+    </div>
 
     <main id="main">
       <slot />
@@ -139,15 +164,15 @@ const nav = [
       .topbar-progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
       main { position: relative; z-index: 1; }
       footer { position: relative; z-index: 1; }
+      /* margin art: light sketch lines in the empty side gutters, drifting with the scroll, fading toward
+         the content. Only when there is side space to use (1280 px and up); never on tablets or phones. */
       .margin-art { display: none; }
-      @media (min-width: 1400px) {
+      @media (min-width: 1366px) {
         .margin-art { display: block; }
         .ma {
           position: fixed; top: -900px; height: calc(100vh + 1800px); z-index: 0; pointer-events: none;
-          width: clamp(220px, calc((100vw - 1120px) / 2 + 70px), 460px);
-          background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='900' viewBox='0 0 220 900' fill='none' stroke='%23d6d2c7' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M44 0C118 140 -14 300 62 452S150 760 44 900'/%3E%3Cpath d='M152 0C96 118 214 262 134 420S72 704 152 900' stroke-dasharray='3 10'/%3E%3Cpath d='M96 180c18-22 44-8 36 18s-40 26-36-2'/%3E%3Ccircle cx='70' cy='118' r='4'/%3E%3Ccircle cx='124' cy='522' r='3'/%3E%3Ccircle cx='44' cy='760' r='5'/%3E%3Cpath d='M170 296v16M162 304h16'/%3E%3Cpath d='M24 600c14-10 30-10 44 0'/%3E%3Cpath d='M186 820c-12 10-28 10-40 0'/%3E%3Cpath d='M60 340l6 6M66 340l-6 6'/%3E%3Cpath d='M190 60c-8 12-8 24 0 36'/%3E%3C/svg%3E") repeat-y left top;
-          opacity: .9; will-change: transform;
-          -webkit-mask-image: linear-gradient(to right, #000 52%, transparent); mask-image: linear-gradient(to right, #000 52%, transparent);
+          width: clamp(160px, calc((100vw - 1120px) / 2 + 50px), 470px); max-width: none;
+          will-change: transform;
         }
         .ma-l { left: 0; }
         .ma-r { right: 0; transform: scaleX(-1); }

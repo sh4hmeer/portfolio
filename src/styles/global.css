@@ -183,7 +183,7 @@ h3 { font-size: clamp(20px, 2.2vw, 24px); line-height: 1.25; }
 .squig { display: flex; justify-content: center; padding: 6px 0 0; }
 .squig svg { width: 120px; height: auto; overflow: visible; }
 .squig .line, .squig .head { stroke: var(--accent); stroke-width: 2.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.squig .line { stroke-dasharray: 260; stroke-dashoffset: 260; transition: stroke-dashoffset 1.8s ease .15s; }
+.squig .line { stroke-dasharray: 300; stroke-dashoffset: 300; transition: stroke-dashoffset 1.8s ease .15s; }
 .squig .head { stroke-dasharray: 60; stroke-dashoffset: 60; transition: stroke-dashoffset .5s ease 1.75s; }
 .squig.in .line, .squig.in .head { stroke-dashoffset: 0; }
 .squig.to-left svg { transform: scaleX(-1); }

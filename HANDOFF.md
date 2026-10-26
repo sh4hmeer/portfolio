@@ -41,14 +41,20 @@ npm run preview    # serves dist
   day) on each part, and a hand-drawn squiggle arrow between parts that lands on the next part's
   numeral (`nextFlip` prop on `DayStop` says which side that is). Even-numbered parts use a second
   arrow shape so two neighbouring arrows never look copied.
-- **Margin art:** light sketch lines (an SVG tile, data URI in `Base.astro`) in the empty side
-  gutters, fixed, drifting up at 0.18x scroll speed and fading toward the content with a mask. Only
-  from 1400 px up; hidden below that, static under reduced motion. Width tracks the gutter so it
-  always touches the content edge slightly.
+- **Margin art:** light sketch lines in the empty side gutters: two fixed inline `<svg>`s in
+  `Base.astro` filled with a 470x900 `<pattern>` and faded toward the content by an SVG mask (inline
+  SVG on purpose: a CSS data-URI background did not show on Shahmeer's machine). They drift up at
+  0.18x scroll speed; only from 1366 px up, hidden below that, static under reduced motion. Width
+  tracks the gutter so the lines just touch the content edge.
+- **Squiggle arrows use `pathLength="300"`** on both shapes so the draw-in dash covers the whole
+  path. Without it the longer (even-part) shape was cut off.
 - **No GitHub link** (he rarely updates it). Links read "Email" and "LinkedIn".
 - **Numbers read as measured, not made up:** per-person figure first (so a small clinic sees itself
-  in it), then the clinic's own uneven total (380 patients a day, 3 h 40 min, 11 machines, 1 h 50
-  min, 27 s, 2 h 50 min). Never round, even numbers like 400 / 4 hours / 200x / 2 hours. No table of
+  in it), then the clinic's own uneven total (380 patients a day, 3 h 40 min, three machines, 1 h 50
+  min, "on average" 27 s, 2 h 50 min). Never round, even numbers like 400 / 4 hours / 200x / 2 hours.
+- **Bold text is one or two sentences with the number in it; everything else goes in the grey
+  line.** Part 4 never names a monitor count ("one monitor or three, it lays itself out to fit the
+  room"). Part 7's grey line carries the machine-learning explanation. No table of
   contents, no captions under the screens, no explanatory grey notes.
 - **Visuals size themselves by their own container** (`@container` queries on `.stop-visual` /
   `.hero-screen`, nested one on `.rc-lane`), not the viewport, because the same visual sits in

@@ -1,14 +1,15 @@
 ---
-// One part of the clinic day: a numeral and time of day, one bold claim with a
+// One part of the clinic day: a numeral and location, one bold claim with a
 // number in it, one grey line of plain detail, and the screen beside it. A
-// hand-drawn squiggle arrow leads to the next part, leaning toward the side
-// where the next part's text begins. `wide` puts the screen full-width under the
-// text (used for the big lounge screen).
-// `nextFlip` says which side the NEXT part's text (and numeral) sits on, so the
-// arrow leans toward it: right when the next part is flipped, left otherwise.
+// hand-drawn squiggle arrow leads to the next part and lands on its numeral.
+// `wide` puts the screen full-width under the text (used for the big lounge
+// screen). `nextFlip` says which side the NEXT part's numeral sits on, so the
+// arrow leans toward it. Even parts use a second squiggle shape so neighbouring
+// arrows never look copied. pathLength normalises both shapes so the draw-in
+// dash always covers the whole path (without it the longer shape was cut off).
 const { id, n, time, flip = false, wide = false, last = false, nextFlip = false } = Astro.props;
 const dir = nextFlip ? 'to-right' : 'to-left';
-const alt = n % 2 === 0;   // even parts get a different squiggle so neighbours never match
+const alt = n % 2 === 0;
 ---
 <section id={id} class:list={['stop', { flip, wide }]}>
   <div class="wrap stop-grid">
@@ -27,13 +28,13 @@ const alt = n % 2 === 0;   // even parts get a different squiggle so neighbours 
       <div class:list={['squig', 'rv', dir]} aria-hidden="true">
         {alt ? (
           <svg viewBox="0 0 160 130" fill="none">
-            <path class="line" d="M 112 6 C 60 10, 28 50, 78 62 C 128 74, 44 96, 118 116" />
-            <path class="head" d="M 104 108 L 119 120 L 124 102" />
+            <path class="line" pathLength="300" d="M 112 6 C 60 10, 28 50, 78 62 C 128 74, 44 96, 118 116" />
+            <path class="head" pathLength="60" d="M 104 108 L 119 120 L 124 102" />
           </svg>
         ) : (
           <svg viewBox="0 0 160 130" fill="none">
-            <path class="line" d="M 28 6 C 2 34, 96 40, 72 68 C 52 92, 118 86, 122 112" />
-            <path class="head" d="M 108 104 L 123 116 L 128 98" />
+            <path class="line" pathLength="300" d="M 28 6 C 2 34, 96 40, 72 68 C 52 92, 118 86, 122 112" />
+            <path class="head" pathLength="60" d="M 108 104 L 123 116 L 128 98" />
           </svg>
         )}
       </div>
