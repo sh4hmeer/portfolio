@@ -75,7 +75,7 @@ strong, b { font-weight: 600; }
 .wrap { max-width: var(--maxw); margin: 0 auto; padding-left: var(--pad); padding-right: var(--pad); min-width: 0; }
 .section { padding: 64px 0; scroll-margin-top: calc(var(--bar-h) + 12px); }
 @media (min-width: 900px) { .section { padding: 84px 0; } }
-.section.tint { background: rgba(255,255,255,.6); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.section.tint { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .section-head { margin-bottom: 36px; }
 .section-head h2 { margin-bottom: 14px; }
 
@@ -190,7 +190,7 @@ h3 { font-size: clamp(20px, 2.2vw, 24px); line-height: 1.25; }
 @media (min-width: 960px) {
   /* land the arrowhead on the next part's numeral: left edge, or the start of the flipped text column */
   .squig.to-left { justify-content: flex-start; padding-left: 48px; }
-  .squig.to-right { justify-content: flex-start; padding-left: 56%; }
+  .squig.to-right { justify-content: flex-start; padding-left: 49%; }
 }
 @media (prefers-reduced-motion: reduce) { .squig .line, .squig .head { stroke-dashoffset: 0; transition: none; } }
 

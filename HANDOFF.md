@@ -50,11 +50,16 @@ npm run preview    # serves dist
   at the viewport top inside a fixed layer) with it. JS: on resize the pattern is centred at native
   size up to 1440px and scaled to the viewport above (`patternTransform`); on scroll the svg is
   translated by 0.35x scroll, modulo one tile, so it loops seamlessly. Hidden under 900px, static
-  under reduced motion. `.section.tint` is 60% white so the trail shows through. To change the
-  look, replace `public/leaf-trail.svg` (re-export from his design) keeping the two colours.
-- **Arrows sit a little to the right of the numeral** (`padding-left: 48px` / `56%`), by request. The
-  arrowheads are symmetric chevrons placed on the end of each line (recomputed from the line's end
-  tangent); if a line shape changes, recompute the head.
+  under reduced motion. `.section.tint` stays solid white (a translucent tint made the white cards
+  inside it look newly white; reverted). To change the look, replace `public/leaf-trail.svg`
+  (re-export from his design) keeping the two colours.
+- **Arrows aim at the next numeral.** Both line shapes end heading down at about 60 degrees
+  (down-left when mirrored); the chevron head is computed from the line's end tangent (16 px arms,
+  35 degree spread). The arrow box sits at `padding-left: 48px` (left-leaning) or `49%` (right-
+  leaning) so the tip lands about 50 px beside and 120 px above the numeral. If a line shape
+  changes, recompute the head from the new end tangent.
+- **Every visual in the day sequence is a dark screen**, including the device race wrapper and the
+  morning note (Shahmeer asked for them dark; no light cards among the seven parts).
 - **Squiggle arrows use `pathLength="300"`** on both shapes so the draw-in dash covers the whole
   path. Without it the longer (even-part) shape was cut off.
 - **No GitHub link** (he rarely updates it). Links read "Email" and "LinkedIn".
