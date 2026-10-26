@@ -1,18 +1,17 @@
 ---
-// Good to know: the few reassurances a clinic owner wants before writing.
-// Short on purpose, and light on how anything works under the hood.
+// Good to know: four direct answers.
 const qs = [
-  { q: 'Does this replace our EMR?', a: 'No. Everything works alongside the EMR you already use, and nobody has to learn a new system.' },
-  { q: 'Is patient information safe?', a: 'Yes. Everything stays within your clinic, the same way your EMR does today. I take that as seriously as you do.' },
-  { q: 'How soon does something show up?', a: 'The first piece is usually running within a few weeks of my first visit. The rest follows at a pace that suits your team.' },
-  { q: 'What does it cost?', a: 'We agree on it up front, before anything is built, once we both know what your clinic needs. Ask, and I will give you a straight answer.' },
+  { q: 'Does this replace the software we already use?', a: 'No. It works alongside the systems you already have, and nobody learns a new system.' },
+  { q: 'Is our information safe?', a: 'Yes. Everything stays within your organization and is built to PHIPA and HIPAA standards.' },
+  { q: 'How soon does something show up?', a: 'The first piece is running within weeks of my first visit. The rest follows at your pace.' },
+  { q: 'What does it cost?', a: 'Adjusted to your needs. Reach out and we will discuss them.' },
 ];
 ---
 <section id="questions" class="section tint">
   <div class="wrap">
     <div class="section-head rv">
       <p class="eyebrow"><span class="dot"></span> Good to know</p>
-      <h2>The things people usually ask first.</h2>
+      <h2>The questions people ask first.</h2>
     </div>
     <div class="fq rv">
       {qs.map((x) => (

@@ -159,8 +159,17 @@ h3 { font-size: clamp(20px, 2.2vw, 24px); line-height: 1.25; }
   box-shadow: 0 6px 16px -6px rgba(29,122,75,.6);
 }
 .stop-when { font-size: 16px; color: var(--ink-faint); }
-.stop-text h2 { margin: 0 0 18px; }
-.stop-text .body { margin-bottom: 18px; }
+.stop-claim { font-family: var(--display); font-weight: 700; font-size: clamp(21px, 2.3vw, 27px); line-height: 1.32; letter-spacing: -.012em; margin: 0 0 14px; color: var(--ink); }
+.stop-detail { margin: 0; color: var(--ink-dim); font-size: 17.5px; line-height: 1.6; max-width: 36em; }
+.stop.wide .stop-text { max-width: 820px; }
+@media (min-width: 960px) {
+  .stop.wide .stop-grid { grid-template-columns: 1fr; grid-template-areas: "text" "visual" "squig"; gap: 26px; }
+  .stop.wide .squig { justify-content: center; padding-left: 0; padding-right: 0; }
+}
+/* lead-in from the intro to the numbered parts */
+.day-intro { padding-top: 40px; }
+.day-intro .day-see { font-weight: 700; color: var(--accent); font-size: 18px; margin: 0 0 10px; }
+.day-intro h2 { max-width: 24ch; }
 .fact {
   margin: 4px 0 8px; padding: 16px 18px; border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0;
   font-size: 17px; line-height: 1.5;

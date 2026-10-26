@@ -1,30 +1,27 @@
 ---
-// One part of the clinic day. A big numeral and a time of day mark the part,
-// the visual sits beside the text, a "Next" link closes it, and a hand-drawn
-// squiggle arrow leads the eye down to the next part (it leans toward the side
-// where the next part's text begins).
-const { id, n, time, title, next, flip = false } = Astro.props;
+// One part of the clinic day: a numeral and time of day, one bold claim with a
+// number in it, one grey line of plain detail, and the screen beside it. A
+// hand-drawn squiggle arrow leads to the next part, leaning toward the side
+// where the next part's text begins. `wide` puts the screen full-width under the
+// text (used for the big lounge screen).
+const { id, n, time, flip = false, wide = false, last = false } = Astro.props;
+const dir = wide ? 'to-mid' : (flip ? 'to-left' : 'to-right');
 ---
-<section id={id} class:list={['stop', { flip }]}>
+<section id={id} class:list={['stop', { flip, wide }]}>
   <div class="wrap stop-grid">
     <div class="stop-text rv">
       <div class="stop-mark">
         <span class="stop-num" aria-hidden="true">{n}</span>
         <span class="stop-when"><span class="sr-only">Part {n}. </span>{time}</span>
       </div>
-      <h2>{title}</h2>
-      <slot name="text" />
+      <h2 class="stop-claim"><slot name="claim" /></h2>
+      <p class="stop-detail"><slot name="detail" /></p>
     </div>
     <div class="stop-visual rv">
       <slot name="visual" />
     </div>
-    {next && (
-      <div class="stop-next rv">
-        <a class="next" href={`#${next.id}`}><span class="arr" aria-hidden="true">↓</span> Next: {next.label}</a>
-      </div>
-    )}
-    {next && (
-      <div class:list={['squig', 'rv', flip ? 'to-left' : 'to-right']} aria-hidden="true">
+    {!last && (
+      <div class:list={['squig', 'rv', dir]} aria-hidden="true">
         <svg viewBox="0 0 160 130" fill="none">
           <path class="line" d="M 28 6 C 2 34, 96 40, 72 68 C 52 92, 118 86, 122 112" />
           <path class="head" d="M 108 104 L 123 116 L 128 98" />

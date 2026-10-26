@@ -1,21 +1,20 @@
 ---
-// Get in touch. Two plain buttons and a short form. The site is static, so the
-// form composes an email in the visitor's own mail app: nothing is stored here.
+// Get in touch. Two buttons and a three-field form that composes an email in
+// the visitor's own mail app (the site is static; nothing is stored here).
 const email = 'shahmeer_shahid@outlook.com';
-const seeIt = `mailto:${email}?subject=${encodeURIComponent('A short call to see it running')}&body=${encodeURIComponent('Hi Shahmeer,\n\nI would like to see how it runs. A few times that work for me:\n\n\nClinic:\nEMR:\n')}`;
+const message = `mailto:${email}?subject=${encodeURIComponent('Walk me through the specifics')}`;
 const ask2027 = `mailto:${email}?subject=${encodeURIComponent('About 2027')}`;
 ---
 <section id="contact" class="section">
   <div class="wrap cf">
     <div class="rv">
       <p class="eyebrow"><span class="dot"></span> Get in touch</p>
-      <h2>Happy to show you how it runs.</h2>
-      <p class="lead">The easiest way to understand it is to see it. A short video call while the clinic is open, my screen shared on the live boards, and whatever questions you have.</p>
+      <h2>Need clarity?</h2>
+      <p class="lead">Get in touch and I will walk you through the specifics.</p>
       <div class="cf-ctas">
-        <a class="btn primary" href={seeIt}>Set up a short call</a>
+        <a class="btn primary" href={message}>Send a message</a>
         <a class="btn ghost" href={ask2027}>Ask about 2027</a>
       </div>
-      <p class="cf-note">I read and reply to every message myself.</p>
       <div class="cf-links">
         <a href={`mailto:${email}`}>{email}</a>
         <a href="https://www.linkedin.com/in/shahmeer-shahid-" target="_blank" rel="noopener">LinkedIn</a>
@@ -24,35 +23,22 @@ const ask2027 = `mailto:${email}?subject=${encodeURIComponent('About 2027')}`;
     </div>
 
     <form class="cf-form rv" data-fit action={`mailto:${email}`} method="get">
-      <div>
-        <h3>Or tell me a little about your clinic</h3>
-        <p class="hint">A few quick answers. Pressing Send opens the message in your own mail app so you can look it over first.</p>
-      </div>
+      <h3>Tell me about your work</h3>
       <div class="cf-row">
         <div class="cf-field"><label for="cf-name">Your name</label><input id="cf-name" name="name" type="text" autocomplete="name" /></div>
-        <div class="cf-field"><label for="cf-clinic">Clinic</label><input id="cf-clinic" name="clinic" type="text" autocomplete="organization" /></div>
-      </div>
-      <div class="cf-row">
         <div class="cf-field">
-          <label for="cf-emr">EMR you use</label>
-          <select id="cf-emr" name="emr">
-            <option>OSCAR</option><option>Accuro</option><option>TELUS PS Suite</option><option>TELUS Med Access</option><option>Another one</option><option>Not sure</option>
-          </select>
-        </div>
-        <div class="cf-field">
-          <label for="cf-vol">Patients on a typical day</label>
-          <select id="cf-vol" name="volume">
-            <option>Under 40</option><option>40 to 80</option><option>80 to 150</option><option>More than 150</option>
+          <label for="cf-industry">Industry</label>
+          <select id="cf-industry" name="industry">
+            <option>Healthcare</option><option>Pharmacy</option><option>Manufacturing</option><option>Professional services</option><option>Retail</option><option>Other</option>
           </select>
         </div>
       </div>
       <div class="cf-field">
-        <label for="cf-pain">What slows your day down most?</label>
-        <textarea id="cf-pain" name="pain" placeholder="A sentence or two is plenty."></textarea>
+        <label for="cf-pain">What slows your day down?</label>
+        <textarea id="cf-pain" name="pain"></textarea>
       </div>
       <div class="cf-send">
         <button class="btn primary" type="submit">Send</button>
-        <small>Goes to {email}. Nothing is stored on this site.</small>
       </div>
     </form>
   </div>
@@ -65,15 +51,8 @@ const ask2027 = `mailto:${email}?subject=${encodeURIComponent('About 2027')}`;
     f.addEventListener('submit', (e) => {
       e.preventDefault();
       const v = (n) => (f.elements[n] && f.elements[n].value || '').trim();
-      const body = [
-        'Hi Shahmeer,', '',
-        'Name: ' + v('name'),
-        'Clinic: ' + v('clinic'),
-        'EMR: ' + v('emr'),
-        'Patients on a typical day: ' + v('volume'), '',
-        'What slows the day down most:', v('pain'), '',
-      ].join('\n');
-      location.href = 'mailto:' + email + '?subject=' + encodeURIComponent('About my clinic' + (v('clinic') ? ': ' + v('clinic') : '')) + '&body=' + encodeURIComponent(body);
+      const body = ['Hi Shahmeer,', '', 'Name: ' + v('name'), 'Industry: ' + v('industry'), '', 'What slows my day down:', v('pain'), ''].join('\n');
+      location.href = 'mailto:' + email + '?subject=' + encodeURIComponent('About my work' + (v('industry') ? ': ' + v('industry') : '')) + '&body=' + encodeURIComponent(body);
     });
   })();
 </script>

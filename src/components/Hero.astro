@@ -1,31 +1,25 @@
 ---
-// Opening screen: a plain description of what the work does for a clinic, two
-// buttons, and the doctors' lounge screen sitting under the text so the first
-// screen always shows that the page continues.
-import LoungeBoard from './LoungeBoard.astro';
+// Opening screen: what the work is, broadly, then a lead-in to the numbered
+// walk through a clinic day directly below.
 ---
 <section id="top" class="hero">
   <div class="wrap">
     <div class="hero-text">
-      <p class="eyebrow"><span class="dot"></span> Running at Tri-City Eye Care <span class="sep">·</span> Kitchener, Ontario</p>
-      <h1>Helping your clinic always know where its patients are, and keep the day moving.</h1>
+      <p class="eyebrow"><span class="dot"></span> Shahmeer Shahid <span class="sep">·</span> Kitchener, Ontario</p>
+      <h1>Taking your messy workflow and making it efficient.</h1>
       <p class="lead">
-        I work inside an eye clinic in Ontario, building the small pieces of software it was missing:
-        patients who check themselves in, screens that show staff who is next, and test results that
-        find their own way into the chart. It all runs quietly alongside the EMR the clinic already uses.
+        I work in Ontario building software that saves your team time and generates revenue,
+        built around the way you already work. Running today in healthcare.
       </p>
       <div class="hero-cta">
-        <a class="btn primary" href="#day">Walk through a clinic day <span class="arr" aria-hidden="true">↓</span></a>
+        <a class="btn primary" href="#day">See my work <span class="arr" aria-hidden="true">↓</span></a>
         <a class="btn ghost" href="#contact">Get in touch</a>
       </div>
     </div>
-
-    <div class="hero-screen rv">
-      <LoungeBoard />
-      <p class="screen-cap">
-        This is the screen in the doctors' lounge, with made-up patients. It changes on its own as
-        people check in, finish their tests and see the doctor.
-      </p>
-    </div>
   </div>
 </section>
+
+<div class="day-intro wrap rv">
+  <p class="day-see">See my work in healthcare</p>
+  <h2>Let's follow a clinic through one day, from the moment a patient walks in.</h2>
+</div>

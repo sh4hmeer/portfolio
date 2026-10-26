@@ -21,21 +21,25 @@ npm run preview    # serves dist
   exists if it is ever wanted again).
 
 ## How the page is meant to read (keep these)
-- **Plain, first-person, unhurried.** Describe what the work does for the clinic; no slogans, no
-  staccato "X. Y." headlines, no hype words. Headings are full sentences a manager would say.
+- **Plain, first-person, and confident.** Describe what the work does; no slogans, no hype words,
+  and NO hedging ("usually", "a little", "probably", "ask and I will give you a straight answer").
+  Credibility first: every claim is stated flatly, with a number where one helps. Some rounding up
+  is fine; the page is meant to be easy for someone who knows nothing about the software.
+- **Broad, not clinic-only.** The intro speaks to any business with a messy workflow; the clinic
+  day is the proof. The contact form asks only name, industry, and what slows the day down.
 - **Light on how anything works.** Outcomes, not mechanisms. Nothing on the page should read as
   instructions for rebuilding it. Specific internals (polling, file watching, matching rules,
   model stats, email schedules, hardware) stay off the page.
-- **Everyone shown is made up** and the footer says so. Never real EMR screenshots.
+- **Everyone shown is made up** (no disclaimer on the page). Never real EMR screenshots.
 - **Light theme, 18 to 19 px body text, AAA contrast, one accent colour.** Dark is only for the
   "screens" (the board recreations).
 - **No pinned or scroll-jacked sections, no carousels, no hover-only content, no accordions,
   nothing the visitor has to press to make a demo run.** Every visual moves slowly and
   continuously on its own, pauses off-screen and on a hidden tab, and goes static under
   `prefers-reduced-motion`.
-- **Structure is visible:** numbered "On this page" index under the hero, a big numeral and a
-  time of day on each part, a "Next: ..." link closing each part, and a hand-drawn squiggle arrow
-  between parts that leans toward where the next part's text starts.
+- **Structure is visible:** a big numeral and a time of day on each part, and a hand-drawn
+  squiggle arrow between parts that leans toward where the next part's text starts. No table of
+  contents, no captions under the screens, no explanatory grey notes.
 - **Visuals size themselves by their own container** (`@container` queries on `.stop-visual` /
   `.hero-screen`, nested one on `.rc-lane`), not the viewport, because the same visual sits in
   columns of very different widths. Verified at 22 widths from 320 to 2560 px with the overflow
@@ -44,12 +48,13 @@ npm run preview    # serves dist
 - Canadian spelling and vocabulary: EMR (not EHR), health card, front desk, exam room, scan.
 
 ## Page order (`src/pages/index.astro`)
-`Hero` (#top) → `OnThisPage` → `#day` wrapper with seven `DayStop`s:
-`#checkin` Kiosk · `#boards` TriageBoard (flip) · `#devices` DeviceRace · `#doctor` DoctorFlow (flip) ·
-`#staff` FloorClock · `#map` FloorMap (flip) · `#nightly` NightlyReport
-→ `Changed` (#changed) → `HowIWork` (#how) → `BeforeThis` (#before) → `Questions` (#questions,
-"Good to know") → `Contact` (#contact; two mailto buttons + a form that composes a mailto, no
-backend, nothing stored).
+`Hero` (#top; broad intro, then the "See my work in healthcare" lead-in) → `#day` wrapper with seven
+`DayStop`s, each = numeral + time of day, ONE bold claim with a number, ONE grey line, one screen:
+`#checkin` Kiosk · `#boards` LoungeBoard (wide, full-width under the text) · `#devices` DeviceRace ·
+`#doctor` DoctorFlow (flip) · `#staff` FloorClock · `#map` FloorMap (flip) · `#nightly` NightlyReport
+→ `Changed` (#changed) → `HowIWork` (#how) → `Questions` (#questions, "Good to know", 4 direct
+answers) → `Contact` (#contact; two mailto buttons + a 3-field form, name / industry / what slows
+your day down, that composes a mailto; no backend, nothing stored).
 Top bar (`Base.astro`): brand, five links (hidden under 1000 px), "Get in touch" button, 2 px
 page-progress line, scroll spy.
 
@@ -60,12 +65,13 @@ page-progress line, scroll spy.
   visual / next / squig; `.flip` swaps columns AND column widths), `.stop-mark` numeral, `.fact`,
   `.next`, `.squig` arrow (draws in via `.rv.in`).
 - `src/styles/visuals.css` – all visual styles, global on purpose (some DOM is built by JS).
-- `src/components/DayStop.astro` – the part wrapper (numeral + time, h2, `text` and `visual` slots,
-  Next link, squiggle).
+- `src/components/DayStop.astro` – the part wrapper (numeral + time, `claim` / `detail` / `visual`
+  slots, squiggle; props `flip`, `wide`, `last`).
 - Visuals (self-contained, inline script, slow continuous loops):
-  `LoungeBoard` (hero), `Kiosk`, `TriageBoard`, `DeviceRace`, `DoctorFlow`, `FloorClock`,
+  `Kiosk`, `LoungeBoard`, `DeviceRace`, `DoctorFlow`, `FloorClock`,
   `FloorMap` (SVG map with moving dots), `NightlyReport` (SVG bars + cycling highlight).
-- `Changed`, `HowIWork`, `BeforeThis`, `Questions`, `Contact` – copy lives in each component.
+- `Changed`, `HowIWork`, `Questions`, `Contact` – copy lives in each component.
+- Privacy wording: "built to PHIPA and HIPAA standards" (PHIPA is Ontario's health privacy law).
 
 ## Checking a change
 Build, then serve `dist` and run Playwright against it (the scripts used live in the session

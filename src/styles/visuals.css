@@ -8,10 +8,10 @@
    fq- (good to know), cf- (contact), bt- (before the clinic). */
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
-.hero { padding: 40px 0 0; }
-@media (min-width: 900px) { .hero { padding-top: 56px; } }
+.hero { padding: 44px 0 0; }
+@media (min-width: 900px) { .hero { padding-top: 64px; } }
 .hero-text { max-width: 820px; }
-.hero-text h1 { margin: 0 0 22px; max-width: 22ch; }
+.hero-text h1 { margin: 0 0 22px; max-width: 18ch; }
 .hero-text .lead { margin: 0 0 28px; }
 .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; }
 .hero-screen { margin-top: 40px; }
