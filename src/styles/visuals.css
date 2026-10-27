@@ -92,7 +92,7 @@
 .ks-pane h4 { font-family: var(--display); font-size: clamp(20px, 5cqi, 32px); margin: 4px 0 2px; line-height: 1.15; }
 .ks-pane p { margin: 0; color: var(--s-muted); font-size: clamp(14px, 3cqi, 18px); max-width: 30em; }
 .ks-pane .ks-sub { color: var(--s-text); }
-.ks-slot { width: min(260px, 70%); height: 14px; border-radius: 7px; background: #05070b; border: 1px solid #39404d; margin: 30px 0 4px; position: relative; }
+.ks-slot { width: min(260px, 70%); height: 14px; border-radius: 7px; background: #05070b; border: 1px solid #39404d; margin: 66px 0 10px; position: relative; }   /* top margin clears the card's highest bounce (58px above the slot) */
 .ks-card { position: absolute; left: 50%; top: -34px; width: 54%; height: 34px; border-radius: 5px 5px 0 0; background: linear-gradient(180deg, #2f8f5c, #1d6b43); transform: translateX(-50%); border: 1px solid #6fd3a0; opacity: .95; }
 .ks-card::after { content: ""; position: absolute; left: 10px; top: 9px; width: 18px; height: 12px; border-radius: 2px; background: #e9c76a; }
 .ks-pane.on .ks-card { animation: kscard 3.2s ease-in-out infinite; }
