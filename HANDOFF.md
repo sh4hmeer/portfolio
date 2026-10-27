@@ -13,6 +13,10 @@ npm run build      # -> dist/
 npm run preview    # serves dist
 ```
 - **Live at https://shahmeershahid.com** (GitHub Pages, repo `sh4hmeer/portfolio`, branch `main`).
+- **Deployed 2026-10-27:** `main` fast-forwarded to the revamp and pushed from the `sh4hmeer` gh
+  login (`gh auth switch -u sh4hmeer`; the TriCityEyeCare login cannot push here). The previous
+  site (the dark scroll-pinned portfolio, last commit d224ff7) is kept on branch
+  **`old-site-2026-06`**; to revert, push that branch's content to `main`.
   Every push to `main` runs `.github/workflows/deploy.yml` (single `build-deploy` job).
   `public/CNAME` keeps the custom domain. Node 24 local, 22 on CI, Astro 5.
 - Pushing needs the `sh4hmeer` gh login (`gh auth switch`).
