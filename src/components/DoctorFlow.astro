@@ -21,11 +21,11 @@
   </div>
   <div class="df-mon">
     <span class="df-label">Monitor 2 · scans and photos</span>
-    <div class="df-win forum" data-win="forum">
+    <div class="df-win scans" data-win="scans">
       <div class="wb"><i></i><b>Scans · M. Okafor</b></div>
       <div class="wc"><div class="ln w2"></div><div class="scan"></div><div class="ln w1"></div></div>
     </div>
-    <div class="df-win optos" data-win="optos">
+    <div class="df-win photos" data-win="photos">
       <div class="wb"><i></i><b>Photos · M. Okafor</b></div>
       <div class="wc"><div class="ln w2"></div><div class="retina"></div><div class="ln w1"></div></div>
     </div>
@@ -39,7 +39,7 @@
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const cursor = root.querySelector('[data-cursor]');
     const row = root.querySelector('.df-prow.target');
-    const wins = { echart: root.querySelector('[data-win="echart"]'), forum: root.querySelector('[data-win="forum"]'), optos: root.querySelector('[data-win="optos"]') };
+    const wins = { echart: root.querySelector('[data-win="echart"]'), scans: root.querySelector('[data-win="scans"]'), photos: root.querySelector('[data-win="photos"]') };
     const timer = root.querySelector('[data-timer]');
     let seq = 0, visible = false, loop = null;
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -58,8 +58,8 @@
       cursor.classList.add('down'); row.classList.add('hit');
       await sleep(220); cursor.classList.remove('down');
       await sleep(500); if (id !== seq) return; wins.echart.classList.add('on');
-      await sleep(800); if (id !== seq) return; wins.forum.classList.add('on');
-      await sleep(700); if (id !== seq) return; wins.optos.classList.add('on');
+      await sleep(800); if (id !== seq) return; wins.scans.classList.add('on');
+      await sleep(700); if (id !== seq) return; wins.photos.classList.add('on');
       await sleep(500); if (id !== seq) return; timer.classList.add('on');
     }
     if (reduce) { Object.values(wins).forEach((w) => w.classList.add('on')); row.classList.add('hit'); timer.classList.add('on'); cursor.style.display = 'none'; return; }

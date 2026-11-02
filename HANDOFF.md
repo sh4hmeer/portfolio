@@ -15,14 +15,18 @@ npm run preview    # serves dist
 - **Live at https://shahmeershahid.com** (GitHub Pages, repo `sh4hmeer/portfolio`, branch `main`).
 - **Deployed 2026-10-27:** `main` fast-forwarded to the revamp and pushed from the `sh4hmeer` gh
   login (`gh auth switch -u sh4hmeer`; the TriCityEyeCare login cannot push here). The previous
-  site (the dark scroll-pinned portfolio, last commit d224ff7) is kept on branch
-  **`old-site-2026-06`**; to revert, push that branch's content to `main`.
+  site (the dark scroll-pinned portfolio, last commit d224ff7) lives in the PRIVATE repo
+  **`sh4hmeer/portfolio-archive`** (branch `old-site-2026-06`, plus `site-2026-10-27` = this site
+  before the 2026-11-02 cleanup, prototype included). It was moved off the public repo on 2026-11-02
+  because its source named the EMR, the devices and a doctor. To revert, push the archive branch's
+  content to `main` here.
   Every push to `main` runs `.github/workflows/deploy.yml` (single `build-deploy` job).
   `public/CNAME` keeps the custom domain. Node 24 local, 22 on CI, Astro 5.
 - Pushing needs the `sh4hmeer` gh login (`gh auth switch`).
-- `prototype/` (the pixel clinic game) stays in the repo for other projects that copied from it,
-  but the site no longer embeds it and the build no longer mirrors it (`npm run sync-clinic` still
-  exists if it is ever wanted again).
+- `prototype/` (the pixel clinic game) and `scripts/sync-clinic.mjs` were REMOVED from this public
+  repo on 2026-11-02 (its handoff named the EMR, a doctor and the board routes). The last copy is in
+  `sh4hmeer/portfolio-archive`, branch `site-2026-10-27`. Note that the public git history before
+  that date still contains both; squashing `main` to a fresh root is the only way to remove them.
 
 ## How the page is meant to read (keep these)
 - **Plain, first-person, and confident.** Describe what the work does; no slogans, no hype words,
@@ -33,7 +37,13 @@ npm run preview    # serves dist
   day is the proof. The contact form asks only name, industry, and what slows the day down.
 - **Light on how anything works.** Outcomes, not mechanisms. Nothing on the page should read as
   instructions for rebuilding it. Specific internals (polling, file watching, matching rules,
-  model stats, email schedules, hardware) stay off the page.
+  model stats, email schedules, hardware) stay off the page. 2026-11-02 tightening: the grey lines
+  of parts 4 and 7 state the outcome only (no visit-type examples, no list of what the model finds);
+  the specifics belong in the walkthrough, which is the call to action.
+- **Nothing names the clinic, the EMR or a product, including in the source.** Screen bars say
+  "Eye clinic", never the real clinic name (with "Kitchener" that was directions to the live
+  clinic). Class names and data attributes are generic (`scans`, `photos`), never the vendor's name;
+  view-source is public too. Check: `grep -ci "tri-city\|oscar\|forum\|optos" dist/index.html` = 0.
 - **Everyone shown is made up** (no disclaimer on the page). Never real EMR screenshots.
 - **Light theme, 18 to 19 px body text, AAA contrast, one accent colour.** Dark is only for the
   "screens" (the board recreations).
@@ -67,6 +77,9 @@ npm run preview    # serves dist
 - **Squiggle arrows use `pathLength="300"`** on both shapes so the draw-in dash covers the whole
   path. Without it the longer (even-part) shape was cut off.
 - **No GitHub link** (he rarely updates it). Links read "Email" and "LinkedIn".
+- **In-page links never write a hash into the address bar.** A click handler in `Base.astro` scrolls
+  to the section and strips any hash; the skip link is exempt. Sections keep their ids for
+  scroll-spy and for links shared from outside.
 - **Numbers read as measured, not made up:** per-person figure first (so a small clinic sees itself
   in it), then the clinic's own uneven total (380 patients a day, 3 h 40 min, three machines, 1 h 50
   min, "on average" 27 s, 2 h 50 min). Never round, even numbers like 400 / 4 hours / 200x / 2 hours.
@@ -102,8 +115,9 @@ day and five lines add up to hours a week and a month: 35 s check-in, 30 s findi
 before/after rows and metric cards, which repeated the parts) → `HowIWork` (#how, broad
 enough for any business, no "Right now" card: it revealed too much and could put off a clinic on a
 different EMR) → `Questions` (#questions, "Good to know", 4 direct answers) → `Contact` (#contact;
-two mailto buttons + a 3-field form, name / industry / what slows your day down, that composes a
-mailto; links read "Email", never the address; no backend, nothing stored).
+"Book a walkthrough" (on screen with made-up patients or in person) + "Ask about 2027" mailto
+buttons + a 3-field form, name / industry / what slows your day down, that composes a mailto;
+links read "Email", never the address; no backend, nothing stored).
 Top bar (`Base.astro`): brand, five links (hidden under 1000 px), "Get in touch" button, 2 px
 page-progress line, scroll spy.
 
@@ -131,7 +145,8 @@ scratchpad; they are short and easy to recreate):
    `document.documentElement.scrollWidth` vs `innerWidth`. Expect zero findings.
 2. Element screenshots of each section at 1280 and 390 px, a full-page shot at 1440 / 1366 / 390,
    and a pass with `reduced_motion="reduce"`.
-3. `grep -c "—\|–" dist/index.html` = 0; no console errors.
+3. `grep -c "—\|–" dist/index.html` = 0; `grep -ci "tri-city\|oscar\|forum\|optos" dist/index.html`
+   = 0; no console errors; clicking a top-bar link leaves the address bar without a hash.
 
 ## Gotchas
 - Bash cwd resets to `Desktop/Projects` each call; `cd .../fde-portfolio &&` first.

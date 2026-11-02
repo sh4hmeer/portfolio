@@ -2,7 +2,7 @@
 // Get in touch. Two buttons and a three-field form that composes an email in
 // the visitor's own mail app (the site is static; nothing is stored here).
 const email = 'shahmeer_shahid@outlook.com';
-const message = `mailto:${email}?subject=${encodeURIComponent('Walk me through the specifics')}`;
+const message = `mailto:${email}?subject=${encodeURIComponent('Book a walkthrough')}`;
 const ask2027 = `mailto:${email}?subject=${encodeURIComponent('About 2027')}`;
 ---
 <section id="contact" class="section">
@@ -10,9 +10,9 @@ const ask2027 = `mailto:${email}?subject=${encodeURIComponent('About 2027')}`;
     <div class="rv">
       <p class="eyebrow"><span class="dot"></span> Get in touch</p>
       <h2>Need clarity?</h2>
-      <p class="lead">Reach out and I will walk you through the specifics.</p>
+      <p class="lead">Reach out and I will walk you through the specifics, on screen with made-up patients or in person at your clinic.</p>
       <div class="cf-ctas">
-        <a class="btn primary" href={message}>Send a message</a>
+        <a class="btn primary" href={message}>Book a walkthrough</a>
         <a class="btn ghost" href={ask2027}>Ask about 2027</a>
       </div>
       <div class="cf-links">
